@@ -1,0 +1,17 @@
+﻿using System;
+using UnityEngine;
+
+namespace SwiftFramework.Core
+{
+    public interface IWindow
+    {
+        IAppearAnimationHandler Animation { get; }
+        void Show();
+        void Hide();
+        bool IsFullScreen { get; }
+        bool IsShown { get; }
+        RectTransform RectTransform { get; }
+        IPromise HidePromise { get; }
+    }
+
+}

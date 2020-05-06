@@ -69,13 +69,15 @@ namespace SwiftFramework.Core.Editor
             Selection.activeObject = linkSelectionHistory.Pop();
         }
 
-        protected FieldInfo fieldInfo;
-        protected System.Type type;
+        protected readonly FieldInfo fieldInfo;
+        protected readonly System.Type type;
+        protected readonly bool forceFlatHierarchy;
 
-        public BaseLinkDrawer(System.Type type, FieldInfo fieldInfo)
+        public BaseLinkDrawer(System.Type type, FieldInfo fieldInfo, bool forceFlatHierarchy = false)
         {
             this.type = type;
             this.fieldInfo = fieldInfo;
+            this.forceFlatHierarchy = forceFlatHierarchy;
         }
 
         protected List<AddressableAssetEntry> assets = new List<AddressableAssetEntry>();
@@ -159,7 +161,7 @@ namespace SwiftFramework.Core.Editor
 
             for (int i = 1; i < assets.Count; i++)
             {
-                names[i] = AddrHelper.GetAddressName(assets[i].address, type, fieldInfo);
+                names[i] = AddrHelper.GetAddressName(assets[i].address, type, fieldInfo, forceFlatHierarchy);
             }
         }
 

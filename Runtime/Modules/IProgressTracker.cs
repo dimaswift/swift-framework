@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using SwiftFramework.Core.SharedData;
+
 namespace SwiftFramework.Core
 {
     public interface IProgressTracker : IModule
@@ -14,8 +15,13 @@ namespace SwiftFramework.Core
         IPromise ClaimAchievementReward(string id);
         IPromise ClaimQuestReward(string id);
         ProgressItemStatus GetQuestStatus(string id);
+        TimeSpan GetQuestCooldown(string id);
         ProgressItemStatus GetAchievementStatus(string id);
         void RefreshCredits();
+        (int current, int target) GetQuestProgress(string id);
+        (int current, int target, int step) GetAchievementProgress(string id);
+        bool IsAnyRewardAvailable();
+        IStatefulEvent<bool> IsAppLive { get; }
     }
 
     public interface IProgressRestoreHandler

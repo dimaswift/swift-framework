@@ -5,9 +5,9 @@ namespace SwiftFramework.Core
     public class CameraAnchor : MonoBehaviour
     {
         [SerializeField] private TextAnchor type = TextAnchor.UpperCenter;
-        [SerializeField] private Vector2 offset;
+        [SerializeField] private Vector2 offset = Vector2.zero;
 
-        private float aspect;
+        private float aspect = 0;
 
         private Camera cam;
 
@@ -19,6 +19,7 @@ namespace SwiftFramework.Core
             }
             if (aspect != cam.aspect)
             {
+                aspect = cam.aspect;
                 Vector3 targetPosition = cam.transform.position;
                 targetPosition.z = transform.position.z;
                 Bounds cameraBounds = cam.GetIsometricBounds();

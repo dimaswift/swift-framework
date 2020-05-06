@@ -15,6 +15,22 @@ namespace SwiftFramework.Core
 
     public static class ExtentionMethods
     {
+        public static float AverageFast(this IEnumerable<float> values)
+        {
+            if (values.CountFast() == 0)
+            {
+                return 0;
+            }
+
+            float sum = 0;
+
+            foreach (var v in values)
+            {
+                sum += v;
+            }
+            return sum / values.CountFast();
+        }
+
         public static Bounds GetIsometricBounds(this Camera cam)
         {
             return new Bounds()

@@ -7,7 +7,7 @@ namespace SwiftFramework.Core.Editor
 {
     internal class AssetLinkDrawer : BaseLinkDrawer
     {
-        public AssetLinkDrawer(System.Type type, FieldInfo fieldInfo = null) : base(type, fieldInfo)
+        public AssetLinkDrawer(System.Type type, FieldInfo fieldInfo = null, bool forceFlatHierarchy = false) : base(type, fieldInfo, forceFlatHierarchy)
         {
 
         }
@@ -20,8 +20,6 @@ namespace SwiftFramework.Core.Editor
         {
             return Promise<string>.Resolved(CreateAsset(type, fieldInfo.GetChildValueType()));
         }
-
-        private static readonly Sorter sorter = new Sorter();
 
         private class Sorter : IComparer<string>
         {

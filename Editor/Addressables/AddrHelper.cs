@@ -26,8 +26,8 @@ namespace SwiftFramework.Core.Editor
 
         public static readonly string[] rootFolders =
         {
-            "Assets/Configs",
-            "Assets/Addressables"
+            //"Assets/Configs",
+            //"Assets/Addressables"
         };
 
         public static AddressableAssetSettings Settings
@@ -148,7 +148,7 @@ namespace SwiftFramework.Core.Editor
         }
 
 
-        public static string GetAddressName(string address, Type assetType, FieldInfo fieldInfo = null)
+        public static string GetAddressName(string address, Type assetType, FieldInfo fieldInfo = null, bool forceFlatHierarchy = false)
         {
             string rootFolder = "";
 
@@ -206,7 +206,7 @@ namespace SwiftFramework.Core.Editor
                 address = address.Substring(1, address.Length - 1);
             }
 
-            return flatHierarchy ? Path.GetFileNameWithoutExtension(address) : address;
+            return flatHierarchy || forceFlatHierarchy ? Path.GetFileNameWithoutExtension(address) : address;
         }
 
 

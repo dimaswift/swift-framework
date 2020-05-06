@@ -16,7 +16,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SwiftFramework.EditorUtils
 {
-    internal static class EditorUtilExtentions
+    public static class EditorUtilExtentions
     {
         public static T Value<T>(this LinkTo<T> link) where T : UnityEngine.Object
         {
@@ -24,7 +24,7 @@ namespace SwiftFramework.EditorUtils
         }
     }
 
-    internal class Util : ScriptableSingleton<Util>
+    public class Util : ScriptableSingleton<Util>
     {
         public static event Action<Type, ModuleConfig> OnModuleConfigApplied = (type, moduleConfig) => { };
         public static event Action OnScriptsReloaded = () => { };
@@ -40,6 +40,7 @@ namespace SwiftFramework.EditorUtils
         public const string OPT_DEV_BUILD_NUM = "-devBuildNumber";
 
         public static readonly Dictionary<string, string> executeArguments = new Dictionary<string, string>();
+        private static readonly List<Type> cachedTypes = new List<Type>();
 
         public static readonly string projectDir = Environment.CurrentDirectory.Replace('\\', '/');
 
@@ -69,7 +70,7 @@ namespace SwiftFramework.EditorUtils
             }
         }
 
-        public static Builder currentBuilder { get { return instance.m_CurrentBuilder; } private set { instance.m_CurrentBuilder = value; } }
+        internal static Builder currentBuilder { get { return instance.m_CurrentBuilder; } private set { instance.m_CurrentBuilder = value; } }
 
         [SerializeField] Builder m_CurrentBuilder;
 
@@ -93,6 +94,22 @@ namespace SwiftFramework.EditorUtils
                 type = type
             });
             EditorUtility.SetDirty(instance);
+        }
+
+        public static void CopyDirectory(string source, string destination, string exceptFilesWithExtentions = null)
+        {
+            foreach (string dirPath in Directory.GetDirectories(source, "*",
+                SearchOption.AllDirectories))
+                Directory.CreateDirectory(dirPath.Replace(source, destination));
+
+            foreach (string newPath in Directory.GetFiles(source, "*.*", SearchOption.AllDirectories))
+            {
+                if (exceptFilesWithExtentions != null && Path.GetExtension(newPath) == exceptFilesWithExtentions)
+                {
+                    continue;
+                }
+                File.Copy(newPath, newPath.Replace(source, destination), true);
+            } 
         }
 
         [InitializeOnLoadMethod]
@@ -125,6 +142,30 @@ namespace SwiftFramework.EditorUtils
             OnModuleConfigApplied(moduleType, moduleConfig);
         }
 
+
+        public static void OpenPrefab<T>()
+        {
+            var id = Util.FindPrefabPath(typeof(T))?.GetInstanceID();
+            if (id.HasValue)
+                AssetDatabase.OpenAsset(id.Value);
+        }
+
+        public static GameObject FindPrefabPath(Type type)
+        {
+            foreach (var guid in AssetDatabase.FindAssets($"t:{ "GameObject" }"))
+            {
+                GameObject go = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid)) as GameObject;
+                if (go == null)
+                {
+                    continue;
+                }
+                if (go.GetComponent(type))
+                {
+                    return go;
+                }
+            }
+            return null;
+        }
 
         public static string ToRelativePath(string absolutePath)
         {
@@ -486,17 +527,17 @@ namespace SwiftFramework.EditorUtils
 
         public static IEnumerable<Type> GetAllTypes()
         {
-            foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
+            if (cachedTypes.Count == 0)
             {
-                foreach (var type in a.DefinedTypes)
+                foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    if(type.IsVisible == false)
+                    foreach (var type in a.DefinedTypes)
                     {
-                        continue;
+                        cachedTypes.Add(type);
                     }
-                    yield return type;
                 }
             }
+            return cachedTypes;
         }
 
         public static Dictionary<string, string> GetAssembyDefinitionLocations()
@@ -527,8 +568,6 @@ namespace SwiftFramework.EditorUtils
 
         public static IEnumerable<(string assemblyLocation, Type type)> GetAllTypesWithAssemblyPath()
         {
-            List<AssemblyDefinitionAsset> assemblies = new List<AssemblyDefinitionAsset>();
-
             var assemblyLocations = GetAssembyDefinitionLocations();
 
             foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
@@ -552,18 +591,11 @@ namespace SwiftFramework.EditorUtils
 
         public static IEnumerable<Type> GetAllTypes(Func<Type, bool> predicate)
         {
-            foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var type in GetAllTypes())
             {
-                foreach (var type in a.DefinedTypes)
+                if (predicate(type))
                 {
-                    if (type.IsVisible == false)
-                    {
-                        continue;
-                    }
-                    if (predicate(type))
-                    {
-                        yield return type;
-                    }
+                    yield return type;
                 }
             }
         }
@@ -728,7 +760,7 @@ namespace SwiftFramework.EditorUtils
         }
 
 
-        public static Builder GetBuilderFromExecuteArgument()
+        internal static Builder GetBuilderFromExecuteArgument()
 		{
 			string name;
 			var args = executeArguments;
@@ -767,7 +799,7 @@ namespace SwiftFramework.EditorUtils
 			return builder;
 		}
 
-		public static Builder CreateBuilderAsset()
+        internal static Builder CreateBuilderAsset()
 		{
 			if (!Directory.Exists("Assets/Editor"))
 				AssetDatabase.CreateFolder("Assets", "Editor");
@@ -820,7 +852,7 @@ namespace SwiftFramework.EditorUtils
 			);
 		}
 
-		public static void StartBuild(Builder builder, bool buildAndRun, bool buildAssetBundle)
+		internal static void StartBuild(Builder builder, bool buildAndRun, bool buildAssetBundle)
 		{
 			currentBuilder = builder;
 			instance.m_BuildAndRun = buildAndRun;

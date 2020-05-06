@@ -9,7 +9,7 @@
         void LogFirstAdWatched(string placementId);
         void LogRewardedVideoSuccess(string placementId);
         void LogRewardedVideoAttemptToShow(string placementId);
-
+        void LogInterstitialWatched();
         void LogRewardedVideoError(string placementId, string errorType, string errorCode);
         void LogLevelUp(int level);
     }

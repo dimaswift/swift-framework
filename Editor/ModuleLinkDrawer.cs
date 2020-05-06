@@ -22,8 +22,8 @@ namespace SwiftFramework.Core.Editor
 
         private static readonly GUIContent configLabel = new GUIContent("Config");
         private static readonly GUIContent behaviourLabel = new GUIContent("Behaviour");
-        private static readonly GUIContent implementationLabel = new GUIContent("Implementation");
 
+        private bool checkedForimplementation;
 
         private readonly Dictionary<string, Data> dataCache = new Dictionary<string, Data>();
 
@@ -166,8 +166,9 @@ namespace SwiftFramework.Core.Editor
                 data.interfaceAttribute = fieldInfo.GetCustomAttribute<LinkFilterAttribute>();
             }
 
-            if (data.interfaceAttribute != null && data.implementationTypes.Count == 0)
+            if (data.interfaceAttribute != null && data.implementationTypes.Count == 0 && checkedForimplementation == false)
             {
+                checkedForimplementation = true;
                 foreach (Type type in Util.GetAllTypes())
                 {
                     if (data.interfaceAttribute.interfaceType != null
@@ -300,7 +301,7 @@ namespace SwiftFramework.Core.Editor
 
             if (data.behaviourModuleDrawer == null)
             {
-                data.behaviourModuleDrawer = new AssetLinkDrawer(data.selectedType);
+                data.behaviourModuleDrawer = new AssetLinkDrawer(data.selectedType, null, true);
             }
             position.y += baseHeight;
 
@@ -341,7 +342,7 @@ namespace SwiftFramework.Core.Editor
 
             if (data.configDrawer == null)
             {
-                data.configDrawer = new AssetLinkDrawer(data.configurable.configType);
+                data.configDrawer = new AssetLinkDrawer(data.configurable.configType, null, true);
             }
 
             position.y += baseHeight;

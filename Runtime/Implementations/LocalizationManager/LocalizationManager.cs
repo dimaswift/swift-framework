@@ -6,13 +6,8 @@ using System.Collections.Generic;
 
 namespace SwiftFramework.Core
 {
-    internal enum Extention
-    {
-        TSV, CSV
-    }
     [DefaultModule]
     [Configurable(typeof(LocalizationConfig))]
-    [DependsOnModules(typeof(INetworkManager))]
     internal class LocalizationManager : Module, ILocalizationManager
     {
         private struct SelectedLanguage

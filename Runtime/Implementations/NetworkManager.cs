@@ -4,7 +4,7 @@ using System;
 using UnityEngine;
 using System.Collections;
 
-namespace SwiftFramework.Network
+namespace SwiftFramework.Core
 {
     [DefaultModule]
     [DisallowCustomModuleBehaviours]

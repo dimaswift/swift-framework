@@ -52,7 +52,13 @@ namespace SwiftFramework.Core
     public class GenericImage : InterfaceComponentField<IImage> { }
 
     [Serializable]
-    public class GenericButton : InterfaceComponentField<IButton> { }
+    public class GenericButton : InterfaceComponentField<IButton> 
+    { 
+        public void AddListener(UnityAction action)
+        {
+            Value.AddListener(action);
+        }
+    }
 
     [Serializable]
     public class GenericText : InterfaceComponentField<IText> { }

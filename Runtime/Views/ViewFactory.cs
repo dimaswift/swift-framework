@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SwiftFramework.Views
+namespace SwiftFramework.Core
 {
     [DefaultModule]
     [DisallowCustomModuleBehaviours]

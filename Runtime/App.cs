@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace SwiftFramework.Core
@@ -190,7 +189,7 @@ namespace SwiftFramework.Core
         }
 
         public override ILocalizationManager Local => GetCachedModule(ref localizationManager);
-        public override IClock Clock => GetCachedModule(ref serverTimeManager);
+        public override IClock Clock => GetCachedModule(ref clock);
         public override INetworkManager Net => GetCachedModule(ref networkManager);
         public override ICoroutineManager Coroutine => GetCachedModule(ref coroutine);
         public override ISaveStorage Storage => GetCachedModule(ref storage);
@@ -201,7 +200,7 @@ namespace SwiftFramework.Core
         public override ITimer Timer => GetCachedModule(ref timer);
 
         private ILocalizationManager localizationManager;
-        private IClock serverTimeManager;
+        private IClock clock;
         private INetworkManager networkManager;
         private ICoroutineManager coroutine;
         private ITimer timer;
@@ -265,11 +264,17 @@ namespace SwiftFramework.Core
 
         private IEnumerable<IPromise<IModule>> GetCoreModulesInitPromises()
         {
-            yield return CreateModule(GetModuleLink<ITimer>());
-            yield return CreateModule(GetModuleLink<ICoroutineManager>());
-            yield return CreateModule(GetModuleLink<ISaveStorage>());
-            yield return CreateModule(GetModuleLink<IClock>());
-            yield return CreateModule(GetModuleLink<IViewFactory>());
+            yield return Promise<IModule>.Resolved(new SaveStorageManager());
+            yield return CreateBehaviourCoreModule<CoroutineTimer>();
+            yield return CreateBehaviourCoreModule<CoroutineManager>();
+            yield return CreateBehaviourCoreModule<Clock>();
+            yield return CreateBehaviourCoreModule<ViewFactory>();
+            yield return CreateBehaviourCoreModule<NetworkManager>();
+        }
+
+        private IPromise<IModule> CreateBehaviourCoreModule<T>() where T : BehaviourModule
+        {
+            return Promise<IModule>.Resolved(new GameObject(typeof(T).Name).AddComponent<T>().GetComponent<IModule>());
         }
 
         protected virtual void OnInit()
@@ -306,7 +311,7 @@ namespace SwiftFramework.Core
 
                 promise.Always(m =>
                 {
-                    initPromise.ReportProgress(progress.Average());
+                    initPromise.ReportProgress(progress.AverageFast());
                     progress[i] = 1f;
                     --remainingCount;
 

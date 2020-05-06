@@ -1,14 +1,10 @@
-﻿using Newtonsoft.Json.Serialization;
-using SwiftFramework.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
-using System.Runtime.Serialization;
 using System.Text;
 using UnityEngine;
 
-namespace SwiftFramework.StorageManager
+namespace SwiftFramework.Core
 {
     [DefaultModule]
     internal class SaveStorageManager : Module, ISaveStorage

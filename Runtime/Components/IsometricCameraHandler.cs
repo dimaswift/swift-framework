@@ -1,11 +1,10 @@
 ﻿using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace SwiftFramework.Core
 {
     public abstract class IsometricCameraHandler : MonoBehaviour
     {
-        [SerializeField] private float cameraSize;
+        [SerializeField] private float cameraSize = 5;
 
         protected Camera cam;
         protected Vector3? defaultPos;

@@ -1,8 +1,7 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using SwiftFramework.Core;
-namespace SwiftFramework.CoroutineManager
+
+namespace SwiftFramework.Core
 {
     [DefaultModule]
     [DisallowCustomModuleBehaviours]
@@ -25,7 +24,6 @@ namespace SwiftFramework.CoroutineManager
                 StopCoroutine(coroutine);
                 coroutine = null;
             }
-           
         }
     }
 }

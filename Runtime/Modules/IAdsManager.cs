@@ -13,14 +13,15 @@ namespace SwiftFramework.Core
         event Action<string> OnRewardedClosed;
         event Action<string> OnRewardedAttemptToShow;
         event Action<RewardedAdErrorArgs> OnRewardedError;
+        event Action OnInterstitialWatched;
         bool IsRewardedReady();
         void SetBannerShown(bool shown);
-        IPromise<bool> ShowRewardedWithLoadingWindow(string placementId);
         IPromise<RewardedShowResult> ShowRewarded(string placementId);
+        IPromise<bool> ShowRewardedWithLoadingWindow(string placementId);
         bool ShowInterstitial(string placementId);
         bool IsInterstitialReady();
         void CancelRewardedShow();
-        bool TryShowInterstitial();
+        IPromise TryShowInterstitial();
         void ResetInterstitialCounter();
         bool IsBannerEnabled { get; }
     }

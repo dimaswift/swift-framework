@@ -31,7 +31,7 @@ namespace SwiftFramework.EditorUtils
 
         public void Reset()
 		{
-			keystoreFile = PlayerSettings.Android.keystoreName.Replace("\\", "/").Replace(Util.projectDir + "/", "");
+			keystoreFile = PlayerSettings.Android.keystoreName.Replace("\\", "/").Replace(BuilderUtil.projectDir + "/", "");
 			keystorePassword = PlayerSettings.Android.keystorePass;
 			keystoreAliasName = PlayerSettings.Android.keyaliasName;
 			keystoreAliasPassword = PlayerSettings.Android.keyaliasPass;

@@ -18,7 +18,7 @@ namespace SwiftFramework.Core
         void Catch(Action<Exception> action);
         void Always(Action action);
         IPromise Then(Action onSuccess = null, Action<Exception> onError = null);
-        IPromise Channel (Promise otherPromise);
+        IPromise Channel(Promise otherPromise);
     }
 
     public interface IPromise<T> : IBasePromise
@@ -98,7 +98,7 @@ namespace SwiftFramework.Core
 
         public static IPromise<T> Race(params IPromise<T>[] promises)
         {
-            return Race((IEnumerable<IPromise<T>>) promises);
+            return Race((IEnumerable<IPromise<T>>)promises);
         }
 
         public static IPromise<T> Race(IEnumerable<IPromise<T>> promises)
@@ -139,7 +139,7 @@ namespace SwiftFramework.Core
 
         public void ReportProgress(float progress)
         {
-            if(state != PromiseState.Pending)
+            if (state != PromiseState.Pending)
             {
                 Debug.LogError($"Trying to report progress on promise with state {state}");
                 return;
@@ -199,7 +199,7 @@ namespace SwiftFramework.Core
                 promise.ReportProgress(p);
             });
 
-            Done(r => 
+            Done(r =>
             {
                 onSuccess?.Invoke(r);
                 promise.Resolve();
@@ -407,7 +407,7 @@ namespace SwiftFramework.Core
                 promise.Resolve();
             });
 
-            Catch(e => 
+            Catch(e =>
             {
                 onError?.Invoke(e);
                 promise.Reject(e);
@@ -525,7 +525,7 @@ namespace SwiftFramework.Core
 
         public static IPromise All(params IPromise[] promises)
         {
-            return All((IEnumerable<IPromise>) promises);
+            return All((IEnumerable<IPromise>)promises);
         }
 
         public static IPromise All<T>(params IPromise<T>[] promises)
@@ -537,7 +537,7 @@ namespace SwiftFramework.Core
         {
             int total = promises.CountFast();
 
-            if(total == 0)
+            if (total == 0)
             {
                 return Resolved();
             }
@@ -562,11 +562,11 @@ namespace SwiftFramework.Core
                 })
                 .Catch(e =>
                 {
-                    if(promise.state == PromiseState.Pending)
+                    if (promise.state == PromiseState.Pending)
                     {
                         promise.Reject(e);
                     }
-                 
+
                 });
             }
 
@@ -697,7 +697,7 @@ namespace SwiftFramework.Core
             });
 
             return this;
-            
+
         }
     }
 }

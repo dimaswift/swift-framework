@@ -55,11 +55,11 @@ namespace SwiftFramework.Core.Editor
             {
                 return null;
             }
+
             ScriptableObject manifest = Util.FindScriptableObject(manifestClass);
             if(manifest == null)
             {
-                Util.EnsureProjectFolderExists(configsFolder);
-                manifest = Util.CreateScriptable(manifestClass, "ModuleManifest", configsFolder) as ScriptableObject;
+                Debug.Log($"{"Manifest not found"}"); 
             }
             return manifest;
         }

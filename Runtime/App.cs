@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SwiftFramework.Core;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -215,7 +216,6 @@ namespace SwiftFramework.Core
 
         private readonly Dictionary<ModuleLink, IPromise<IModule>> createdModules = new Dictionary<ModuleLink, IPromise<IModule>>();
         private readonly Dictionary<ModuleLink, IModule> readyModules = new Dictionary<ModuleLink, IModule>();
-        private readonly Dictionary<ModuleLink, IPromise> initializingModules = new Dictionary<ModuleLink, IPromise>();
 
         private bool initialializingStarted = false;
         private bool debugMode;
@@ -241,11 +241,14 @@ namespace SwiftFramework.Core
 
             initialializingStarted = true;
             SetState(AppState.Loading);
-        
+
             AddrCache.PreloadAll(AddrLabels.Prewarm).Done(assets =>
             {
                 SetState(AppState.AssetsPreloaded);
-                Promise.All(GetCoreModulesInitPromises()).Always(() =>
+
+                List<IPromise<IModule>> coreModules = new List<IPromise<IModule>>(GetCoreModulesInitPromises());
+
+                Promise.All(coreModules).Always(() =>
                 {
                     SetState(AppState.CoreModulesInitialized);
                     InitModules().Then(() =>
@@ -260,21 +263,51 @@ namespace SwiftFramework.Core
             return initPromise;
         }
 
-
-
         private IEnumerable<IPromise<IModule>> GetCoreModulesInitPromises()
         {
-            yield return Promise<IModule>.Resolved(new SaveStorageManager());
-            yield return CreateBehaviourCoreModule<CoroutineTimer>();
-            yield return CreateBehaviourCoreModule<CoroutineManager>();
-            yield return CreateBehaviourCoreModule<Clock>();
-            yield return CreateBehaviourCoreModule<ViewFactory>();
-            yield return CreateBehaviourCoreModule<NetworkManager>();
+            yield return CreateCoreModule<ISaveStorage, SaveStorageManager>();
+            yield return CreateBehaviourCoreModule<ITimer, CoroutineTimer>();
+            yield return CreateBehaviourCoreModule<ICoroutineManager, CoroutineManager>();
+            yield return CreateBehaviourCoreModule<IClock, Clock>();
+            yield return CreateBehaviourCoreModule<IViewFactory, ViewFactory>();
+            yield return CreateBehaviourCoreModule<INetworkManager, NetworkManager>();
+            yield return CreateModule(GetModuleLink<ILocalizationManager>());
         }
 
-        private IPromise<IModule> CreateBehaviourCoreModule<T>() where T : BehaviourModule
+        private IPromise<IModule> CreateCoreModule<TInt, TImp>() where TImp : IModule, new() where TInt : IModule
         {
-            return Promise<IModule>.Resolved(new GameObject(typeof(T).Name).AddComponent<T>().GetComponent<IModule>());
+            Promise <IModule> promise = Promise<IModule>.Create();
+
+            IModule module = new TImp();
+            module.SetUp(this);
+
+            var link = ModuleLink.Create(typeof(TImp), typeof(TInt));
+
+            createdModules.Add(link, promise);
+
+            module.Init().Done(() =>
+            {
+                readyModules.Add(link, module);
+                promise.Resolve(module);
+            });
+
+            return promise;
+        }
+
+        private IPromise<IModule> CreateBehaviourCoreModule<TInt, TImp>() where TImp : BehaviourModule where TInt : IModule
+        {
+            Promise<IModule> promise = Promise<IModule>.Create();
+            var go = new GameObject(typeof(TImp).Name);
+            UnityEngine.Object.DontDestroyOnLoad(go);
+            TInt module = go.AddComponent<TImp>().GetComponent<TInt>();
+            module.SetUp(this);
+            module.Init().Done(() => 
+            {
+                readyModules.Add(ModuleLink.Create(typeof(TImp), typeof(TInt)), module);
+                promise.Resolve(module);
+            });
+
+            return promise;
         }
 
         protected virtual void OnInit()
@@ -284,51 +317,17 @@ namespace SwiftFramework.Core
 
         private IPromise InitModules()
         {
-            List<IPromise<IModule>> initPromises = new List<IPromise<IModule>>();
-            List<ModuleLink> modulesToInit = new List<ModuleLink>();
+            List<IPromise<IModule>> promises = new List<IPromise<IModule>>();
 
             foreach (ModuleLink coreModuleLink in moduleFactory.GetModuleLinks())
             {
-                modulesToInit.Add(coreModuleLink);
-                initPromises.Add(CreateModule(coreModuleLink));
+                promises.Add(CreateModule(coreModuleLink)); 
             }
 
-            if (initPromises.Count == 0)
+            Promise.All(promises).Always(() => 
             {
                 initPromise.Resolve();
-                return initPromise;
-            }
-
-            int remainingCount = initPromises.Count;
-
-            float[] progress = new float[remainingCount];
-            int index = 0;
-
-            foreach (IPromise<IModule> promise in initPromises)
-            {
-                int i = index;
-                ModuleLink module = modulesToInit[index];
-
-                promise.Always(m =>
-                {
-                    initPromise.ReportProgress(progress.AverageFast());
-                    progress[i] = 1f;
-                    --remainingCount;
-
-                    if (remainingCount <= 0 && initPromise.CurrentState == PromiseState.Pending)
-                    {
-                        initPromise.Resolve();
-                    }
-                });
-
-                promise.Catch(ex =>
-                {
-                    logger.LogError($"Cannot initialize module {module}. Exception was thrown. Skipping...");
-                    logger.LogException(ex);
-                });
-
-                index++;
-            }
+            });
 
             return initPromise;
         }
@@ -376,7 +375,12 @@ namespace SwiftFramework.Core
 
             IPromise<IModule> createModulePromise = moduleFactory.CreateModule(moduleLink);
 
-            createdModules.Add(moduleLink, createModulePromise);
+            createdModules.Add(moduleLink, result);
+
+            if (debugMode)
+            {
+                logger.Log($"Trying to create {moduleLink.InterfaceType.Name}");
+            }
 
             createModulePromise.Then(newModule =>
             {
@@ -386,6 +390,10 @@ namespace SwiftFramework.Core
 
                 foreach (ModuleLink depLink in newModule.GetDependencies())
                 {
+                    if (debugMode)
+                    {
+                        logger.Log($"Trying to resolve dependency: <b>{depLink.InterfaceType.Name}</b> for <b>{moduleLink.InterfaceType.Name}</b>");
+                    }
                     if (IsCreated(depLink, out IPromise<IModule> depModCreatePromise))
                     {
                         Promise depInitPromise = Promise.Create();
@@ -422,7 +430,7 @@ namespace SwiftFramework.Core
 
                             CreateModule(depLink).Then(_m =>
                             {
-                                _m.Init().Then(() => newDepModuleInitPromise.Resolve()).Catch(e => { logger.LogException(e); newDepModuleInitPromise.Resolve(); });
+                                newDepModuleInitPromise.Resolve();
                             })
                             .Catch(e =>
                             {
@@ -448,8 +456,6 @@ namespace SwiftFramework.Core
                     }
 
                     IPromise init = newModule.Init();
-
-                    initializingModules.Add(moduleLink, init);
 
                     init.Done(() =>
                     {

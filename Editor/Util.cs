@@ -16,7 +16,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SwiftFramework.EditorUtils
 {
-    public static class EditorUtilExtentions
+    internal static class EditorUtilExtentions
     {
         public static T Value<T>(this LinkTo<T> link) where T : UnityEngine.Object
         {
@@ -27,32 +27,24 @@ namespace SwiftFramework.EditorUtils
     public class Util : ScriptableSingleton<Util>
     {
         public static event Action<Type, ModuleConfig> OnModuleConfigApplied = (type, moduleConfig) => { };
+
         public static event Action OnScriptsReloaded = () => { };
 
-        const string CUSTOM_BUILDER_TEMPLATE = "ProjectBuilderTemplate";
-        const string EXCLUDE_BUILD_DIR = "__ExcludeBuild";
-
-        public const string OPT_BUILDER = "-builder";
-        public const string OPT_CLOUD_BUILDER = "-bvrbuildtarget";
-        public const string OPT_APPEND_SYMBOL = "-appendSymbols";
-        public const string OPT_OVERRIDE = "-override";
-
-        public const string OPT_DEV_BUILD_NUM = "-devBuildNumber";
-
-        public static readonly Dictionary<string, string> executeArguments = new Dictionary<string, string>();
         private static readonly List<Type> cachedTypes = new List<Type>();
+        private static readonly MD5CryptoServiceProvider hashSumProvider = new MD5CryptoServiceProvider();
 
-        public static readonly string projectDir = Environment.CurrentDirectory.Replace('\\', '/');
 
-        public static readonly Type builderType = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(x => x.GetTypes())
-            .FirstOrDefault(x => x.IsSubclassOf(typeof(Builder)))
-                                                  ?? typeof(Builder);
+        [SerializeField] internal List<DeferredInstantiation> deferredScriptableCreations = new List<DeferredInstantiation>();
 
-        public static readonly MethodInfo miSetIconForObject = typeof(EditorGUIUtility).GetMethod("SetIconForObject", BindingFlags.Static | BindingFlags.NonPublic);
-        private static MD5CryptoServiceProvider hashSumProvider = new MD5CryptoServiceProvider();
 
-        public static string RelativeFrameworkRootFolder
+        [Serializable]
+        internal class DeferredInstantiation
+        {
+            public string path;
+            public string type;
+        }
+
+        internal static string RelativeFrameworkRootFolder
         {
             get
             {
@@ -61,29 +53,13 @@ namespace SwiftFramework.EditorUtils
             }
         }
 
-        public static string FrameworkRootFolder
+        internal static string FrameworkRootFolder
         {
             get
             {
                 string path = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(instance));
                 return ToRelativePath(new FileInfo(path).Directory.Parent.Parent.FullName);
             }
-        }
-
-        internal static Builder currentBuilder { get { return instance.m_CurrentBuilder; } private set { instance.m_CurrentBuilder = value; } }
-
-        [SerializeField] Builder m_CurrentBuilder;
-
-        /// <summary>On finished compile callback.</summary>
-        [SerializeField] bool m_BuildAndRun = false;
-        [SerializeField] bool m_BuildAssetBundle = false;
-        [SerializeField] private List<DeferredInstantiation> deferredScriptableCreations = new List<DeferredInstantiation>();
-
-        [System.Serializable]
-        private class DeferredInstantiation
-        {
-            public string path;
-            public string type;
         }
 
         public static void CreateAssetAfterScriptReload(string type, string path)
@@ -109,31 +85,9 @@ namespace SwiftFramework.EditorUtils
                     continue;
                 }
                 File.Copy(newPath, newPath.Replace(source, destination), true);
-            } 
-        }
-
-        [InitializeOnLoadMethod]
-        static void InitializeOnLoadMethod()
-        {
-            // Get command line options from arguments.
-            string argKey = "";
-            foreach (string arg in System.Environment.GetCommandLineArgs())
-            {
-                if (arg.IndexOf('-') == 0)
-                {
-                    argKey = arg;
-                    executeArguments[argKey] = "";
-                }
-                else if (0 < argKey.Length)
-                {
-                    executeArguments[argKey] = arg;
-                    argKey = "";
-                }
             }
-
-            // When custom builder script exist, convert all builder assets.
-            EditorApplication.delayCall += UpdateBuilderAssets;
         }
+
 
         internal static string EditorFolder => "Assets/Editor/SwiftFramework";
 
@@ -145,7 +99,7 @@ namespace SwiftFramework.EditorUtils
 
         public static void OpenPrefab<T>()
         {
-            var id = Util.FindPrefabPath(typeof(T))?.GetInstanceID();
+            var id = FindPrefabPath(typeof(T))?.GetInstanceID();
             if (id.HasValue)
                 AssetDatabase.OpenAsset(id.Value);
         }
@@ -210,38 +164,6 @@ namespace SwiftFramework.EditorUtils
             return result.ToArray();
         }
 
-        /// <summary>Update builder assets.</summary>
-        static void UpdateBuilderAssets()
-        {
-            MonoScript builderScript = Resources.FindObjectsOfTypeAll<MonoScript>()
-                .FirstOrDefault(x => x.GetClass() == builderType);
-
-            Texture2D icon = GetAssets<Texture2D>(typeof(Builder).Name + " Icon")
-                .FirstOrDefault();
-
-            // 
-            if (builderType == typeof(Builder))
-                return;
-
-            // Set Icon
-            if (icon && builderScript && miSetIconForObject != null)
-            {
-                miSetIconForObject.Invoke(null, new object[] { builderScript, icon });
-                EditorUtility.SetDirty(builderScript);
-            }
-
-            // Update script reference for builders.
-            foreach (var builder in GetAssets<Builder>())
-            {
-                // Convert 'm_Script' to custom builder script.
-                var so = new SerializedObject(builder);
-                so.Update();
-                so.FindProperty("m_Script").objectReferenceValue = builderScript;
-                so.ApplyModifiedProperties();
-            }
-
-            AssetDatabase.Refresh();
-        }
 
         public static IEnumerable<UnityEngine.Object> GetAllAssets()
         {
@@ -272,7 +194,7 @@ namespace SwiftFramework.EditorUtils
             return null;
         }
 
-        public static UnityEngine.Object GetAsset(Type type) 
+        public static UnityEngine.Object GetAsset(Type type)
         {
             foreach (var guid in AssetDatabase.FindAssets($"t:{ type.Name }"))
             {
@@ -286,7 +208,7 @@ namespace SwiftFramework.EditorUtils
             foreach (var guid in AssetDatabase.FindAssets($"t:{ "GameObject" }"))
             {
                 GameObject go = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid)) as GameObject;
-                if(go == null)
+                if (go == null)
                 {
                     continue;
                 }
@@ -354,7 +276,7 @@ namespace SwiftFramework.EditorUtils
                 return null;
             }
 
-    
+
             return AssetDatabase.LoadAssetAtPath(ToRelativePath(configPath), type);
         }
 
@@ -379,7 +301,7 @@ namespace SwiftFramework.EditorUtils
 
         public static byte[] CalculateHashSum(string filePath)
         {
-            if(File.Exists(filePath) == false)
+            if (File.Exists(filePath) == false)
             {
                 return new byte[0];
             }
@@ -424,7 +346,7 @@ namespace SwiftFramework.EditorUtils
                 prefabName += " (NEW)";
             }
 
-            if(link != null)
+            if (link != null)
             {
                 link.SaveLink($"{Folders.Addressables}/{Folders.Modules}/{prefabName}");
             }
@@ -453,7 +375,7 @@ namespace SwiftFramework.EditorUtils
                 configName += " (NEW)";
             }
             AssetDatabase.CreateAsset(config, configPath());
-            if(link != null)
+            if (link != null)
             {
                 link.SaveLink($"{Folders.Configs}/{configName}");
             }
@@ -462,7 +384,7 @@ namespace SwiftFramework.EditorUtils
 
         public static void EnsureProjectFolderExists(string folder)
         {
-            if(AssetDatabase.IsValidFolder(folder))
+            if (AssetDatabase.IsValidFolder(folder))
             {
                 return;
             }
@@ -557,7 +479,7 @@ namespace SwiftFramework.EditorUtils
                 }
                 if (result.Item1 != null)
                 {
-                    if(dict.ContainsKey(result.Item1) == false)
+                    if (dict.ContainsKey(result.Item1) == false)
                     {
                         dict.Add(result.Item1, result.Item2);
                     }
@@ -619,7 +541,7 @@ namespace SwiftFramework.EditorUtils
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 MonoScript ms = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
-                if(ms.GetClass() == type)
+                if (ms.GetClass() == type)
                 {
                     FileInfo fi = new FileInfo(path);
                     return fi.Directory.ToString();
@@ -740,7 +662,7 @@ namespace SwiftFramework.EditorUtils
         public static string GetGameNamespace()
         {
             Type gameClass = FindChildClass(typeof(App));
-            if(gameClass != null)
+            if (gameClass != null)
             {
                 return string.IsNullOrEmpty(gameClass.Namespace) ? "" : gameClass.Namespace.Split('.')[0];
             }
@@ -758,107 +680,6 @@ namespace SwiftFramework.EditorUtils
             }
             return default;
         }
-
-
-        internal static Builder GetBuilderFromExecuteArgument()
-		{
-			string name;
-			var args = executeArguments;
-
-			if(args.TryGetValue(Util.OPT_CLOUD_BUILDER, out name))
-			{
-				name = name.Replace("-", " ");
-			}
-			else if (!args.TryGetValue(Util.OPT_BUILDER, out name))
-			{
-				throw new UnityException(Builder.kLogType + "Error : You need to specify the builder as follows. '-builder <builder asset name>'");
-			}
-
-			Builder builder = GetAssets<Builder>(name).FirstOrDefault();
-
-			if (!builder)
-			{
-				throw new UnityException(Builder.kLogType + "Error : The specified builder could not be found. " + name);
-			}
-			else if (builder.actualBuildTarget != EditorUserBuildSettings.activeBuildTarget)
-			{
-				throw new UnityException(Builder.kLogType + "Error : The specified builder's build target is not " + EditorUserBuildSettings.activeBuildTarget);
-			}
-			else
-			{
-				UnityEngine.Debug.Log(Builder.kLogType + "Builder selected : " + builder);
-			}
-
-
-			string json;
-			if (args.TryGetValue(Util.OPT_OVERRIDE, out json))
-			{
-				UnityEngine.Debug.Log(Builder.kLogType + "Override builder with json as following\n" + json);
-				JsonUtility.FromJsonOverwrite(json, builder);
-			}
-			return builder;
-		}
-
-        internal static Builder CreateBuilderAsset()
-		{
-			if (!Directory.Exists("Assets/Editor"))
-				AssetDatabase.CreateFolder("Assets", "Editor");
-
-			// Open save file dialog.
-			string filename = AssetDatabase.GenerateUniqueAssetPath(string.Format("Assets/Editor/Default {0}.asset", EditorUserBuildSettings.activeBuildTarget));
-			string path = EditorUtility.SaveFilePanelInProject("Create New Builder Asset", Path.GetFileName(filename), "asset", "", "Assets/Editor");
-			if (path.Length == 0)
-				return null;
-
-			// Create and save a new builder asset.
-			Builder builder = ScriptableObject.CreateInstance(builderType) as Builder;
-			AssetDatabase.CreateAsset(builder, path);
-			AssetDatabase.SaveAssets();
-			Selection.activeObject = builder;
-			return builder;
-		}
-
-		/// <summary>
-		/// Shows the or create custom builder.
-		/// </summary>
-		public static void CreateCustomProjectBuilder()
-		{
-			// Select file name for custom project builder script.
-			string path = EditorUtility.SaveFilePanelInProject("Create Custom Project Builder", "CustomProjectBuilder", "cs", "", "Assets/Editor");
-			if (string.IsNullOrEmpty(path))
-				return;
-			
-			// Create new custom project builder script from template.
-			string templatePath = AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets(CUSTOM_BUILDER_TEMPLATE + " t:TextAsset").First());
-			typeof(ProjectWindowUtil).GetMethod("CreateScriptAssetFromTemplate", BindingFlags.Static | BindingFlags.NonPublic)
-				.Invoke(null, new object[]{ path, templatePath });
-
-			// Ping the script asset.
-			AssetDatabase.Refresh();
-			EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<TextAsset>(path));
-		}
-
-
-		public static void RevealOutputInFinder(string path)
-		{
-			if (InternalEditorUtility.inBatchMode)
-				return;
-
-			var parent = Path.GetDirectoryName(path);
-			EditorUtility.RevealInFinder(
-				(Directory.Exists(path) || File.Exists(path)) ? path : 
-				(Directory.Exists(parent) || File.Exists(parent)) ? parent :
-				projectDir
-			);
-		}
-
-		internal static void StartBuild(Builder builder, bool buildAndRun, bool buildAssetBundle)
-		{
-			currentBuilder = builder;
-			instance.m_BuildAndRun = buildAndRun;
-			instance.m_BuildAssetBundle = buildAssetBundle;
-			ResumeBuild(true);
-		}
 
         public static T ToLink<T>(UnityEngine.Object asset) where T : Link, new()
         {
@@ -939,7 +760,7 @@ namespace SwiftFramework.EditorUtils
 
         public static List<PropertyAttribute> GetFieldAttributes(FieldInfo field)
         {
-            
+
             if (field == null)
                 return null;
 
@@ -949,41 +770,6 @@ namespace SwiftFramework.EditorUtils
 
             return null;
         }
-
-        public static void ResumeBuild(bool compileSuccessfully)
-		{
-			bool success = false;
-			try
-			{
-				EditorUtility.ClearProgressBar();
-				if (compileSuccessfully && currentBuilder)
-				{
-					currentBuilder.ApplySettings();
-					success = currentBuilder.BuildPlayer(instance.m_BuildAndRun);
-				}
-			}
-			catch (Exception ex)
-			{
-				Debug.LogException(ex);
-			}
-
-			if (Util.executeArguments.ContainsKey("-batchmode"))
-			{
-				EditorApplication.Exit(success ? 0 : 1);
-			}
-		}
-
-		public static void ExcludeDirectory (string dir) {
-			DirectoryInfo d = new DirectoryInfo (dir);
-			if (!d.Exists)
-				return;
-
-			if (!Directory.Exists (EXCLUDE_BUILD_DIR))
-				Directory.CreateDirectory (EXCLUDE_BUILD_DIR);
-			MoveDirectory (d.FullName, EXCLUDE_BUILD_DIR + "/" + dir.Replace ("\\", "/").Replace ("/", "~~"));
-
-			AssetDatabase.Refresh();
-		}
 
         [DidReloadScripts(1)]
         private static void DidReloadScripts()
@@ -997,27 +783,6 @@ namespace SwiftFramework.EditorUtils
             instance.deferredScriptableCreations.Clear();
         }
 
-		[InitializeOnLoadMethod]
-		public static void RevertExcludedDirectory () {
-			DirectoryInfo exDir = new DirectoryInfo (EXCLUDE_BUILD_DIR);
-			if (!exDir.Exists)
-				return;
 
-			foreach (DirectoryInfo d in exDir.GetDirectories()) 
-				MoveDirectory (d.FullName, d.Name.Replace ("~~", "/"));
-
-			foreach (FileInfo f in exDir.GetFiles())
-				f.Delete (); 
-
-			exDir.Delete ();
-			AssetDatabase.Refresh();
-		}
-
-		static void MoveDirectory (string from, string to) {
-			Directory.Move (from, to);
-			if (File.Exists (from + ".meta"))
-				File.Move (from + ".meta", to + ".meta");
-		}
-
-	}
+    }
 }

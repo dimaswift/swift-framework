@@ -101,7 +101,7 @@ namespace SwiftFramework.EditorUtils
 			{
 				EditorApplication.delayCall += () =>
 				{
-					Util.CreateBuilderAsset();
+					BuilderUtil.CreateBuilderAsset();
 					OnSelectionChanged();
 				};
 			};
@@ -214,7 +214,7 @@ namespace SwiftFramework.EditorUtils
 			if (targets == null || targets.Length == 0)
 			{
 				if (GUILayout.Button("Create New ProjectBuilder Asset"))
-					Selection.activeObject = Util.CreateBuilderAsset();
+					Selection.activeObject = BuilderUtil.CreateBuilderAsset();
 				return;
 			}
 
@@ -389,25 +389,20 @@ namespace SwiftFramework.EditorUtils
 				{
 					if (GUILayout.Button(new GUIContent(string.Format("Build to '{0}'", builder.buildName), EditorGUIUtility.FindTexture("preAudioPlayOff")), "LargeButton"))
 					{
-						EditorApplication.delayCall += () => Util.StartBuild(builder, false, false);
+						EditorApplication.delayCall += () => BuilderUtil.StartBuild(builder, false);
 					}
 
 					var r = EditorGUILayout.GetControlRect(false, GUILayout.Width(15));
 					if (GUI.Button(new Rect(r.x - 2, r.y + 5, 20, 20), contentOpen, EditorStyles.label))
-						Util.RevealOutputInFinder(builder.OutputFolderPath);
+						BuilderUtil.RevealOutputInFinder(builder.OutputFolderPath);
 					EditorGUI.EndDisabledGroup();
 				}
 
 				if (GUILayout.Button(new GUIContent("Build & Run", EditorGUIUtility.FindTexture("preAudioPlayOn")), "LargeButton"))
 				{
-					EditorApplication.delayCall += () => Util.StartBuild(builder, true, false);
+					EditorApplication.delayCall += () => BuilderUtil.StartBuild(builder, true);
 				}
 				EditorGUI.EndDisabledGroup();
-
-				if (Util.builderType == typeof(Builder) && GUILayout.Button("Create Custom Project Builder Script"))
-				{
-					Util.CreateCustomProjectBuilder();
-				}
 
 				if (GUILayout.Button("Convert to JSON (console log)"))
 				{

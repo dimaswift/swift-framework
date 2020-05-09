@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace SwiftFramework.Core
 {
@@ -35,12 +36,30 @@ namespace SwiftFramework.Core
         public event Action OnResumed = () => { };
         public event Action OnInitialized = () => { };
 
-        public virtual GlobalConfig GlobalConfig => BootConfig.Main.globalConfig.Value;
+        private BootConfig bootConfig;
+
+        public virtual GlobalConfig GlobalConfig => bootConfig.globalConfig.Value;
 
         private bool ignoreNextPauseEvent;
 
         private IEnumerator Start()
         {
+            var bootConfigPath = "Configs/BootConfig";
+            var bootConfigLoad = Addressables.LoadAssetAsync<BootConfig>(bootConfigPath);
+
+            while (bootConfigLoad.IsDone == false)
+            {
+                yield return null;
+            }
+
+            bootConfig = bootConfigLoad.Result;
+
+            if (bootConfig == null)
+            {
+                Debug.Log($"Cannot load BootConfig. Make sure it is present in the project inside Assets/{bootConfigPath}");
+                yield break;
+            }
+
             yield return new WaitForSeconds(bootDelay);
 
             if (IsSetUpValid() == false)
@@ -60,7 +79,7 @@ namespace SwiftFramework.Core
                 OnLoadingProgressChanged(p);
             });
 
-            BootConfig.Main.modulesManifest.Load().Then(manifest => 
+            bootConfig.modulesManifest.Load().Then(manifest =>
             {
                 App<A>.Create(this, GetLogger(), manifest, debugMode).Then(() =>
                 {
@@ -78,15 +97,15 @@ namespace SwiftFramework.Core
 
         protected virtual bool IsSetUpValid()
         {
-            if (BootConfig.Main.modulesManifest.HasValue == false)
+            if (bootConfig.modulesManifest.HasValue == false)
             {
-                Debug.LogError($"ModuleManifest not found: {BootConfig.Main.modulesManifest.ToString()}");
+                Debug.LogError($"ModuleManifest not found: {bootConfig.modulesManifest.ToString()}");
                 return false;
             }
 
-            if (BootConfig.Main.globalConfig.HasValue == false)
+            if (bootConfig.globalConfig.HasValue == false)
             {
-                Debug.LogError($"GlobalConfig not found: {BootConfig.Main.globalConfig.ToString()}");
+                Debug.LogError($"GlobalConfig not found: {bootConfig.globalConfig.ToString()}");
                 return false;
             }
 
@@ -138,13 +157,13 @@ namespace SwiftFramework.Core
             }
             Resources.UnloadUnusedAssets();
             GC.Collect();
-            App<A>.Create(this, GetLogger(), BootConfig.Main.modulesManifest.Value, debugMode).Then(() =>
+            App<A>.Create(this, GetLogger(), bootConfig.modulesManifest.Value, debugMode).Then(() =>
             {
                 OnAppInitialized();
                 OnInitialized();
                 result.Resolve();
             })
-            .Catch(e => 
+            .Catch(e =>
             {
                 Debug.LogException(e);
             });
@@ -154,7 +173,7 @@ namespace SwiftFramework.Core
 
         private void OnApplicationPause(bool pause)
         {
-         
+
             if (App.Initialized == false)
             {
                 return;
@@ -165,7 +184,7 @@ namespace SwiftFramework.Core
                 {
                     OnPaused();
                     OnAppPaused();
-                } 
+                }
             }
             else
             {

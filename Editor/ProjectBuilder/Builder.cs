@@ -84,8 +84,6 @@ namespace SwiftFramework.EditorUtils
 
         public string facebookAppId = null;
 
-        public string[] excludeDirectories = new string[]{ };
-
         public bool showUnitySplashScreen = false;
 
         public bool showSplashScreen = true;
@@ -154,11 +152,11 @@ namespace SwiftFramework.EditorUtils
 
             PlayerSettings.bundleVersion = version;
 			string buildNumber;
-			if (developmentBuild && Util.executeArguments.TryGetValue(Util.OPT_DEV_BUILD_NUM, out buildNumber) && !string.IsNullOrEmpty(buildNumber))
+			if (developmentBuild && BuilderUtil.executeArguments.TryGetValue(BuilderUtil.OPT_DEV_BUILD_NUM, out buildNumber) && !string.IsNullOrEmpty(buildNumber))
 				PlayerSettings.bundleVersion += "." + buildNumber;
 
 
-            File.WriteAllText(Path.Combine(Util.projectDir, "BUILD_VERSION"), PlayerSettings.bundleVersion);
+            File.WriteAllText(Path.Combine(BuilderUtil.projectDir, "BUILD_VERSION"), PlayerSettings.bundleVersion);
 
             if (defaultIconToOverwrite == null)
             {
@@ -174,9 +172,9 @@ namespace SwiftFramework.EditorUtils
                 }
             }
 
-            string defaultIconFilePath = Path.Combine(Util.projectDir, AssetDatabase.GetAssetPath(defaultIconToOverwrite));
+            string defaultIconFilePath = Path.Combine(BuilderUtil.projectDir, AssetDatabase.GetAssetPath(defaultIconToOverwrite));
 
-            string selectedIconFilePath = Path.Combine(Util.projectDir, AssetDatabase.GetAssetPath(icon));
+            string selectedIconFilePath = Path.Combine(BuilderUtil.projectDir, AssetDatabase.GetAssetPath(icon));
 
             File.WriteAllBytes(defaultIconFilePath, File.ReadAllBytes(selectedIconFilePath));
 
@@ -260,9 +258,6 @@ namespace SwiftFramework.EditorUtils
 
             string buildFilePath = GetOutputFolder();
 
-            foreach (var dir in excludeDirectories)
-				Util.ExcludeDirectory(dir);
-
 			BuildOptions opt = developmentBuild ? (BuildOptions.Development & BuildOptions.AllowDebugging) : BuildOptions.None
 				                | (autoRunPlayer ? BuildOptions.AutoRunPlayer : BuildOptions.None);
 
@@ -272,8 +267,6 @@ namespace SwiftFramework.EditorUtils
 				
 			Debug.Log(kLogType + "BuildPlayer is started. Defined symbols : " + PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup));
 			var report = BuildPipeline.BuildPlayer(scenesToBuild, buildFilePath, actualBuildTarget, opt);
-
-			Util.RevertExcludedDirectory();
 
             switch (report.summary.result)
             {
@@ -290,7 +283,7 @@ namespace SwiftFramework.EditorUtils
 
 		static void Build()
 		{
-			Util.StartBuild(Util.GetBuilderFromExecuteArgument(), true, false);
+			BuilderUtil.StartBuild(BuilderUtil.GetBuilderFromExecuteArgument(), true);
 		}
 	}
 }
@@ -303,12 +296,12 @@ namespace Building
     {
         public static void BuildAndroid()
         {
-            Util.StartBuild(Util.GetBuilderFromExecuteArgument(), false, false);
+            BuilderUtil.StartBuild(BuilderUtil.GetBuilderFromExecuteArgument(), false);
         }
 
         public static void BuildIOS()
         {
-            Util.StartBuild(Util.GetBuilderFromExecuteArgument(), false, false);
+            BuilderUtil.StartBuild(BuilderUtil.GetBuilderFromExecuteArgument(), false);
         }
     }
 }

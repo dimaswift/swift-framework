@@ -26,8 +26,8 @@ namespace SwiftFramework.Core.Editor
 
         public static readonly string[] rootFolders =
         {
-            //"Assets/Configs",
-            //"Assets/Addressables"
+            "Assets/Configs",
+            "Assets/Addressables"
         };
 
         public static AddressableAssetSettings Settings

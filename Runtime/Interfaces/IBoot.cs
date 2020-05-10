@@ -11,6 +11,6 @@ namespace SwiftFramework.Core
         event Action OnResumed;
         event Action OnInitialized;
         event Action<bool> OnFocused;
-        GlobalConfig GlobalConfig { get; }
+        BootConfig Config { get; }
     }
 }

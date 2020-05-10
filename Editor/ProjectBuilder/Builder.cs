@@ -3,19 +3,14 @@ using SwiftFramework.Core;
 
 namespace SwiftFramework.EditorUtils
 {
-    using SwiftFramework.Core.Editor;
-
     using System.IO;
     using System.Reflection;
     using UnityEditor;
-    using UnityEditor.AddressableAssets.Settings;
     using UnityEngine;
 
     internal class Builder : ScriptableObject
 	{
         public ModuleManifestLink manifest = null;
-
-        public GlobalConfigLink globalConfig = null;
 
         public const string kLogType = "#### [Builder] ";
 
@@ -136,10 +131,14 @@ namespace SwiftFramework.EditorUtils
 
         public void BuildAddressableAssets()
         {
-            AddressableAssetSettings.BuildPlayerContent();
+#if USE_ADDRESSABLES
+            UnityEditor.AddressableAssets.Settings.AddressableAssetSettings.BuildPlayerContent();
+#else
+            Debug.LogError($"Addressables are disabled"); 
+#endif
         }
 
-		public void ApplySettings()
+        public void ApplySettings()
 		{
             PlayerSettings.SplashScreen.showUnityLogo = showUnitySplashScreen;
             PlayerSettings.SplashScreen.show = showSplashScreen;
@@ -183,21 +182,19 @@ namespace SwiftFramework.EditorUtils
             EditorBuildSettingsScene[] buildSettingsScenes = EditorBuildSettings.scenes;
 
             BootConfig bootConfig = Util.FindScriptableObject<BootConfig>();
-            AddrHelper.GetAsset<GlobalConfig>(globalConfig).bundleId = applicationIdentifier;
-            bootConfig.globalConfig = globalConfig;
+
             bootConfig.modulesManifest = manifest;
             bootConfig.buildNumber = versionCode;
 
             EditorUtility.SetDirty(bootConfig);
-            EditorUtility.SetDirty(AddrHelper.GetAsset<GlobalConfig>(globalConfig));
 
-            BaseModuleManifest manufestAsset = AddrHelper.GetAsset<BaseModuleManifest>(manifest);
+            BaseModuleManifest manufestAsset = manifest.Value();
 
             foreach ((ModuleLink m, FieldInfo f) in manufestAsset.GetModuleFields())
             {
                 if (m.ConfigLink.HasValue)
                 {
-                    Util.ApplyModuleConfig(m.ImplementationType, AddrHelper.GetAsset<ModuleConfig>(m.ConfigLink));
+                    Util.ApplyModuleConfig(m.ImplementationType, m.ConfigLink.Value());
                 }
             }
 

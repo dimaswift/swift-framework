@@ -20,7 +20,11 @@ namespace SwiftFramework.EditorUtils
     {
         public static T Value<T>(this LinkTo<T> link) where T : UnityEngine.Object
         {
+#if USE_ADDRESSABLES
             return AddrHelper.GetAsset<T>(link);
+#else
+            return link.Value;
+#endif
         }
     }
 
@@ -173,15 +177,15 @@ namespace SwiftFramework.EditorUtils
             }
         }
 
-        public static IEnumerable<T> GetAssets<T>(string name = "") where T : UnityEngine.Object
+        public static IEnumerable<T> GetAssets<T>(string name = "", params string[] folders) where T : UnityEngine.Object
         {
-            return AssetDatabase.FindAssets(string.Format("t:{0} {1}", typeof(T).Name, name))
+            return AssetDatabase.FindAssets(string.Format("t:{0} {1}", typeof(T).Name, name), folders)
                 .Select(x => AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(x), typeof(T)) as T);
         }
 
-        public static IEnumerable<UnityEngine.Object> GetAssets(Type type, string name = "")
+        public static IEnumerable<UnityEngine.Object> GetAssets(Type type, string name = "", params string[] folders)
         {
-            return AssetDatabase.FindAssets(string.Format("t:{0} {1}", type.Name, name))
+            return AssetDatabase.FindAssets(string.Format("t:{0} {1}", type.Name, name), folders)
                 .Select(x => AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(x), type));
         }
 

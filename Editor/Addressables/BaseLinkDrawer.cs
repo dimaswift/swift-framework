@@ -1,19 +1,45 @@
 ﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+#if USE_ADDRESSABLES
 using UnityEditor.AddressableAssets.Settings;
+#endif
 using SwiftFramework.EditorUtils;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace SwiftFramework.Core.Editor
 {
+    internal class LegacyAssetEntry
+    {
+        public string AssetPath;
+        public string address;
+        public Object asset;
+
+        private const string ROOT_FOLDER = "Assets/Resources/";
+
+        public static LegacyAssetEntry Create(Object asset)
+        {
+            var path = AssetDatabase.GetAssetPath(asset);
+            var ext = Path.GetExtension(path);
+
+            return new LegacyAssetEntry()
+            {
+                address = path.Substring(ROOT_FOLDER.Length, path.Length - ROOT_FOLDER.Length - ext.Length),
+                asset = asset,
+                AssetPath = path
+            };
+        }
+    }
+
     internal class BaseLinkDrawer
     {
         public bool AllowSelectAndPing { get; set; } = true;
 
         private static readonly Stack<Object> linkSelectionHistory = new Stack<Object>();
 
+#if USE_ADDRESSABLES
         private static readonly AddrSorter sorter = new AddrSorter();
 
         private class AddrSorter : IComparer<AddressableAssetEntry>
@@ -31,6 +57,8 @@ namespace SwiftFramework.Core.Editor
                 return CompareName(x.address, y.address);
             }
         }
+#endif
+
 
         public static int CompareName(string x, string y)
         {
@@ -79,8 +107,14 @@ namespace SwiftFramework.Core.Editor
             this.fieldInfo = fieldInfo;
             this.forceFlatHierarchy = forceFlatHierarchy;
         }
-
+#if USE_ADDRESSABLES
         protected List<AddressableAssetEntry> assets = new List<AddressableAssetEntry>();
+#else
+
+
+        protected List<LegacyAssetEntry> assets = new List<LegacyAssetEntry>();
+#endif
+
 
         protected string[] names = new string[0];
 
@@ -113,9 +147,9 @@ namespace SwiftFramework.Core.Editor
 
             string ext = GetExtention(type);
 
-            if (System.IO.Directory.Exists(defaultFolder) == false)
+            if (Directory.Exists(defaultFolder) == false)
             {
-                System.IO.Directory.CreateDirectory(defaultFolder);
+                Directory.CreateDirectory(defaultFolder);
             }
 
             string path = EditorUtility.SaveFilePanelInProject("Create new " + type.Name, type.Name, ext, "Create new " + type.Name, defaultFolder);
@@ -136,12 +170,21 @@ namespace SwiftFramework.Core.Editor
                 var so = ScriptableObject.CreateInstance(type);
                 AssetDatabase.CreateAsset(so, path);
             }
+
+            string address = null;
+
+#if USE_ADDRESSABLES
             AddrHelper.Reload();
+            
+            var entry = AddrHelper.CreateOrModifyEntry(AssetDatabase.AssetPathToGUID(path));
+            address = entry.address;
+#else
+            address = Path.GetDirectoryName(path);
+#endif
+
             AssetDatabase.Refresh();
 
-            var entry = AddrHelper.CreateOrModifyEntry(AssetDatabase.AssetPathToGUID(path));
-
-            return entry.address;
+            return address;
 
         }
 
@@ -150,10 +193,77 @@ namespace SwiftFramework.Core.Editor
             return serializedProperty.FindPropertyRelative(Link.PathPropertyName).stringValue;
         }
 
+        public static string GetAddressName(string address, System.Type assetType, FieldInfo fieldInfo = null, bool forceFlatHierarchy = false)
+        {
+            string rootFolder = "";
+
+            bool flatHierarchy = false;
+
+            System.Type fieldType = fieldInfo.GetChildValueType();
+
+            if (fieldType != null)
+            {
+                LinkFolderAttribute folderAttr = fieldType.GetCustomAttribute<LinkFolderAttribute>();
+
+                FlatHierarchy flatHierarchyAttr = fieldType.GetCustomAttribute<FlatHierarchy>();
+
+                if (flatHierarchyAttr == null)
+                {
+                    flatHierarchyAttr = assetType.GetCustomAttribute<FlatHierarchy>();
+                }
+
+                if (flatHierarchyAttr != null)
+                {
+                    flatHierarchy = true;
+                }
+
+                if (folderAttr != null)
+                {
+                    rootFolder += folderAttr.folder;
+                }
+            }
+
+            if (typeof(ModuleConfig).IsAssignableFrom(assetType))
+            {
+                rootFolder = $"{Folders.Configs}";
+            }
+
+            if (typeof(BehaviourModule).IsAssignableFrom(assetType))
+            {
+                rootFolder = $"{Folders.Addressables}/{Folders.Modules}";
+            }
+
+            AddrSingletonAttribute singletonAttr = assetType.GetCustomAttribute<AddrSingletonAttribute>();
+
+            if (singletonAttr != null && fieldType != null)
+            {
+                address = fieldType.Name + " (Singleton)";
+                return address;
+            }
+
+            if (rootFolder != null && address.StartsWith(rootFolder))
+            {
+                address = address.Substring(rootFolder.Length, address.Length - rootFolder.Length).RemoveExtention();
+            }
+
+            if (address.StartsWith("/"))
+            {
+                address = address.Substring(1, address.Length - 1);
+            }
+
+            return flatHierarchy || forceFlatHierarchy ? Path.GetFileNameWithoutExtension(address) : address;
+        }
+
+
 
         private void LoadNames()
         {
+#if USE_ADDRESSABLES
             assets.Sort(sorter); 
+#else
+
+#endif
+
             assets.Insert(0, null);
 
             names = new string[assets.Count + 1];
@@ -161,7 +271,7 @@ namespace SwiftFramework.Core.Editor
 
             for (int i = 1; i < assets.Count; i++)
             {
-                names[i] = AddrHelper.GetAddressName(assets[i].address, type, fieldInfo, forceFlatHierarchy);
+                names[i] = GetAddressName(assets[i].address, type, fieldInfo, forceFlatHierarchy);
             }
         }
 
@@ -180,8 +290,15 @@ namespace SwiftFramework.Core.Editor
 
             if (assets.Count == 0)
             {
+
+#if USE_ADDRESSABLES
                 AddrHelper.OnReload -= DoReload;
                 AddrHelper.OnReload += DoReload;
+#else
+                AssetHelper.OnReload -= DoReload;
+                AssetHelper.OnReload += DoReload;
+#endif
+
                 DoReload();
             }
 

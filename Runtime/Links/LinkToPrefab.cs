@@ -1,10 +1,13 @@
-﻿using UnityEngine.AddressableAssets;
+﻿#if USE_ADDRESSABLES
+using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+#endif
 using System;
 using UnityEngine;
 
 namespace SwiftFramework.Core
 {
+
     [Serializable]
     public class LinkToPrefab<T> : Link where T : class
     {
@@ -18,7 +21,11 @@ namespace SwiftFramework.Core
 
         [NonSerialized] private Promise<T> loadPromise;
 
+#if USE_ADDRESSABLES
         [NonSerialized] private AsyncOperationHandle<GameObject>? loadHandle;
+#else
+        [NonSerialized] private ResourceRequest loadHandle = null;
+#endif
 
         public virtual T Value
         {
@@ -29,7 +36,11 @@ namespace SwiftFramework.Core
                     return cachedAsset;
                 }
 
+#if USE_ADDRESSABLES
                 cachedGameObject = AddrCache.GetAsset<GameObject>(Path);
+#else
+                cachedGameObject = Resources.Load<GameObject>(Path);
+#endif
 
                 cachedAsset = cachedGameObject?.GetComponent<T>();
 
@@ -85,6 +96,7 @@ namespace SwiftFramework.Core
                 return loadPromise;
             }
 
+#if USE_ADDRESSABLES
             if (Loaded || AddrCache.Loaded(Path))
             {
                 loadPromise.Resolve(Value);
@@ -110,18 +122,57 @@ namespace SwiftFramework.Core
                     }
                 }
             };
+#else
+            if (Loaded)
+            {
+                loadPromise.Resolve(Value);
+                return loadPromise;
+            }
+
+            loadHandle = Resources.LoadAsync<GameObject>(Path);
+
+            loadHandle.completed += a =>
+            {
+                if (Loaded == false)
+                {
+                    if (loadHandle.isDone && loadHandle.asset)
+                    {
+                        cachedGameObject = loadHandle.asset as GameObject;
+                        Initialize(cachedGameObject);
+                        cachedAsset = cachedGameObject.GetComponent<T>();
+                        loadPromise.Resolve(cachedAsset);
+                    }
+                    else
+                    {
+                        loadPromise.Reject(new EntryPointNotFoundException($"Cannot load value from link: {Path}"));
+                    }
+                }
+            };
+
+#endif
 
             return loadPromise;
         }
 
         public virtual void Release()
         {
+#if USE_ADDRESSABLES
+
             if (Loaded == false || loadHandle.HasValue == false)
             {
                 return;
             }
 
             Addressables.Release(loadHandle.Value);
+#else
+            if (Loaded == false || loadHandle == null || loadHandle.asset == null)
+            {
+                return;
+            }
+
+            Resources.UnloadAsset(loadHandle.asset);
+
+#endif
 
             loadPromise = null;
             cachedAsset = null;

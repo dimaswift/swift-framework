@@ -42,12 +42,7 @@ namespace SwiftFramework.Core.Editor
     public class MaterialLinkDrawer : LinkPropertyDrawer<UnityEngine.Material>
     {
     }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.GlobalConfigLink))]
-    public class GlobalConfigLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.GlobalConfig>
-    {
-    }
-    
+
     [CustomPropertyDrawer(typeof(SwiftFramework.Core.ModuleManifestLink))]
     public class ModuleManifestLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.BaseModuleManifest>
     {

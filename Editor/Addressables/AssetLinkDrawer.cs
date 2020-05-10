@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Reflection;
 using System.Collections.Generic;
+using SwiftFramework.EditorUtils;
 
 namespace SwiftFramework.Core.Editor
 {
@@ -12,8 +13,8 @@ namespace SwiftFramework.Core.Editor
 
         }
 
-        protected override bool CanCreate => type.IsAbstract == false 
-            && type.IsGenericType == false 
+        protected override bool CanCreate => type.IsAbstract == false
+            && type.IsGenericType == false
             && (typeof(ScriptableObject).IsAssignableFrom(type) || typeof(MonoBehaviour).IsAssignableFrom(type));
 
         protected override IPromise<string> OnCreate()
@@ -33,7 +34,12 @@ namespace SwiftFramework.Core.Editor
         {
             assets.Clear();
 
+
+#if USE_ADDRESSABLES
             assets.AddRange(AddrHelper.GetAssets(type));
+#else
+            assets.AddRange(AssetHelper.GetAssets(type));
+#endif
 
             if (fieldInfo != null)
             {
@@ -60,7 +66,7 @@ namespace SwiftFramework.Core.Editor
                 }
             }
 
-            
+
         }
 
     }

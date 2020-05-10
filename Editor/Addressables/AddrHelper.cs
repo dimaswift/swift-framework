@@ -1,4 +1,6 @@
-﻿using SwiftFramework.Core.Views;
+﻿#if USE_ADDRESSABLES
+
+using SwiftFramework.Core.Editor;
 using SwiftFramework.EditorUtils;
 using System;
 using System.CodeDom;
@@ -146,69 +148,6 @@ namespace SwiftFramework.Core.Editor
 
             return null;
         }
-
-
-        public static string GetAddressName(string address, Type assetType, FieldInfo fieldInfo = null, bool forceFlatHierarchy = false)
-        {
-            string rootFolder = "";
-
-            bool flatHierarchy = false;
-
-            Type fieldType = fieldInfo.GetChildValueType();
-
-            if (fieldType != null)
-            {
-                LinkFolderAttribute folderAttr = fieldType.GetCustomAttribute<LinkFolderAttribute>();
-
-                FlatHierarchy flatHierarchyAttr = fieldType.GetCustomAttribute<FlatHierarchy>();
-
-                if (flatHierarchyAttr == null)
-                {
-                    flatHierarchyAttr = assetType.GetCustomAttribute<FlatHierarchy>();
-                }
-
-                if (flatHierarchyAttr != null)
-                {
-                    flatHierarchy = true;
-                }
-
-                if (folderAttr != null)
-                {
-                    rootFolder += folderAttr.folder;
-                }
-            }
-
-            if (typeof(ModuleConfig).IsAssignableFrom(assetType))
-            {
-                rootFolder = $"{Folders.Configs}";
-            }
-
-            if (typeof(BehaviourModule).IsAssignableFrom(assetType))
-            {
-                rootFolder = $"{Folders.Addressables}/{Folders.Modules}";
-            }
-
-            AddrSingletonAttribute singletonAttr = assetType.GetCustomAttribute<AddrSingletonAttribute>();
-
-            if (singletonAttr != null && fieldType != null)
-            {
-                address = fieldType.Name + " (Singleton)";
-                return address;
-            }
-
-            if (rootFolder != null && address.StartsWith(rootFolder))
-            {
-                address = address.Substring(rootFolder.Length, address.Length - rootFolder.Length).RemoveExtention();
-            }
-
-            if (address.StartsWith("/"))
-            {
-                address = address.Substring(1, address.Length - 1);
-            }
-
-            return flatHierarchy || forceFlatHierarchy ? Path.GetFileNameWithoutExtension(address) : address;
-        }
-
 
         public static string NormalizeAddress(string address)
         {
@@ -533,3 +472,5 @@ namespace SwiftFramework.Core.Editor
     }
 
 }
+#endif
+

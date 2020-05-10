@@ -395,7 +395,9 @@ namespace SwiftFramework.Core.Editor
                 if (GUI.Button(new Rect(position.x + position.width, position.y, sideButtonWidth, 18), "Create Config"))
                 {
                     Util.CreateModuleConfig(data.configurable.configType, configProperty);
+#if USE_ADDRESSABLES
                     AddrHelper.Reload();
+#endif
                 }
             }
 

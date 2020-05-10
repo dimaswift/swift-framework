@@ -1,12 +1,11 @@
 ﻿using Newtonsoft.Json;
+using SwiftFramework.Core;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 namespace SwiftFramework.Core
@@ -15,6 +14,44 @@ namespace SwiftFramework.Core
 
     public static class ExtentionMethods
     {
+        public static IPromise<T> GetPromise<T>(this ResourceRequest resourceRequest) where T : UnityEngine.Object
+        {
+            Promise<T> promise = Promise<T>.Create();
+
+            resourceRequest.completed += r =>
+            {
+                if (r.isDone)
+                {
+                    promise.Resolve(resourceRequest.asset as T);
+                }
+                else
+                {
+                    promise.Reject(new Exception("Cannot load resource"));
+                }
+            };
+
+            return promise;
+        }
+
+        public static IPromise GetPromise(this AsyncOperation asyncOperation)
+        {
+            Promise promise = Promise.Create();
+
+            asyncOperation.completed += r => 
+            {
+                if (r.isDone)
+                {
+                    promise.Resolve();
+                }
+                else
+                {
+                    promise.Reject(new Exception());
+                }
+            };
+
+            return promise; 
+        }
+
         public static float AverageFast(this IEnumerable<float> values)
         {
             if (values.CountFast() == 0)
@@ -251,107 +288,6 @@ namespace SwiftFramework.Core
             {
                 yield return l.Value;
             }
-        }
-
-        public static IPromise GetPromise(this AsyncOperationHandle handle)
-        {
-            Promise promise = Promise.Create();
-
-            if (handle.IsDone)
-            {
-                if (handle.Status == AsyncOperationStatus.Succeeded)
-                {
-                    promise.Resolve();
-                }
-                else
-                {
-                    promise.Reject(handle.OperationException);
-                }
-            }
-            else
-            {
-                handle.Completed += o =>
-                {
-                    if (o.Status == AsyncOperationStatus.Succeeded)
-                    {
-                        promise.Resolve();
-                    }
-                    else
-                    {
-                        promise.Reject(handle.OperationException);
-                    }
-                };
-            }
-
-            return promise;
-        }
-
-        public static IPromise<T> GetPromise<T>(this AsyncOperationHandle<T> handle)
-        {
-            Promise<T> promise = Promise<T>.Create();
-
-            if (handle.IsDone)
-            {
-
-                if (handle.Status == AsyncOperationStatus.Succeeded)
-                {
-                    promise.Resolve(handle.Result);
-                }
-                else
-                {
-                    promise.Reject(handle.OperationException);
-                }
-            }
-            else
-            {
-                handle.Completed += o =>
-                {
-                    if (o.Status == AsyncOperationStatus.Succeeded)
-                    {
-                        promise.Resolve(o.Result);
-                    }
-                    else
-                    {
-                        promise.Reject(handle.OperationException);
-                    }
-                };
-            }
-
-            return promise;
-        }
-
-        public static IPromise GetPromiseWithoutResult<T>(this AsyncOperationHandle<T> handle)
-        {
-            Promise promise = Promise.Create();
-
-            if (handle.IsDone)
-            {
-
-                if (handle.Status == AsyncOperationStatus.Succeeded)
-                {
-                    promise.Resolve();
-                }
-                else
-                {
-                    promise.Reject(handle.OperationException);
-                }
-            }
-            else
-            {
-                handle.Completed += o =>
-                {
-                    if (o.Status == AsyncOperationStatus.Succeeded)
-                    {
-                        promise.Resolve();
-                    }
-                    else
-                    {
-                        promise.Reject(handle.OperationException);
-                    }
-                };
-            }
-
-            return promise;
         }
 
         public static IPromise LogException(this IPromise promise)

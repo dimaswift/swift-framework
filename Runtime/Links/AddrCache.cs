@@ -1,8 +1,11 @@
-﻿using UnityEngine.AddressableAssets;
+﻿#if USE_ADDRESSABLES
+using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
+#endif
 using System;
 using System.Collections.Generic;
-using UnityEngine.ResourceManagement.ResourceLocations;
+
 using System.Reflection;
 using SwiftFramework.Core;
 using UnityEngine;
@@ -16,7 +19,11 @@ namespace SwiftFramework.Core
 
         private static readonly Dictionary<string, UnityEngine.Object> preloadedAssets = new Dictionary<string, UnityEngine.Object>();
 
+#if USE_ADDRESSABLES
         private static readonly Dictionary<string, AsyncOperationHandle> preloadedOperations = new Dictionary<string, AsyncOperationHandle>();
+#else
+        private static readonly Dictionary<string, ResourceRequest> preloadedOperations = new Dictionary<string, ResourceRequest>();
+#endif
 
         private static readonly Dictionary<string, (Promise<IEnumerable<UnityEngine.Object>> promise, List<string> addresses)> loadedLabels =
             new Dictionary<string, (Promise<IEnumerable<UnityEngine.Object>> promise, List<string> addresses)>();
@@ -38,7 +45,7 @@ namespace SwiftFramework.Core
             {
                 return null;
             }
-            UnityEngine.Debug.LogError($"Cannot get preloaded asset of type '{typeof(T).Name}' at address '{address}'. Before accessing synchronous link property 'Value', you need to call async method AddrCache.Preload(addressable label) or mark asset type with [PrewardAsset]");
+            Debug.LogError($"Cannot get preloaded asset of type '{typeof(T).Name}' at address '{address}'. Before accessing synchronous link property 'Value', you need to call async method AddrCache.Preload(addressable label) or mark asset type with [PrewardAsset]");
             return null;
         }
 
@@ -52,7 +59,7 @@ namespace SwiftFramework.Core
         {
             foreach (var asset in preloadedAssets)
             {
-                UnityEngine.GameObject go = asset.Value as UnityEngine.GameObject;
+                GameObject go = asset.Value as GameObject;
                 if (go != null)
                 {
                     T component = go.GetComponent<T>();
@@ -83,7 +90,23 @@ namespace SwiftFramework.Core
             {
                 return Promise<T>.Resolved(asset as T);
             }
+
+#if USE_ADDRESSABLES
             return Addressables.LoadAssetAsync<T>(address).GetPromise();
+#else
+            Promise<T> promise = Promise<T>.Create();
+
+            foreach (T obj in Resources.LoadAll<T>(""))
+            {
+                if (obj is T)
+                {
+                    promise.Resolve(obj as T);
+                }
+            }
+
+            return promise;
+#endif
+
         }
 
         public static IPromise<T> LoadPrefab<T>(string address)
@@ -110,6 +133,7 @@ namespace SwiftFramework.Core
                 return false;
             }
 
+#if USE_ADDRESSABLES
             Addressables.LoadAssetAsync<UnityEngine.GameObject>(address).GetPromise().Then(g =>
             {
                 if (TryGetPreloaded())
@@ -128,6 +152,26 @@ namespace SwiftFramework.Core
                 }
             })
             .Catch(e => promise.Reject(e));
+#else
+            Resources.LoadAsync<GameObject>(address).GetPromise<GameObject>().Then(g =>
+            {
+                if (TryGetPreloaded())
+                {
+                    return;
+                }
+                T comp = g.GetComponent<T>();
+                if (comp != null)
+                {
+                    preloadedAssets.Add(address, g);
+                    promise.Resolve(comp);
+                }
+                else
+                {
+                    promise.Reject(new InvalidOperationException());
+                }
+            })
+            .Catch(e => promise.Reject(e));
+#endif
 
             return promise;
         }
@@ -147,7 +191,7 @@ namespace SwiftFramework.Core
         {
             foreach (var asset in preloadedAssets)
             {
-                UnityEngine.GameObject go = asset.Value as UnityEngine.GameObject;
+                GameObject go = asset.Value as GameObject;
                 if (go != null)
                 {
                     T component = go.GetComponent<T>();
@@ -190,7 +234,11 @@ namespace SwiftFramework.Core
                 }
             }
 
+#if USE_ADDRESSABLES
             Addressables.ClearResourceLocators();
+#else
+            Resources.UnloadUnusedAssets();
+#endif
 
             preloadedOperations.Clear();
             preloadedAssets.Clear();
@@ -200,6 +248,8 @@ namespace SwiftFramework.Core
 
         public static bool ReleaseAll(string label)
         {
+
+#if USE_ADDRESSABLES
             if (preloadedOperations.TryGetValue(label, out AsyncOperationHandle asyncOperation) == false)
             {
                 return false;
@@ -207,6 +257,15 @@ namespace SwiftFramework.Core
 
             preloadedOperations.Remove(label);
             Addressables.Release(asyncOperation);
+#else
+            if (preloadedOperations.TryGetValue(label, out ResourceRequest asyncOperation) == false || !asyncOperation.asset)
+            {
+                return false;
+            }
+
+            preloadedOperations.Remove(label);
+            Resources.UnloadAsset(asyncOperation.asset);
+#endif
 
             foreach (var asset in loadedLabels[label].addresses)
             {
@@ -232,10 +291,10 @@ namespace SwiftFramework.Core
         public static IPromise<(IList<object> assets, long size)> CheckForUpdates()
         {
             Promise<(IList<object> assets, long size)> promise = Promise<(IList<object> assets, long size)>.Create();
+#if USE_ADDRESSABLES
 
             Addressables.CheckForCatalogUpdates().GetPromise().Always(assets =>
             {
-              
                 if (assets == null || assets.Count == 0)
                 {
                     Debug.Log($"No content to update");
@@ -263,9 +322,14 @@ namespace SwiftFramework.Core
                     }
                 });
             });
+#else
+            promise.Reject(onlySupportedOnAddressablesException);
+#endif
 
             return promise;
         }
+
+        private static readonly NotSupportedException onlySupportedOnAddressablesException = new NotSupportedException("Operation only supported with Addressables enabled");
 
         public static IPromise DownloadUpdatesIfNeeded(FileDownloadHandler downloadCallback)
         {
@@ -289,18 +353,22 @@ namespace SwiftFramework.Core
         {
             Promise promise = Promise.Create();
 
+#if USE_ADDRESSABLES
             var handle = Addressables.DownloadDependenciesAsync(assetsToDownload, Addressables.MergeMode.Union);
-            
+
             App.Core.Coroutine.Begin(ReportDownloadProgress(handle, downloadCallback, totalSize));
 
             handle.GetPromise().Always(() =>
             {
                 promise.Resolve();
             });
+#else
+            promise.Reject(onlySupportedOnAddressablesException);
+#endif
 
             return promise;
         }
-
+#if USE_ADDRESSABLES
         private static IEnumerator ReportDownloadProgress(AsyncOperationHandle handle, FileDownloadHandler downloadHandler, long totalSize)
         {
             while (handle.IsDone == false)
@@ -315,10 +383,14 @@ namespace SwiftFramework.Core
             downloadHandler(totalSize, totalSize);
         }
 
+#endif
+
+
         public static IPromise<long> GetDownloadSize()
         {
             Promise<long> promise = Promise<long>.Create();
 
+#if USE_ADDRESSABLES
             if (Addressables.ResourceLocators.FirstOrDefaultFast().Locate(AddrLabels.Remote, typeof(UnityEngine.Object), out IList<IResourceLocation> locations))
             {
                 AsyncOperationHandle<long> handle = new AsyncOperationHandle<long>();
@@ -341,6 +413,10 @@ namespace SwiftFramework.Core
             {
                 promise.Resolve(0);
             }
+#else
+
+            promise.Reject(onlySupportedOnAddressablesException);
+#endif
 
             return promise;
         }
@@ -356,7 +432,11 @@ namespace SwiftFramework.Core
 
             if (initPromise == null)
             {
+#if USE_ADDRESSABLES
                 initPromise = Addressables.InitializeAsync().GetPromiseWithoutResult();
+#else
+                initPromise = Promise.Resolved();
+#endif
             }
 
             Promise<IEnumerable<UnityEngine.Object>> promise = Promise<IEnumerable<UnityEngine.Object>>.Create();
@@ -368,6 +448,7 @@ namespace SwiftFramework.Core
 
             initPromise.Done(() =>
             {
+#if USE_ADDRESSABLES
                 try
                 {
                     Addressables.ResourceLocators.FirstOrDefaultFast().Locate(label, typeof(UnityEngine.Object), out IList<IResourceLocation> locations);
@@ -398,8 +479,11 @@ namespace SwiftFramework.Core
                 {
                     promise.Reject(e);
                 }
-            });
+#else
+                promise.Resolve(new List<UnityEngine.Object>());
 
+#endif
+            });
 
             return promise;
         }

@@ -1,4 +1,5 @@
-﻿using SwiftFramework.EditorUtils;
+﻿#if USE_ADDRESSABLES
+using SwiftFramework.EditorUtils;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -83,3 +84,4 @@ namespace SwiftFramework.Core.Editor
     }
 
 }
+#endif

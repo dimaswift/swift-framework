@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 
 namespace SwiftFramework.Core
 {
@@ -24,6 +23,8 @@ namespace SwiftFramework.Core
 
     public abstract class AppBoot<A> : AppBoot, IBoot where A : App<A>, new()
     {
+        public BootConfig Config => bootConfig;
+
         public GlobalEvent AppInitialized => onAppInitialized.Value;
 
         [SerializeField] private float bootDelay = 0.5f;
@@ -38,21 +39,22 @@ namespace SwiftFramework.Core
 
         private BootConfig bootConfig;
 
-        public virtual GlobalConfig GlobalConfig => bootConfig.globalConfig.Value;
-
         private bool ignoreNextPauseEvent;
 
         private IEnumerator Start()
         {
             var bootConfigPath = "Configs/BootConfig";
-            var bootConfigLoad = Addressables.LoadAssetAsync<BootConfig>(bootConfigPath);
 
+#if USE_ADDRESSABLES
+            var bootConfigLoad = AddressableAssets.Addressables.LoadAssetAsync<BootConfig>(bootConfigPath);
             while (bootConfigLoad.IsDone == false)
             {
                 yield return null;
             }
-
             bootConfig = bootConfigLoad.Result;
+#else
+            bootConfig = Resources.Load<BootConfig>(bootConfigPath);
+#endif
 
             if (bootConfig == null)
             {
@@ -100,12 +102,6 @@ namespace SwiftFramework.Core
             if (bootConfig.modulesManifest.HasValue == false)
             {
                 Debug.LogError($"ModuleManifest not found: {bootConfig.modulesManifest.ToString()}");
-                return false;
-            }
-
-            if (bootConfig.globalConfig.HasValue == false)
-            {
-                Debug.LogError($"GlobalConfig not found: {bootConfig.globalConfig.ToString()}");
                 return false;
             }
 

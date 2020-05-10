@@ -1,7 +1,13 @@
 ﻿using UnityEngine;
 using System;
+using UnityEngine.SceneManagement;
+
+#if USE_ADDRESSABLES
+
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.ResourceProviders;
+
+#endif
 
 namespace SwiftFramework.Core
 {
@@ -47,14 +53,6 @@ namespace SwiftFramework.Core
     [FlatHierarchy]
     [LinkFolder(Folders.Configs)]
     [Serializable()]
-    public class GlobalConfigLink : LinkTo<GlobalConfig>
-    {
-
-    }
-
-    [FlatHierarchy]
-    [LinkFolder(Folders.Configs)]
-    [Serializable()]
     public class ModuleManifestLink : LinkTo<BaseModuleManifest>
     {
 
@@ -92,8 +90,11 @@ namespace SwiftFramework.Core
     [Serializable()]
     public class SceneLink : Link
     {
+#if USE_ADDRESSABLES
         private SceneInstance sceneInstance;
-
+#else
+        private Scene scene;
+#endif
         public override string ToString()
         {
             return System.IO.Path.GetFileNameWithoutExtension(GetPath());
@@ -106,20 +107,28 @@ namespace SwiftFramework.Core
 
         public IPromise Unload()
         {
+#if USE_ADDRESSABLES
             return Addressables.UnloadSceneAsync(sceneInstance).GetPromiseWithoutResult();
+#else
+            return SceneManager.UnloadSceneAsync(scene).GetPromise();
+#endif
         }
 
-        public IPromise<bool> Load(UnityEngine.SceneManagement.LoadSceneMode mode)
+        public IPromise<bool> Load(LoadSceneMode mode)
         {
             Promise<bool> promise = Promise<bool>.Create();
-
+#if USE_ADDRESSABLES
             Addressables.LoadSceneAsync(Path, mode, true).GetPromise().Then(scene =>
             {
                 sceneInstance = scene;
                 promise.Resolve(true);
             })
             .Catch(e => promise.Resolve(false));
+#else
 
+            SceneManager.LoadSceneAsync(Path, mode).GetPromise().Then(() => promise.Resolve(true)).Catch(e => promise.Resolve(false));
+
+#endif
             return promise;
         }
 
@@ -136,7 +145,7 @@ namespace SwiftFramework.Core
         }
         public override IPromise Preload()
         {
-            return Load(UnityEngine.SceneManagement.LoadSceneMode.Additive).Then();
+            return Load(LoadSceneMode.Additive).Then();
         }
     }
 }

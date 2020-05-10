@@ -1,5 +1,4 @@
-﻿using System.IO;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace SwiftFramework.Core
 {
@@ -8,6 +7,5 @@ namespace SwiftFramework.Core
     {
         public int buildNumber;
         public ModuleManifestLink modulesManifest = Link.Create<ModuleManifestLink>($"Configs/ModuleManifest");
-        public GlobalConfigLink globalConfig = Link.Create<GlobalConfigLink>($"Configs/GlobalConfig");
     }
 }

@@ -1,13 +1,20 @@
 ﻿using System;
 using UnityEngine;
+
+#if USE_ADDRESSABLES
+
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+
+#endif
+
 
 namespace SwiftFramework.Core
 {
     [Serializable]
     public class LinkTo<T> : Link where T : UnityEngine.Object
     {
+
         public bool Loaded => loaded;
 
         public override bool HasValue => string.IsNullOrEmpty(Path) == false && Path != NULL;
@@ -18,7 +25,13 @@ namespace SwiftFramework.Core
 
         [NonSerialized] private bool loaded;
 
+#if USE_ADDRESSABLES
+
         [NonSerialized] private AsyncOperationHandle<T>? loadHandle;
+#else
+        [NonSerialized] private ResourceRequest loadHandle;
+#endif
+
 
         public virtual T Value
         {
@@ -38,7 +51,11 @@ namespace SwiftFramework.Core
                     return cachedAsset;
                 }
 
+#if USE_ADDRESSABLES
                 cachedAsset = AddrCache.GetAsset<T>(Path);
+#else
+                cachedAsset = Resources.Load<T>(Path);
+#endif
 
                 Initialize(cachedAsset);
 
@@ -88,6 +105,8 @@ namespace SwiftFramework.Core
                 return loadPromise;
             }
 
+#if USE_ADDRESSABLES
+
             if (loaded || AddrCache.Loaded(Path))
             {
                 loadPromise.Resolve(Value);
@@ -124,18 +143,62 @@ namespace SwiftFramework.Core
                     }
                 }
             };
+#else
+
+            if (loaded)
+            {
+                loadPromise.Resolve(Value);
+                return loadPromise;
+            }
+
+            if (IsGenerated())
+            {
+                cachedAsset = App.Core.Storage.Load<T>(this);
+                Initialize(cachedAsset);
+                loaded = cachedAsset != null;
+                loadPromise.Resolve(cachedAsset);
+                return loadPromise;
+            }
+
+            loadHandle = Resources.LoadAsync<T>(Path);
+
+            loadHandle.completed += r =>
+            {
+                if (Loaded == false && loadHandle.isDone && loadHandle.asset)
+                {
+                    cachedAsset = loadHandle.asset as T;
+                    Initialize(cachedAsset);
+                    loaded = cachedAsset != null;
+                    loadPromise.Resolve(cachedAsset);
+                }
+                else
+                {
+                    loadPromise.Reject(new EntryPointNotFoundException($"Cannot load resource of type {typeof(T)} at path {Path}"));
+                }
+            };
+
+#endif
 
             return loadPromise;
         }
 
         public void Release()
         {
+#if USE_ADDRESSABLES
             if (Loaded == false || loadHandle.HasValue == false)
             {
                 return;
             }
 
             Addressables.Release(loadHandle.Value);
+#else
+            if (Loaded == false || loadHandle == null || loadHandle.asset == null)
+            {
+                return;
+            }
+
+            Resources.UnloadAsset(loadHandle.asset);
+#endif
 
             loadPromise = null;
             cachedAsset = null;

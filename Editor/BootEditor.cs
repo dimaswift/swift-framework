@@ -18,7 +18,6 @@ namespace SwiftFramework.Core.Editor
         public static void GenerateConfigs()
         {
             EnsureConfigExists<BootConfig>(bootConfigFolder);
-            EnsureConfigExists<GlobalConfig>(configsFolder);
 
             EnsureModuleManifestExists();
 
@@ -62,13 +61,6 @@ namespace SwiftFramework.Core.Editor
                 Debug.Log($"{"Manifest not found"}"); 
             }
             return manifest;
-        }
-
-       
-        [MenuItem("SwiftFramework/Global Config")]
-        private static void SelectGlobalConfig()
-        {
-            Selection.activeObject = EnsureConfigExists<GlobalConfig>(configsFolder);
         }
 
         [MenuItem("SwiftFramework/Boot Config")]

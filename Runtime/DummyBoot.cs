@@ -6,7 +6,7 @@ namespace SwiftFramework.Core
     {
         public GlobalEvent AppInitialized => null;
 
-        public GlobalConfig GlobalConfig => null;
+        public BootConfig Config => null;
 
         public event Action OnPaused = () => { };
         public event Action OnResumed = () => { };

@@ -39,6 +39,7 @@ namespace SwiftFramework.Core.Editor
         {
             assets.Clear();
 
+#if USE_ADDRESSABLES
             if (fieldInfo.GetChildValueType().BaseType.Name.Contains("LinkToScriptable"))
             {
                 assets.AddRange(AddrHelper.GetScriptableObjectsWithInterface(type));
@@ -47,6 +48,17 @@ namespace SwiftFramework.Core.Editor
             {
                 assets.AddRange(AddrHelper.GetPrefabsWithComponent(type));
             }
+
+#else
+            if (fieldInfo.GetChildValueType().BaseType.Name.Contains("LinkToScriptable"))
+            {
+                assets.AddRange(AssetHelper.GetScriptableObjectsWithInterface(type));
+            }
+            else
+            {
+                assets.AddRange(AssetHelper.GetPrefabsWithComponent(type));
+            }
+#endif
 
             if (fieldInfo != null)
             {

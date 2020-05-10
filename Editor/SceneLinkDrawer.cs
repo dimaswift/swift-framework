@@ -11,7 +11,7 @@ namespace SwiftFramework.Core.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if(drawer == null)
+            if (drawer == null)
             {
                 drawer = new SceneLinkDrawer(typeof(SceneAsset), fieldInfo);
             }
@@ -29,8 +29,12 @@ namespace SwiftFramework.Core.Editor
         protected override void Reload()
         {
             assets.Clear();
-
+#if USE_ADDRESSABLES
             assets.AddRange(AddrHelper.GetScenes());
+#else
+            assets.AddRange(AssetHelper.GetScenes());
+#endif
+
         }
     }
 }

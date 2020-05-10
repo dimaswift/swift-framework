@@ -38,7 +38,7 @@ namespace SwiftFramework.Core.Editor
 #if USE_ADDRESSABLES
             assets.AddRange(AddrHelper.GetAssets(type));
 #else
-            assets.AddRange(AssetHelper.GetAssets(type));
+            assets.AddRange(ResourcesAssetHelper.GetAssets(type));
 #endif
 
             if (fieldInfo != null)

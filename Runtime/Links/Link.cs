@@ -5,11 +5,6 @@ using System.Runtime.Serialization;
 
 namespace SwiftFramework.Core
 {
-    public class UserCustomDrawerAttribute : Attribute
-    {
-
-    }
-
     [Serializable]
     public class Link : ILink, ISerializationCallbackReceiver
     {
@@ -26,13 +21,6 @@ namespace SwiftFramework.Core
         [HideInInspector] [SerializeField] protected string Path = NULL;
 
         public const string NULL = "null";
-
-        public string ResourcesPath => GetPath().RemoveExtention();
-
-        public static string AssetToLinkPath(string assetPath)
-        {
-            return assetPath.Substring(7, assetPath.Length - 7);
-        }
 
         public bool IsGenerated()
         {

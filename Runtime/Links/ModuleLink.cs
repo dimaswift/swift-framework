@@ -1,5 +1,4 @@
-﻿using SwiftFramework.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -12,8 +11,6 @@ namespace SwiftFramework.Core
         public bool HasImplementation => ImplementationType != null;
         public BehaviourModuleLink BehaviourLink => behaviourLink;
         public ModuleConfigLink ConfigLink => configLink;
-
-        private List<ModuleConfig> list;
 
         public Type InterfaceType
         {
@@ -66,7 +63,7 @@ namespace SwiftFramework.Core
         [SerializeField] private BehaviourModuleLink behaviourLink;
         [SerializeField] private ModuleConfigLink configLink;
 
-        private IModule module;
+        [NonSerialized] private IModule module;
         private static readonly RuntimeModuleFactory runtimeModuleFactory = new RuntimeModuleFactory();
 
         public static ModuleLink Create<T>()
@@ -155,8 +152,6 @@ namespace SwiftFramework.Core
                 && a?.interfaceType == b?.interfaceType
                 && a?.implementationType == b?.implementationType;
         }
-
-
 
         public static bool operator !=(ModuleLink a, ModuleLink b)
         {

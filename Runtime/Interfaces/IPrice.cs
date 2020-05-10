@@ -16,7 +16,6 @@ namespace SwiftFramework.Core
 
     [FlatHierarchy]
     [Serializable]
-    [UserCustomDrawer]
     public class PriceLink : LinkToScriptable<IPrice>
     {
         public static PriceLink CreatePrice(PriceLink source, BigNumber amount)

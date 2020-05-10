@@ -52,11 +52,11 @@ namespace SwiftFramework.Core.Editor
 #else
             if (fieldInfo.GetChildValueType().BaseType.Name.Contains("LinkToScriptable"))
             {
-                assets.AddRange(AssetHelper.GetScriptableObjectsWithInterface(type));
+                assets.AddRange(ResourcesAssetHelper.GetScriptableObjectsWithInterface(type));
             }
             else
             {
-                assets.AddRange(AssetHelper.GetPrefabsWithComponent(type));
+                assets.AddRange(ResourcesAssetHelper.GetPrefabsWithComponent(type));
             }
 #endif
 

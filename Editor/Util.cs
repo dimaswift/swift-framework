@@ -18,6 +18,34 @@ namespace SwiftFramework.EditorUtils
 {
     internal static class EditorUtilExtentions
     {
+        public static string FromRelativeResourcesPathToAbsoluteProjectPath(this string path)
+        {
+            return string.IsNullOrEmpty(path) ? "Assets/Resources" : $"Assets/Resources/{path}";
+        }
+
+        public static string ToRelativeResourcesPath(this string path)
+        {
+            if (path.Contains("/Resources/") == false)
+            {
+                return "";
+            }
+            var file = new FileInfo(path);
+            string result = file.Directory.Name;
+
+            if (result == "Resources")
+            {
+                return "";
+            }
+
+            DirectoryInfo current = file.Directory.Parent;
+            while (current != null && current.Name != "Resources")
+            {
+                result = $"{current.Name}/{result}";
+                current = current.Parent;
+            }
+            return result;
+        }
+
         public static T Value<T>(this LinkTo<T> link) where T : UnityEngine.Object
         {
 #if USE_ADDRESSABLES
@@ -88,7 +116,7 @@ namespace SwiftFramework.EditorUtils
                 {
                     continue;
                 }
-                File.Copy(newPath, newPath.Replace(source, destination), true);
+                AssetDatabase.MoveAsset(ToRelativePath(newPath), ToRelativePath(newPath.Replace(source, destination)));
             }
         }
 
@@ -100,6 +128,34 @@ namespace SwiftFramework.EditorUtils
             OnModuleConfigApplied(moduleType, moduleConfig);
         }
 
+        public static void PromptMoveAssetsFromFolder(string sourceFolder, string destFolder)
+        {
+            var sourceFolderPath = ToAbsolutePath("Assets/" + sourceFolder);
+
+            if (Directory.Exists(sourceFolderPath))
+            {
+                if (new DirectoryInfo(sourceFolderPath).EnumerateFiles().CountFast() == 0)
+                {
+                    return;
+                }
+                if (EditorUtility.DisplayDialog("Warning", $"{sourceFolder} folder detected. Do you want to move assets to {destFolder} folder?", "Yes", "No"))
+                {
+                    AssetDatabase.CreateFolder("Assets", destFolder);
+
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+                    foreach (var item in AssetDatabase.FindAssets("t: Object", new string[] { "Assets/" + sourceFolder }))
+                    {
+                        var path = AssetDatabase.GUIDToAssetPath(item);
+                        AssetDatabase.MoveAsset(path, path.Replace($"/{sourceFolder}/", $"/{destFolder}/"));
+                    }
+
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                    Directory.Delete(sourceFolderPath, true);
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                }
+            }
+        }
 
         public static void OpenPrefab<T>()
         {
@@ -339,7 +395,7 @@ namespace SwiftFramework.EditorUtils
         {
             GameObject newBehaviour = new GameObject(type.Name);
             newBehaviour.AddComponent(type);
-            string moduleFolder = $"Assets/Addressables/{Folders.Modules}";
+            string moduleFolder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}";
 
             Util.EnsureProjectFolderExists(moduleFolder);
             string prefabName = newBehaviour.name;
@@ -352,7 +408,7 @@ namespace SwiftFramework.EditorUtils
 
             if (link != null)
             {
-                link.SaveLink($"{Folders.Addressables}/{Folders.Modules}/{prefabName}");
+                link.SaveLink($"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}/{prefabName}");
             }
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(newBehaviour, prefabPath(), out bool created);
@@ -366,7 +422,7 @@ namespace SwiftFramework.EditorUtils
         {
             ScriptableObject config = CreateInstance(type);
             config.name = type.Name;
-            string configsFolder = $"Assets/{Folders.Configs}";
+            string configsFolder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Configs}";
 
             EnsureProjectFolderExists(configsFolder);
 

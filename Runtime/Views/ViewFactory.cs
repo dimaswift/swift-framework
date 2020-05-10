@@ -64,7 +64,7 @@ namespace SwiftFramework.Core
             {
                 return pools[link.GetHashCode()].Take<T>();
             }
-            if (AddrCache.Loaded(link.GetPath()))
+            if (AssetCache.Loaded(link.GetPath()))
             {
                 Pool pool = Pool.Create(() => Create<T>(link.Value.GetRoot()));
                 pools.Add(link.GetHashCode(), pool);

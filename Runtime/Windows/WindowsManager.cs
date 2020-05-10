@@ -97,7 +97,7 @@ namespace SwiftFramework.Core.Windows
 
             Promise promise = Promise.Create();
 
-            foreach (Window winPrefab in AddrCache.GetPrefabs<Window>())
+            foreach (Window winPrefab in AssetCache.GetPrefabs<Window>())
             {
                 if (winPrefab.GetType().GetCustomAttribute<WarmUpInstanceAttribute>() != null)
                 {
@@ -903,7 +903,7 @@ namespace SwiftFramework.Core.Windows
 
                 if (singletonWindowInstances.ContainsKey(type) == false)
                 {
-                    AddrCache.LoadSignletonPrefab<T>().Then(prefab =>
+                    AssetCache.LoadSignletonPrefab<T>().Then(prefab =>
                     {
                         InstantiateWindow(prefab as Window);
                         GetWindow<T>().Channel(promise);

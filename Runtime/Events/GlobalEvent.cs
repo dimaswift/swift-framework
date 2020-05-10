@@ -5,6 +5,7 @@ using UnityEngine;
 namespace SwiftFramework.Core
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Events/GlobalEvent", fileName = "GlobalEvent")]
+    [PrewarmAsset]
     public class GlobalEvent : ScriptableObject
     {
         public EventArguments DefaultArguments => defaultArguments.Value;

@@ -23,11 +23,10 @@ namespace SwiftFramework.Core
 
     public abstract class AppBoot<A> : AppBoot, IBoot where A : App<A>, new()
     {
-        public BootConfig Config => bootConfig;
+        public BootConfig Config { get; private set; }
 
         public GlobalEvent AppInitialized => onAppInitialized.Value;
 
-        [SerializeField] private float bootDelay = 0.5f;
         [SerializeField] private GlobalEventLink onAppInitialized = Link.CreateNull<GlobalEventLink>();
         [SerializeField] private bool debugMode = false;
 
@@ -37,71 +36,48 @@ namespace SwiftFramework.Core
         public event Action OnResumed = () => { };
         public event Action OnInitialized = () => { };
 
-        private BootConfig bootConfig;
-
         private bool ignoreNextPauseEvent;
 
-        private IEnumerator Start()
+        private void Start()
         {
-            var bootConfigPath = "Configs/BootConfig";
-
-#if USE_ADDRESSABLES
-            var bootConfigLoad = AddressableAssets.Addressables.LoadAssetAsync<BootConfig>(bootConfigPath);
-            while (bootConfigLoad.IsDone == false)
+            AssetCache.LoadSingletonAsset<BootConfig>().Then(bootConfig => 
             {
-                yield return null;
-            }
-            bootConfig = bootConfigLoad.Result;
-#else
-            bootConfig = Resources.Load<BootConfig>(bootConfigPath);
-#endif
+                Config = bootConfig;
 
-            if (bootConfig == null)
-            {
-                Debug.Log($"Cannot load BootConfig. Make sure it is present in the project inside Assets/{bootConfigPath}");
-                yield break;
-            }
+                transform.SetParent(null);
 
-            yield return new WaitForSeconds(bootDelay);
+                DontDestroyOnLoad(gameObject);
 
-            if (IsSetUpValid() == false)
-            {
-                Debug.LogError("Setup is invalid.");
-                yield break;
-            }
+                OnAppWillBoot();
 
-            transform.SetParent(null);
-
-            DontDestroyOnLoad(gameObject);
-
-            OnAppWillBoot();
-
-            App.InitPromise.Progress(p =>
-            {
-                OnLoadingProgressChanged(p);
-            });
-
-            bootConfig.modulesManifest.Load().Then(manifest =>
-            {
-                App<A>.Create(this, GetLogger(), manifest, debugMode).Then(() =>
+                App.InitPromise.Progress(p =>
                 {
-                    OnInitialized();
-                    OnAppInitialized();
-                    if (onAppInitialized.HasValue)
+                    OnLoadingProgressChanged(p);
+                });
+
+                bootConfig.modulesManifest.Load().Then(manifest =>
+                {
+                    App<A>.Create(this, GetLogger(), manifest, debugMode).Then(() =>
                     {
-                        onAppInitialized.Value.Invoke();
-                    }
+                        OnInitialized();
+                        OnAppInitialized();
+                        if (onAppInitialized.HasValue)
+                        {
+                            onAppInitialized.Value.Invoke();
+                        }
+                    })
+                    .LogException();
                 })
                 .LogException();
             })
-            .LogException();
+            .Catch(e => Debug.LogException(e));
         }
 
         protected virtual bool IsSetUpValid()
         {
-            if (bootConfig.modulesManifest.HasValue == false)
+            if (Config.modulesManifest.HasValue == false)
             {
-                Debug.LogError($"ModuleManifest not found: {bootConfig.modulesManifest.ToString()}");
+                Debug.LogError($"ModuleManifest not found: {Config.modulesManifest.ToString()}");
                 return false;
             }
 
@@ -153,7 +129,7 @@ namespace SwiftFramework.Core
             }
             Resources.UnloadUnusedAssets();
             GC.Collect();
-            App<A>.Create(this, GetLogger(), bootConfig.modulesManifest.Value, debugMode).Then(() =>
+            App<A>.Create(this, GetLogger(), Config.modulesManifest.Value, debugMode).Then(() =>
             {
                 OnAppInitialized();
                 OnInitialized();

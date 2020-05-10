@@ -7,76 +7,55 @@ using UnityEngine;
 
 namespace SwiftFramework.EditorUtils
 {
-	/// <summary>
-	/// Compile Utility.
-	/// </summary>
 	internal class Compile : ScriptableSingleton<Compile>
 	{
-		static bool s_IsCompiling = false;
+		private static bool isCompiling = false;
 
-		/// <summary>
-		/// On finished compile callback(static method only).
-		/// This field is 'Serialized' in ScriptableSingleton.
-		/// Therefore, callbacks are retained even after compile.
-		/// </summary>
-		[SerializeField] List<string> m_OnFinishedCompile = new List<string>();
+		[SerializeField] List<string> onFinishedCompile = new List<string>();
 
-		/// <summary>
-		/// Called on next finished compile.
-		/// Supports only static method.
-		/// Note that this does not run in batch mode when doing a build with the -quit flag even if scripts are reloaded.
-		/// </summary>
-		public static event Action<bool> onFinishedCompile
+		public static event Action<bool> OnFinishedCompile
 		{
 			add
 			{
 				string path = string.Format("{0}.{1}", value.Method.DeclaringType.FullName, value.Method.Name);
-				if (instance.m_OnFinishedCompile.Contains(path))
+				if (instance.onFinishedCompile.Contains(path))
 					Debug.LogError(path + " already be registered.");
 				else if (!value.Method.IsStatic)
 					Debug.LogError(path + " is not static method.");
 				else if (value.Method.Name.StartsWith("<"))
 					Debug.LogError(path + " is anonymous method.");
 				else
-					instance.m_OnFinishedCompile.Add(path);
+					instance.onFinishedCompile.Add(path);
 			}
 			remove
 			{
-				instance.m_OnFinishedCompile.Remove(string.Format("{0}.{1}", value.Method.DeclaringType.FullName, value.Method.Name));
+				instance.onFinishedCompile.Remove(string.Format("{0}.{1}", value.Method.DeclaringType.FullName, value.Method.Name));
 			}
 		}
 
-		/// <summary>
-		/// On finished compile successfully.
-		/// </summary>
 		[InitializeOnLoadMethod]
 		static void OnFinishedCompileSuccessfully()
 		{
-			// Compiling is finished successfully.
-			// Call OnFinishedCompile callback next frame.
 			EditorApplication.delayCall += () =>
 			{
-				instance.OnFinishedCompile(true);
+				instance.HandleFinishedCompile(true);
 
-				// Observe compile error until next compile.
 				EditorApplication.update += () =>
 				{
-					if (s_IsCompiling == EditorApplication.isCompiling)
+					if (isCompiling == EditorApplication.isCompiling)
 						return;
 
-					s_IsCompiling = EditorApplication.isCompiling;
+					isCompiling = EditorApplication.isCompiling;
 
-					// Compile has stopped with errors.
-					if (!s_IsCompiling)
-						instance.OnFinishedCompile(false);
+					if (!isCompiling)
+						instance.HandleFinishedCompile(false);
 				};
 			};
 		}
 
-		void OnFinishedCompile(bool successfully)
+		private void HandleFinishedCompile(bool successfully)
 		{
-			// Invoke all callbacks.
-			foreach (var methodPath in m_OnFinishedCompile.ToArray())
+			foreach (var methodPath in onFinishedCompile.ToArray())
 			{
 				try
 				{
@@ -89,7 +68,7 @@ namespace SwiftFramework.EditorUtils
 				{
 					Debug.LogError(methodPath + " cannnot call. " + e.Message);
 				}
-				m_OnFinishedCompile.Remove(methodPath);
+				onFinishedCompile.Remove(methodPath);
 			}
 		}
 	}

@@ -7,9 +7,11 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditorInternal;
 using UnityEngine;
 
@@ -26,11 +28,9 @@ namespace SwiftFramework.Core.Editor
 
         private static List<Type> prewarmedInterfaces = new List<Type>();
 
-        public static readonly string[] rootFolders =
-        {
-            "Assets/Configs",
-            "Assets/Addressables"
-        };
+        internal const string ROOT_FOLDER = "Assets/Addressables";
+
+        public static readonly string[] rootFolders = { ROOT_FOLDER };
 
         public static AddressableAssetSettings Settings
         {
@@ -108,24 +108,25 @@ namespace SwiftFramework.Core.Editor
 
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {
-            //foreach (var path in movedAssets)
-            //{
-            //    string guid = AssetDatabase.AssetPathToGUID(path);
-            //    var entry = Settings.FindAssetEntry(guid);
-            //    if (entry != null)
-            //    {
-            //        var oldAddress = entry.address;
-            //        Settings.RemoveAssetEntry(guid);
-            //        entry = Settings.CreateOrMoveEntry(guid, Settings.DefaultGroup);
-            //        entry.SetAddress(NormalizeAddress(path));
-            //        Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
-            //        Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, null, true);
-            //        Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, null, true);
-            //    }
-            //}
-            //AddressableAssetSettings.OnModificationGlobal -= AddressableAssetSettings_OnModificationGlobal;
-            //AddressableAssetSettings.OnModificationGlobal += AddressableAssetSettings_OnModificationGlobal;
-            //Reload();
+
+            foreach (var path in movedAssets)
+            {
+                string guid = AssetDatabase.AssetPathToGUID(path);
+                var entry = Settings.FindAssetEntry(guid);
+                if (entry != null)
+                {
+                    var oldAddress = entry.address;
+                    Settings.RemoveAssetEntry(guid);
+                    entry = Settings.CreateOrMoveEntry(guid, Settings.DefaultGroup);
+                    entry.SetAddress(NormalizeAddress(path));
+                    Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
+                    Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, null, true);
+                    Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, null, true);
+                }
+            }
+            AddressableAssetSettings.OnModificationGlobal -= AddressableAssetSettings_OnModificationGlobal;
+            AddressableAssetSettings.OnModificationGlobal += AddressableAssetSettings_OnModificationGlobal;
+            Reload();
         }
 
         private static void AddressableAssetSettings_OnModificationGlobal(AddressableAssetSettings arg1, AddressableAssetSettings.ModificationEvent arg2, object arg3)
@@ -151,7 +152,7 @@ namespace SwiftFramework.Core.Editor
 
         public static string NormalizeAddress(string address)
         {
-            return address.Substring(7, address.Length - 7).RemoveExtention();
+            return address.Substring(ROOT_FOLDER.Length + 1, address.Length - (ROOT_FOLDER.Length + 1)).RemoveExtention();
         }
 
         private static bool IsInsideRootFolder(string path)
@@ -167,9 +168,22 @@ namespace SwiftFramework.Core.Editor
         }
 
         [UnityEditor.Callbacks.DidReloadScripts]
-        [MenuItem("SwiftFramework/Addressables/Reload")]
+        private static void OnScriptsReloaded()
+        {
+            Reload();
+        }
+
+        [MenuItem("SwiftFramework/Links/Reload")]
+        private static void ManualReload()
+        {
+            Util.PromptMoveAssetsFromFolder("Resources", "Addressables");
+          
+            Reload(); 
+        }
+
         public static void Reload()
         {
+
             if (reloading)
             {
                 return;
@@ -192,7 +206,13 @@ namespace SwiftFramework.Core.Editor
             }
 
             assets.Clear();
-            Settings.groups.RemoveAll(g => !g);
+            for (int i = 0; i < Settings.groups.Count; i++)
+            {
+                if (!Settings.groups[i] || Settings.groups[i].entries.Count == 0)
+                {
+                    Settings.RemoveGroup(Settings.groups[i]);
+                }
+            }
             Settings.GetAllAssets(assets, false);
             OnReload();
             reloading = false;
@@ -213,7 +233,7 @@ namespace SwiftFramework.Core.Editor
                 return GetOrCreateGroup(AddrGroups.Boot);
             }
 
-            if (TryGetAttribute(asset, out Type type, out AddrGroupAttribute groupAttr))
+            if (asset.TryGetAttribute(out Type type, out AddrGroupAttribute groupAttr))
             {
                 return GetOrCreateGroup(groupAttr.groupName);
             }
@@ -254,6 +274,10 @@ namespace SwiftFramework.Core.Editor
             {
                 group = Util.CreateScriptable<AddressableAssetGroup>(name, "Assets/AddressableAssetsData/AssetGroups");
                 group.Name = name;
+                group.AddSchema<ContentUpdateGroupSchema>();
+                group.AddSchema<BundledAssetGroupSchema>();
+                group.GetSchema<ContentUpdateGroupSchema>().StaticContent = false;
+          
                 EditorUtility.SetDirty(group);
             }
             return group;
@@ -281,7 +305,7 @@ namespace SwiftFramework.Core.Editor
                 return entry;
             }
 
-            if (TryGetAttribute(asset, out Type labeledType, out AddrLabelAttribute labelAttr))
+            if (asset.TryGetAttribute(out Type labeledType, out AddrLabelAttribute labelAttr))
             {
                 foreach (var label in labelAttr.labels)
                 {
@@ -293,7 +317,7 @@ namespace SwiftFramework.Core.Editor
                 }
             }
 
-            if (TryGetAttribute(asset, out Type prewarmedType, out PrewarmAssetAttribute prewarm))
+            if (asset.TryGetAttribute(out Type prewarmedType, out PrewarmAssetAttribute prewarm))
             {
                 Settings.AddLabel(AddrLabels.Prewarm, true);
                 entry.labels.Add(AddrLabels.Prewarm);
@@ -309,12 +333,15 @@ namespace SwiftFramework.Core.Editor
                 }
             }
 
-            if (TryGetAttribute(asset, out Type singletonType, out AddrSingletonAttribute singleton))
+            if (asset.TryGetAttribute(out Type singletonType, out AddrSingletonAttribute singleton))
             {
-                entry.SetAddress(singletonType.ToAddress());
+                if(AssetCache.TryGetSingletonAddress(singletonType, out string addr))
+                {
+                    entry.SetAddress(addr);
+                }
             }
 
-            if (TryGetAttribute(asset, out Type t, out WarmUpInstanceAttribute warmUpAttr))
+            if (asset.TryGetAttribute(out Type t, out WarmUpInstanceAttribute warmUpAttr))
             {
                 Settings.AddLabel(AddrLabels.Prewarm, true);
                 entry.labels.Add(AddrLabels.Prewarm);
@@ -339,44 +366,7 @@ namespace SwiftFramework.Core.Editor
             return null;
         }
 
-        private static bool TryGetAttribute<T>(UnityEngine.Object asset, out Type type, out T attr) where T : Attribute
-        {
-            if (asset == null)
-            {
-                attr = null;
-                type = null;
-                return false;
-            }
-
-            attr = asset.GetType().GetCustomAttribute<T>();
-
-            type = asset.GetType();
-
-            if (attr != null)
-            {
-                return true;
-            }
-
-            if (asset is GameObject)
-            {
-                GameObject go = asset as GameObject;
-                foreach (var c in go.GetComponents<Component>())
-                {
-                    if (c == null)
-                    {
-                        continue;
-                    }
-                    type = c.GetType();
-                    attr = type.GetCustomAttribute<T>();
-                    if (attr != null)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
+    
 
         [MenuItem("SwiftFramework/Links/Generate Drawers")]
         private static void GenerateDrawers()
@@ -396,8 +386,7 @@ namespace SwiftFramework.Core.Editor
                     || type == typeof(Link)
                     || type.BaseType == null
                     || type.BaseType.GetGenericArguments().Length == 0
-                    || typeof(Link).IsAssignableFrom(type) == false
-                    || type.GetCustomAttribute<UserCustomDrawerAttribute>() != null)
+                    || typeof(Link).IsAssignableFrom(type) == false)
                 {
                     continue;
                 }

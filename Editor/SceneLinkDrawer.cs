@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -26,13 +27,32 @@ namespace SwiftFramework.Core.Editor
         {
         }
 
+        protected override void OnAssetChanged(string previousAssetPath, string newAssetPath)
+        {
+            List<EditorBuildSettingsScene> editorBuildSettingsScenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            editorBuildSettingsScenes.RemoveAll(s => s.path == previousAssetPath);
+
+            if (editorBuildSettingsScenes.FindIndex(s => s.path == newAssetPath) == -1)
+            {
+                editorBuildSettingsScenes.Add(new EditorBuildSettingsScene(newAssetPath, true));
+                EditorBuildSettings.scenes = editorBuildSettingsScenes.ToArray();
+            }
+        }
+
+        protected override void OnNullSelected(string previousAssetPath)
+        {
+            List<EditorBuildSettingsScene> editorBuildSettingsScenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            editorBuildSettingsScenes.RemoveAll(s => s.path == previousAssetPath);
+            EditorBuildSettings.scenes = editorBuildSettingsScenes.ToArray();
+        }
+
         protected override void Reload()
         {
             assets.Clear();
 #if USE_ADDRESSABLES
             assets.AddRange(AddrHelper.GetScenes());
 #else
-            assets.AddRange(AssetHelper.GetScenes());
+            assets.AddRange(ResourcesAssetHelper.GetScenes());
 #endif
 
         }

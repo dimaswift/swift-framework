@@ -25,14 +25,14 @@ namespace SwiftFramework.Core
     }
 
     [Serializable]
-    [LinkFolder(Folders.Addressables + "/Sounds")]
+    [LinkFolder(Folders.Sounds)]
     public class AudioClipLink : LinkTo<AudioClip>
     {
 
     }
 
     [Serializable()]
-    [LinkFolder(Folders.Addressables + "/Sprites")]
+    [LinkFolder(Folders.Sprites)]
     public class SpriteLink : LinkTo<Sprite>
     {
 
@@ -80,7 +80,7 @@ namespace SwiftFramework.Core
     }
 
     [Serializable()]
-    [LinkFolder(Folders.Addressables + "/" + Folders.Views)]
+    [LinkFolder(Folders.Views)]
     public class ViewLink : LinkToPrefab<IView>
     {
 
@@ -91,9 +91,9 @@ namespace SwiftFramework.Core
     public class SceneLink : Link
     {
 #if USE_ADDRESSABLES
-        private SceneInstance sceneInstance;
+        [NonSerialized] private SceneInstance sceneInstance = default;
 #else
-        private Scene scene;
+        [NonSerialized] private Scene scene = default;
 #endif
         public override string ToString()
         {
@@ -126,7 +126,7 @@ namespace SwiftFramework.Core
             .Catch(e => promise.Resolve(false));
 #else
 
-            SceneManager.LoadSceneAsync(Path, mode).GetPromise().Then(() => promise.Resolve(true)).Catch(e => promise.Resolve(false));
+            SceneManager.LoadSceneAsync("Resources/" + Path, mode).GetPromise().Then(() => promise.Resolve(true)).Catch(e => promise.Resolve(false));
 
 #endif
             return promise;

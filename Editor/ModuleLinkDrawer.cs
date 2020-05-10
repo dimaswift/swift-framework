@@ -396,7 +396,7 @@ namespace SwiftFramework.Core.Editor
                 {
                     Util.CreateModuleConfig(data.configurable.configType, configProperty);
 #if USE_ADDRESSABLES
-                    AddrHelper.Reload();
+                    AddrHelper.Reload();   
 #endif
                 }
             }

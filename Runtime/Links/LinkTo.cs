@@ -14,7 +14,6 @@ namespace SwiftFramework.Core
     [Serializable]
     public class LinkTo<T> : Link where T : UnityEngine.Object
     {
-
         public bool Loaded => loaded;
 
         public override bool HasValue => string.IsNullOrEmpty(Path) == false && Path != NULL;
@@ -52,7 +51,7 @@ namespace SwiftFramework.Core
                 }
 
 #if USE_ADDRESSABLES
-                cachedAsset = AddrCache.GetAsset<T>(Path);
+                cachedAsset = AssetCache.GetAsset<T>(Path);
 #else
                 cachedAsset = Resources.Load<T>(Path);
 #endif
@@ -107,7 +106,7 @@ namespace SwiftFramework.Core
 
 #if USE_ADDRESSABLES
 
-            if (loaded || AddrCache.Loaded(Path))
+            if (loaded || AssetCache.Loaded(Path))
             {
                 loadPromise.Resolve(Value);
                 return loadPromise;

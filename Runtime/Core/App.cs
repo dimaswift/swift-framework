@@ -242,7 +242,7 @@ namespace SwiftFramework.Core
             initialializingStarted = true;
             SetState(AppState.Loading);
 
-            AddrCache.PreloadAll(AddrLabels.Prewarm).Done(assets =>
+            AssetCache.PreloadAll(AddrLabels.Prewarm).Done(assets =>
             {
                 SetState(AppState.AssetsPreloaded);
 
@@ -567,7 +567,7 @@ namespace SwiftFramework.Core
         protected override void Destroy()
         {
             awaitingActions.Clear();
-            AddrCache.Dispose();
+            AssetCache.Dispose();
             Pooling.Pool.DisposeAllPools();
             main = null;
             Core = null;

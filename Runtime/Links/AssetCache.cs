@@ -11,12 +11,12 @@ using SwiftFramework.Core;
 using UnityEngine;
 using System.Collections;
 using System.Linq;
+using System.IO;
 
 namespace SwiftFramework.Core
 {
-    public static class AddrCache
+    public static class AssetCache
     {
-
         private static readonly Dictionary<string, UnityEngine.Object> preloadedAssets = new Dictionary<string, UnityEngine.Object>();
 
 #if USE_ADDRESSABLES
@@ -45,14 +45,19 @@ namespace SwiftFramework.Core
             {
                 return null;
             }
-            Debug.LogError($"Cannot get preloaded asset of type '{typeof(T).Name}' at address '{address}'. Before accessing synchronous link property 'Value', you need to call async method AddrCache.Preload(addressable label) or mark asset type with [PrewardAsset]");
+            Debug.LogError($"Cannot get preloaded asset of type '{typeof(T).Name}' at address '{address}'. Before accessing synchronous link property 'Value', you need to call async method AssetCache.Preload(addressable label) or mark asset type with [PrewardAsset]");
             return null;
         }
 
 
         public static T GetSingletonAsset<T>() where T : UnityEngine.Object
         {
-            return GetAsset<T>(typeof(T).ToAddress());
+            if (TryGetSingletonAddress(typeof(T), out string addr))
+            {
+                Debug.LogError($"Cannot load asset of type {typeof(T).Name} as a singleton. [AddrSingleton] attribute is missing!");
+                return null;
+            }
+            return GetAsset<T>(addr);
         }
 
         public static T GetPrefab<T>()
@@ -74,17 +79,41 @@ namespace SwiftFramework.Core
 
         public static IPromise<T> LoadSignletonPrefab<T>()
         {
-            return LoadPrefab<T>(typeof(T).ToAddress());
+            if (TryGetSingletonAddress(typeof(T), out string address) == false)
+            {
+                return Promise<T>.Rejected(new InvalidOperationException($"Cannot load prefab of type {typeof(T).Name} as a singleton. [AddrSingleton] attribute is missing!"));
+            }
+            return LoadPrefab<T>(address);
+        }
+
+        public static bool TryGetSingletonAddress(Type type, out string address)
+        {
+            address = null;
+            AddrSingletonAttribute attr = type.GetCustomAttribute<AddrSingletonAttribute>();
+            if (attr == null)
+            {
+                return false;
+            }
+            address = string.IsNullOrEmpty(attr.folder) ? type.Name : $"{attr.folder}/{type.Name}";
+            return true;
         }
 
         public static bool IsPrewarmed<T>()
         {
-            return preloadedAssets.ContainsKey(typeof(T).ToAddress());
+            if (TryGetSingletonAddress(typeof(T), out string address) == false)
+            {
+                Debug.LogError($"Asset of type {typeof(T).Name} is not a singleton. [AddrSingleton] attribute is missing!");
+                return false;
+            }
+            return preloadedAssets.ContainsKey(address);
         }
 
         public static IPromise<T> LoadSingletonAsset<T>() where T : UnityEngine.Object
         {
-            string address = typeof(T).ToAddress();
+            if (TryGetSingletonAddress(typeof(T), out string address) == false)
+            {
+                return Promise<T>.Rejected(new InvalidOperationException($"Cannot load asset of type {typeof(T).Name} as a singleton. [AddrSingleton] attribute is missing!"));
+            }
 
             if (preloadedAssets.TryGetValue(address, out UnityEngine.Object asset))
             {
@@ -96,13 +125,17 @@ namespace SwiftFramework.Core
 #else
             Promise<T> promise = Promise<T>.Create();
 
-            foreach (T obj in Resources.LoadAll<T>(""))
+            Resources.LoadAsync<T>(address).GetPromise<T>().Then(a =>
             {
-                if (obj is T)
+                if (a == null)
                 {
-                    promise.Resolve(obj as T);
+                    promise.Reject(new KeyNotFoundException($"Cannot load asset of type {typeof(T).Name} inside 'Resources/{address}'"));
+                    return;
                 }
-            }
+                preloadedAssets.Add(address, a);
+                promise.Resolve(a);
+            })
+           .Catch(e => promise.Reject(e));
 
             return promise;
 #endif
@@ -119,7 +152,7 @@ namespace SwiftFramework.Core
                 {
                     if (asset != null)
                     {
-                        UnityEngine.GameObject go = asset as UnityEngine.GameObject;
+                        GameObject go = asset as GameObject;
 
                         if (go != null && go.GetComponent<T>() != null)
                         {
@@ -155,6 +188,11 @@ namespace SwiftFramework.Core
 #else
             Resources.LoadAsync<GameObject>(address).GetPromise<GameObject>().Then(g =>
             {
+                if (g == null)
+                {
+                    promise.Reject(new KeyNotFoundException($"Cannot load GameObject inside 'Resources/{address}'"));
+                    return;
+                }
                 if (TryGetPreloaded())
                 {
                     return;

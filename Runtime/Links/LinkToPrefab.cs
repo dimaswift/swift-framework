@@ -37,7 +37,7 @@ namespace SwiftFramework.Core
                 }
 
 #if USE_ADDRESSABLES
-                cachedGameObject = AddrCache.GetAsset<GameObject>(Path);
+                cachedGameObject = AssetCache.GetAsset<GameObject>(Path);
 #else
                 cachedGameObject = Resources.Load<GameObject>(Path);
 #endif
@@ -97,7 +97,7 @@ namespace SwiftFramework.Core
             }
 
 #if USE_ADDRESSABLES
-            if (Loaded || AddrCache.Loaded(Path))
+            if (Loaded || AssetCache.Loaded(Path))
             {
                 loadPromise.Resolve(Value);
                 return loadPromise;

@@ -44,7 +44,7 @@ namespace SwiftFramework.Core
                 }
 
 #if USE_ADDRESSABLES
-                cachedAsset = AddrCache.GetAsset<ScriptableObject>(Path) as T;
+                cachedAsset = AssetCache.GetAsset<ScriptableObject>(Path) as T;
 #else
                 cachedAsset = Resources.Load<ScriptableObject>(Path) as T;
 #endif
@@ -103,7 +103,7 @@ namespace SwiftFramework.Core
             }
 
 #if USE_ADDRESSABLES
-            if (loaded || AddrCache.Loaded(Path))
+            if (loaded || AssetCache.Loaded(Path))
             {
                 loadPromise.Resolve(Value);
                 return loadPromise;

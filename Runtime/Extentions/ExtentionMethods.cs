@@ -14,6 +14,45 @@ namespace SwiftFramework.Core
 
     public static class ExtentionMethods
     {
+        public static bool TryGetAttribute<T>(this UnityEngine.Object asset, out Type type, out T attr) where T : Attribute
+        {
+            if (asset == null)
+            {
+                attr = null;
+                type = null;
+                return false;
+            }
+
+            attr = asset.GetType().GetCustomAttribute<T>();
+
+            type = asset.GetType();
+
+            if (attr != null)
+            {
+                return true;
+            }
+
+            if (asset is GameObject)
+            {
+                GameObject go = asset as GameObject;
+                foreach (var c in go.GetComponents<Component>())
+                {
+                    if (c == null)
+                    {
+                        continue;
+                    }
+                    type = c.GetType();
+                    attr = type.GetCustomAttribute<T>();
+                    if (attr != null)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public static IPromise<T> GetPromise<T>(this ResourceRequest resourceRequest) where T : UnityEngine.Object
         {
             Promise<T> promise = Promise<T>.Create();
@@ -342,11 +381,6 @@ namespace SwiftFramework.Core
             promise.Done(() => Debug.Log("Success" + "\n\n\n" + origin));
             promise.Catch(e => Debug.LogException(e));
             return promise;
-        }
-
-        public static string ToAddress(this Type type)
-        {
-            return type.FullName.Replace('.', '-');
         }
 
         public static string ToJson(this object obj)

@@ -1,8 +1,5 @@
-﻿using SwiftFramework.Core;
-using System.IO;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
-
 
 namespace SwiftFramework.EditorUtils
 {
@@ -13,19 +10,15 @@ namespace SwiftFramework.EditorUtils
 
 		public Texture icon{get{ return EditorGUIUtility.FindTexture("BuildSettings.Android.Small");}}
 
-		/// <summary>Keystore file path.</summary>
 		[Tooltip("Keystore file path.")]
 		public string keystoreFile = "";
 
-		/// <summary>Keystore password.</summary>
 		[Tooltip("Keystore password.")]
 		public string keystorePassword = "";
 
-		/// <summary>Keystore alias name.</summary>
 		[Tooltip("Keystore alias name.")]
 		public string keystoreAliasName = "";
 
-		/// <summary>Keystore alias password.</summary>
 		[Tooltip("Keystore alias password.")]
 		public string keystoreAliasPassword = "";
 
@@ -47,9 +40,6 @@ namespace SwiftFramework.EditorUtils
 			PlayerSettings.Android.keyaliasPass = keystoreAliasPassword;
         }
 
-		/// <summary>
-		/// Draws the ios settings.
-		/// </summary>
 		public void DrawSetting(SerializedObject serializedObject)
 		{
 			var settings = serializedObject.FindProperty("androidSettings");

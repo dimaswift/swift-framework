@@ -11,27 +11,6 @@ using System.IO;
 
 namespace SwiftFramework.Core.Editor
 {
-    internal class LegacyAssetEntry
-    {
-        public string AssetPath;
-        public string address;
-        public Object asset;
-
-        private const string ROOT_FOLDER = "Assets/Resources/";
-
-        public static LegacyAssetEntry Create(Object asset)
-        {
-            var path = AssetDatabase.GetAssetPath(asset);
-            var ext = Path.GetExtension(path);
-
-            return new LegacyAssetEntry()
-            {
-                address = path.Substring(ROOT_FOLDER.Length, path.Length - ROOT_FOLDER.Length - ext.Length),
-                asset = asset,
-                AssetPath = path
-            };
-        }
-    }
 
     internal class BaseLinkDrawer
     {
@@ -112,7 +91,7 @@ namespace SwiftFramework.Core.Editor
 #else
 
 
-        protected List<LegacyAssetEntry> assets = new List<LegacyAssetEntry>();
+        protected List<ResourcesAssetEntry> assets = new List<ResourcesAssetEntry>();
 #endif
 
 
@@ -123,7 +102,7 @@ namespace SwiftFramework.Core.Editor
 
         }
 
-        protected virtual bool CanCreate => false;
+        protected virtual bool CanCreate => true;
 
         protected virtual IPromise<string> OnCreate()
         {
@@ -143,7 +122,7 @@ namespace SwiftFramework.Core.Editor
         public static string CreateAsset(System.Type type, System.Type linkType)
         {
             LinkFolderAttribute folderAttr = linkType.GetCustomAttribute<LinkFolderAttribute>();
-            string defaultFolder = folderAttr != null ? "Assets/" + folderAttr.folder : "Assets";
+            string defaultFolder = folderAttr != null ? ResourcesAssetHelper.RootFolder + "/" + folderAttr.folder : ResourcesAssetHelper.RootFolder;
 
             string ext = GetExtention(type);
 
@@ -164,6 +143,7 @@ namespace SwiftFramework.Core.Editor
                 GameObject go = new GameObject(type.Name);
                 go.AddComponent(type);
                 PrefabUtility.SaveAsPrefabAsset(go, path);
+                Object.DestroyImmediate(go);
             }
             else
             {
@@ -179,9 +159,8 @@ namespace SwiftFramework.Core.Editor
             var entry = AddrHelper.CreateOrModifyEntry(AssetDatabase.AssetPathToGUID(path));
             address = entry.address;
 #else
-            address = Path.GetDirectoryName(path);
+            address = ResourcesAssetEntry.GetAddress(path);
 #endif
-
             AssetDatabase.Refresh();
 
             return address;
@@ -230,7 +209,7 @@ namespace SwiftFramework.Core.Editor
 
             if (typeof(BehaviourModule).IsAssignableFrom(assetType))
             {
-                rootFolder = $"{Folders.Addressables}/{Folders.Modules}";
+                rootFolder = $"{Folders.Modules}";
             }
 
             AddrSingletonAttribute singletonAttr = assetType.GetCustomAttribute<AddrSingletonAttribute>();
@@ -260,8 +239,6 @@ namespace SwiftFramework.Core.Editor
         {
 #if USE_ADDRESSABLES
             assets.Sort(sorter); 
-#else
-
 #endif
 
             assets.Insert(0, null);
@@ -295,8 +272,8 @@ namespace SwiftFramework.Core.Editor
                 AddrHelper.OnReload -= DoReload;
                 AddrHelper.OnReload += DoReload;
 #else
-                AssetHelper.OnReload -= DoReload;
-                AssetHelper.OnReload += DoReload;
+                ResourcesAssetHelper.OnReload -= DoReload;
+                ResourcesAssetHelper.OnReload += DoReload;
 #endif
 
                 DoReload();
@@ -381,15 +358,22 @@ namespace SwiftFramework.Core.Editor
             {
                 if (assets[newSelectedIndex] != null)
                 {
+                    string prevPath = assets.Find(a => a != null && a.address == property.FindPropertyRelative(Link.PathPropertyName).stringValue)?.AssetPath;
                     property.FindPropertyRelative(Link.PathPropertyName).stringValue = assets[newSelectedIndex].address;
+                    OnAssetChanged(prevPath, assets[newSelectedIndex].AssetPath);
                 }
                 else
                 {
+                    OnNullSelected(assets.Find(a => a != null && a.address == property.FindPropertyRelative(Link.PathPropertyName).stringValue)?.AssetPath);
                     property.FindPropertyRelative(Link.PathPropertyName).stringValue = Link.NULL;
                 }
                 property.serializedObject.ApplyModifiedProperties();
             }
         }
+
+        protected virtual void OnNullSelected(string previousAssetPath) { }
+
+        protected  virtual void OnAssetChanged(string previousAssetPath, string newAssetPath) { }
 
     }
 

@@ -40,7 +40,13 @@ namespace SwiftFramework.Editor
 
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, "");
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, defineSymbols);
-        }
+
+			PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, "");
+			PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Standalone, defineSymbols);
+
+			PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WebGL, "");
+			PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WebGL, defineSymbols);
+		}
 
 		public void Revert()
 		{
@@ -117,7 +123,7 @@ namespace SwiftFramework.Editor
 			styleDescription.padding = new RectOffset(3, 3, 5, 1);
 			styleDescription.fontSize = 10;
 
-			styleHeader = new GUIStyle("VCS_StickyNote");
+			styleHeader = new GUIStyle("IN BigTitle");
 			styleHeader.richText = true;
 			styleHeader.fontSize = 12;
 			styleHeader.fontStyle = FontStyle.Bold;

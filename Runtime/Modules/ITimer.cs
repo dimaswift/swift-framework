@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace SwiftFramework.Core
 {
+    [BuiltInModule]
     [ModuleGroup(ModuleGroups.Core)]
     public interface ITimer : IModule
     {

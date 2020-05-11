@@ -65,8 +65,9 @@ namespace SwiftFramework.Core.Editor
             }
             return x.CompareTo(y);
         }
-
+#if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Links/Select Previous Link %q", priority = -100)]
+#endif
         private static void SelectPreviousLink()
         {
             if (linkSelectionHistory.Count == 0)

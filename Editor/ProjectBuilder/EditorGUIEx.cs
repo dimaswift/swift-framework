@@ -17,6 +17,32 @@ namespace SwiftFramework.EditorUtils
             FilePathField(property, new GUIContent(property.displayName), title, directory, extension, options);
         }
 
+        private static GUIStyle boldCenteredLabel;
+
+        public static GUIStyle BoldCenteredLabel
+        {
+            get
+            {
+                if (boldCenteredLabel == null)
+                {
+                    boldCenteredLabel = new GUIStyle("RL Header");
+                    boldCenteredLabel.alignment = TextAnchor.MiddleCenter;
+                    boldCenteredLabel.richText = true;
+                    boldCenteredLabel.fontSize = 15;
+                    boldCenteredLabel.fontStyle = FontStyle.Bold;
+                    boldCenteredLabel.stretchWidth = true;
+
+                    boldCenteredLabel.stretchWidth = true;
+                    boldCenteredLabel.stretchHeight = false;
+                    boldCenteredLabel.normal.textColor = EditorStyles.label.normal.textColor;
+
+                    boldCenteredLabel.clipping = TextClipping.Overflow;
+                }
+                return boldCenteredLabel;
+            }
+        }
+
+
         public static void DrawWarning(Rect rect, string message)
         {
             if (warningStyle == null)

@@ -11,18 +11,7 @@ namespace SwiftFramework.Editor
     {
         public List<Symbol> list = new List<Symbol>()
         {
-            new Symbol() { name = "ENABLE_ADMOB", enabled = false, description = "Admob Ads" },
-            new Symbol() { name = "ENABLE_PLAYFAB", enabled = false, description = "Playfab" },
-            new Symbol() { name = "ENABLE_NOTIFICATIONS", enabled = false, description = "Mobile Notifications" },
-            new Symbol() { name = "ENABLE_FACEBOOK", enabled = false, description = "Facebook" },
-            new Symbol() { name = "ENABLE_IAP", enabled = false, description = "Unity Purchasing" },
-            new Symbol() { name = "ENABLE_APPSFLYER", enabled = false, description = "AppFlyer" },
-            new Symbol() { name = "ENABLE_FIREBASE", enabled = false, description = "Firebase" },
-            new Symbol() { name = "ENABLE_PLAYFABADMIN_API", enabled = false, description = "Playfab Admin API" },
-            new Symbol() { name = "ENABLE_ECS", enabled = false, description = "ECS" },
-            new Symbol() { name = "ENABLE_ADJUST", enabled = false, description = "Adjust SDK" },
-            new Symbol() { name = "ENABLE_APPLOVIN_MAX", enabled = false, description = "Applovin Max ads" },
-			new Symbol() { name = "ENABLE_APPMETRICA", enabled = false, description = "Yandex AppMetrica analytics" }
+            
 		};
 
 		public void Apply()
@@ -46,6 +35,38 @@ namespace SwiftFramework.Editor
 
 			PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WebGL, "");
 			PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WebGL, defineSymbols);
+		}
+
+		public static void Add(string name, string description)
+		{
+			foreach (var symbol in Instance.list)
+			{
+				if(symbol.name == name)
+				{
+					symbol.enabled = true;
+					EditorUtility.SetDirty(Instance);
+					Instance.Apply();
+					return;
+				}
+			}
+
+			Instance.list.Add(new Symbol() { enabled = true, name = name, description = description, style = SymbolStyle.Symbol });
+			EditorUtility.SetDirty(Instance);
+			Instance.Apply();
+		}
+
+		public static void Disable(string name)
+		{
+			foreach (var symbol in Instance.list)
+			{
+				if (symbol.name == name)
+				{
+					symbol.enabled = false;
+					EditorUtility.SetDirty(Instance);
+					Instance.Apply();
+					return;
+				}
+			}
 		}
 
 		public void Revert()
@@ -149,8 +170,9 @@ namespace SwiftFramework.Editor
 
 			minSize = new Vector2(300, 300);
 		}
-
+#if SWIFT_FRAMEWORK_INSTALLED
 		[MenuItem("SwiftFramework/Define Symbols")]
+#endif
         private static void OnOpenFromMenu()
 		{
 			EditorWindow.GetWindow<SymbolCatalogEditor>("Symbol Catalog");

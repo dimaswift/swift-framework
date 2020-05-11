@@ -172,8 +172,9 @@ namespace SwiftFramework.Core.Editor
         {
             Reload();
         }
-
+#if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Links/Reload")]
+#endif
         private static void ManualReload()
         {
             Util.PromptMoveAssetsFromFolder("Resources", "Addressables");
@@ -183,6 +184,11 @@ namespace SwiftFramework.Core.Editor
 
         public static void Reload()
         {
+            if (Directory.Exists(ROOT_FOLDER) == false)
+            {
+                Directory.CreateDirectory(ROOT_FOLDER);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            }
 
             if (reloading)
             {
@@ -274,11 +280,8 @@ namespace SwiftFramework.Core.Editor
             {
                 group = Util.CreateScriptable<AddressableAssetGroup>(name, "Assets/AddressableAssetsData/AssetGroups");
                 group.Name = name;
-                group.AddSchema<ContentUpdateGroupSchema>();
-                group.AddSchema<BundledAssetGroupSchema>();
-                group.GetSchema<ContentUpdateGroupSchema>().StaticContent = false;
-          
                 EditorUtility.SetDirty(group);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             }
             return group;
         }
@@ -366,9 +369,10 @@ namespace SwiftFramework.Core.Editor
             return null;
         }
 
-    
 
+#if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Links/Generate Drawers")]
+#endif
         private static void GenerateDrawers()
         {
             Dictionary<string, CodeCompileUnit> classes = new Dictionary<string, CodeCompileUnit>();
@@ -453,7 +457,7 @@ namespace SwiftFramework.Core.Editor
                 }
 
                 string filePath = $"{dir}/LinkDrawers{file.Directory.Name}.cs";
-                Util.SaveClassToDisc(c.Value, filePath, false);
+                ScriptBuilder.SaveClassToDisc(c.Value, filePath, false);
 
             }
 

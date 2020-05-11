@@ -18,6 +18,8 @@ namespace SwiftFramework.EditorUtils
         {
             var win = GetWindow<TypeSelectorWindow>(true, title, true);
 
+            win.MoveToCenter();
+
             win.types = types;
 
             win.promise = Promise<Type>.Create();

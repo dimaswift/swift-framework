@@ -4,6 +4,7 @@ using UnityEngine;
 namespace SwiftFramework.Core
 {
     [ModuleGroup(ModuleGroups.Core)]
+    [BuiltInModule]
     public interface ISaveStorage : IModule
     {
         event Action OnBeforeSave;

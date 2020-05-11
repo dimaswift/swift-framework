@@ -13,4 +13,13 @@ namespace SwiftFramework.Core
             GroupId = groupId;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Interface)]
+    public class BuiltInModuleAttribute : Attribute
+    {
+        public BuiltInModuleAttribute()
+        {
+
+        }
+    }
 }

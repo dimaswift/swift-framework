@@ -2,6 +2,7 @@
 
 namespace SwiftFramework.Core
 {
+    [BuiltInModule]
     [ModuleGroup(ModuleGroups.Core)]
     public interface IViewFactory : IModule
     {

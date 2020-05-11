@@ -100,8 +100,9 @@ namespace SwiftFramework.Core.Editor
 
 #if !USE_ADDRESSABLES
         private static bool reloading;
-
+#if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Links/Reload")]
+#endif
         private static void ManualReload()
         {
             Util.PromptMoveAssetsFromFolder("Addressables", "Resources");

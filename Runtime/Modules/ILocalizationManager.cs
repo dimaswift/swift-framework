@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Core
 {
+    [BuiltInModule]
     [ModuleGroup(ModuleGroups.Core)]
     public interface ILocalizationManager : IModule
     {

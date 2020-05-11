@@ -28,6 +28,7 @@ namespace SwiftFramework.Core.Editor
                         }
                         string path = $"{folder}/{typeof(T).Name}.asset";
                         instance = CreateInstance<T>();
+                        instance.hideFlags = HideFlags.HideInHierarchy | HideFlags.NotEditable | HideFlags.HideInInspector;
                         instance.name = typeof(T).Name;
                         AssetDatabase.CreateAsset(instance, path);
                         AssetDatabase.Refresh();

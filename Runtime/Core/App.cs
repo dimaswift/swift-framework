@@ -246,7 +246,7 @@ namespace SwiftFramework.Core
             {
                 SetState(AppState.AssetsPreloaded);
 
-                List<IPromise<IModule>> coreModules = new List<IPromise<IModule>>(GetCoreModulesInitPromises());
+                List<IPromise<IModule>> coreModules = new List<IPromise<IModule>>(GetBuiltInModulesInitPromises());
 
                 Promise.All(coreModules).Always(() =>
                 {
@@ -263,7 +263,7 @@ namespace SwiftFramework.Core
             return initPromise;
         }
 
-        private IEnumerable<IPromise<IModule>> GetCoreModulesInitPromises()
+        private IEnumerable<IPromise<IModule>> GetBuiltInModulesInitPromises()
         {
             yield return CreateCoreModule<ISaveStorage, SaveStorageManager>();
             yield return CreateBehaviourCoreModule<ITimer, CoroutineTimer>();

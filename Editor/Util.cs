@@ -18,6 +18,14 @@ namespace SwiftFramework.EditorUtils
 {
     internal static class EditorUtilExtentions
     {
+        public static void MoveToCenter(this EditorWindow window)
+        {
+            var position = window.position;
+            position.center = new Rect(0f, 0f, Screen.currentResolution.width, Screen.currentResolution.height).center;
+            window.position = position;
+            window.Show();
+        }
+
         public static string FromRelativeResourcesPathToAbsoluteProjectPath(this string path)
         {
             return string.IsNullOrEmpty(path) ? "Assets/Resources" : $"Assets/Resources/{path}";
@@ -56,8 +64,11 @@ namespace SwiftFramework.EditorUtils
         }
     }
 
+
     public class Util : ScriptableSingleton<Util>
     {
+        public const string AddressableVersion = "1.8.3";
+
         public static event Action<Type, ModuleConfig> OnModuleConfigApplied = (type, moduleConfig) => { };
 
         public static event Action OnScriptsReloaded = () => { };
@@ -74,6 +85,29 @@ namespace SwiftFramework.EditorUtils
         {
             public string path;
             public string type;
+        }
+
+        private static string ManifestPackagePath
+        {
+            get
+            {
+                var dir = new DirectoryInfo(Application.dataPath);
+                return $"{dir.Parent.FullName}/Packages/manifest.json";
+            }
+        }
+
+        public static bool HasPackageDependency(string dependencyName)
+        {
+            var manifestText = File.ReadAllText(ManifestPackagePath);
+            return manifestText.Contains(dependencyName);
+        }
+
+        public static void AddDependencyToPackageManifest(string dependency)
+        {
+            var manifestLines = new List<string>(File.ReadAllLines(ManifestPackagePath));
+            var startIndex = manifestLines.FindIndex(l => l.Contains($"dependencies\": {{")) + 1;
+            manifestLines.Insert(startIndex, dependency);
+            File.WriteAllLines(ManifestPackagePath, manifestLines);
         }
 
         internal static string RelativeFrameworkRootFolder
@@ -121,7 +155,7 @@ namespace SwiftFramework.EditorUtils
         }
 
 
-        internal static string EditorFolder => "Assets/Editor/SwiftFramework";
+        internal static string EditorFolder => "Assets/Editor";
 
         public static void ApplyModuleConfig(Type moduleType, ModuleConfig moduleConfig)
         {
@@ -625,110 +659,6 @@ namespace SwiftFramework.EditorUtils
             return null;
         }
 
-        public static CodeCompileUnit GenerateManifestClass(string classNamespace, Type gameClass)
-        {
-            CodeCompileUnit manifestFile = new CodeCompileUnit();
-
-            CodeNamespace manifestNamespace = new CodeNamespace(classNamespace);
-
-            manifestNamespace.Imports.Add(new CodeNamespaceImport("SwiftFramework.Core"));
-            manifestNamespace.Imports.Add(new CodeNamespaceImport("UnityEngine"));
-
-            string className = "ModuleManifest";
-
-            CodeTypeDeclaration manifestClass = new CodeTypeDeclaration(className);
-
-            manifestClass.BaseTypes.Add(new CodeTypeReference("BaseModuleManifest"));
-
-            foreach (var property in gameClass.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
-            {
-                if (typeof(IModule).IsAssignableFrom(property.PropertyType))
-                {
-                    string moduleName = property.Name;
-                    var moduleFiled = new CodeMemberField()
-                    {
-                        Name = moduleName[0].ToString().ToLower() + moduleName.Substring(1, moduleName.Length - 1),
-                        Type = new CodeTypeReference(typeof(ModuleLink)),
-
-                    };
-                    moduleFiled.CustomAttributes.Add(new CodeAttributeDeclaration("SerializeField"));
-
-                    var filterAttr = new CodeAttributeDeclaration(new CodeTypeReference("LinkFilter"));
-
-
-                    filterAttr.Arguments.Add(new CodeAttributeArgument(new CodeTypeOfExpression(property.PropertyType)));
-
-                    moduleFiled.CustomAttributes.Add(filterAttr);
-
-
-                    manifestClass.Members.Add(moduleFiled);
-                }
-            }
-
-            var createAssetAttr = new CodeAttributeDeclaration(new CodeTypeReference("CreateAssetMenu"));
-
-            string projectName = string.IsNullOrEmpty(gameClass.Namespace) ? "Game" : gameClass.Namespace.Split('.')[0];
-
-            createAssetAttr.Arguments.Add(new CodeAttributeArgument("menuName", new CodePrimitiveExpression($"{projectName}/{Folders.Configs}ModuleManifest")));
-
-            createAssetAttr.Arguments.Add(new CodeAttributeArgument("fileName", new CodePrimitiveExpression("ModuleManifest")));
-
-            manifestClass.CustomAttributes.Add(createAssetAttr);
-
-            manifestNamespace.Types.Add(manifestClass);
-
-            manifestFile.Namespaces.Add(manifestNamespace);
-
-            return manifestFile;
-        }
-
-
-
-        public static void SaveClassToDisc(CodeCompileUnit code, string path, bool force)
-        {
-            CodeDomProvider provider = CodeDomProvider.CreateProvider("CSharp");
-            CodeGeneratorOptions options = new CodeGeneratorOptions();
-            options.BracingStyle = "C";
-
-            string tmpLinksScript = Path.GetTempFileName();
-
-            StreamWriter sourceWriter = new StreamWriter(tmpLinksScript);
-            provider.GenerateCodeFromCompileUnit(code, sourceWriter, options);
-            sourceWriter.Close();
-
-            bool updated = false;
-
-            string dir = new FileInfo(path).Directory?.FullName;
-
-            if (string.IsNullOrEmpty(dir) == false && Directory.Exists(dir) == false)
-            {
-                Directory.CreateDirectory(dir);
-            }
-
-            if (force || File.Exists(path) == false || File.ReadAllText(tmpLinksScript) != File.ReadAllText(path))
-            {
-                File.WriteAllText(path, File.ReadAllText(tmpLinksScript));
-                updated = true;
-            }
-
-            File.Delete(tmpLinksScript);
-
-            if (updated)
-            {
-                AssetDatabase.Refresh();
-            }
-        }
-
-        public static string GetGameNamespace()
-        {
-            Type gameClass = FindChildClass(typeof(App));
-            if (gameClass != null)
-            {
-                return string.IsNullOrEmpty(gameClass.Namespace) ? "" : gameClass.Namespace.Split('.')[0];
-            }
-            return "";
-        }
-
         public static ScriptableObject FindScriptableObject(Type type)
         {
             foreach (var asset in GetAssets<ScriptableObject>())
@@ -843,6 +773,173 @@ namespace SwiftFramework.EditorUtils
             instance.deferredScriptableCreations.Clear();
         }
 
+
+    }
+
+    public static class ScriptBuilder
+    {
+        public static CodeCompileUnit GenerateManifestClass(string classNamespace, Type gameClass)
+        {
+            CodeCompileUnit manifestFile = new CodeCompileUnit();
+
+            CodeNamespace manifestNamespace = new CodeNamespace(classNamespace);
+
+            manifestNamespace.Imports.Add(new CodeNamespaceImport("SwiftFramework.Core"));
+            manifestNamespace.Imports.Add(new CodeNamespaceImport("UnityEngine"));
+
+            string className = "ModuleManifest";
+
+            CodeTypeDeclaration manifestClass = new CodeTypeDeclaration(className);
+
+            manifestClass.BaseTypes.Add(new CodeTypeReference("BaseModuleManifest"));
+
+            foreach (var property in gameClass.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+            {
+                if (typeof(IModule).IsAssignableFrom(property.PropertyType) && property.PropertyType.GetCustomAttribute<BuiltInModuleAttribute>() == null)
+                {
+                    string moduleName = property.Name;
+                    var moduleFiled = new CodeMemberField()
+                    {
+                        Name = moduleName[0].ToString().ToLower() + moduleName.Substring(1, moduleName.Length - 1),
+                        Type = new CodeTypeReference(typeof(ModuleLink)),
+
+                    };
+                    moduleFiled.CustomAttributes.Add(new CodeAttributeDeclaration("SerializeField"));
+
+                    var filterAttr = new CodeAttributeDeclaration(new CodeTypeReference("LinkFilter"));
+
+
+                    filterAttr.Arguments.Add(new CodeAttributeArgument(new CodeTypeOfExpression(property.PropertyType)));
+
+                    moduleFiled.CustomAttributes.Add(filterAttr);
+
+
+                    manifestClass.Members.Add(moduleFiled);
+                }
+            }
+
+            var createAssetAttr = new CodeAttributeDeclaration(new CodeTypeReference("CreateAssetMenu"));
+
+            string projectName = string.IsNullOrEmpty(gameClass.Namespace) ? "Game" : gameClass.Namespace.Split('.')[0];
+
+            createAssetAttr.Arguments.Add(new CodeAttributeArgument("menuName", new CodePrimitiveExpression($"{projectName}/{Folders.Configs}ModuleManifest")));
+
+            createAssetAttr.Arguments.Add(new CodeAttributeArgument("fileName", new CodePrimitiveExpression("ModuleManifest")));
+
+            manifestClass.CustomAttributes.Add(createAssetAttr);
+
+            manifestNamespace.Types.Add(manifestClass);
+
+            manifestFile.Namespaces.Add(manifestNamespace);
+
+            return manifestFile;
+        }
+
+        public static CodeCompileUnit GenerateAppClass(string projectName, string nameSpace)
+        {
+            CodeCompileUnit unit = new CodeCompileUnit();
+
+            CodeNamespace codeNamespace = new CodeNamespace(nameSpace);
+
+            codeNamespace.Imports.Add(new CodeNamespaceImport("SwiftFramework.Core"));
+
+            codeNamespace.Imports.Add(new CodeNamespaceImport("UnityEngine"));
+
+            string className = $"{projectName}";
+
+            CodeTypeDeclaration cls = new CodeTypeDeclaration(className);
+
+            cls.BaseTypes.Add(new CodeTypeReference($"App<{className}>"));
+
+            codeNamespace.Types.Add(cls);
+
+            unit.Namespaces.Add(codeNamespace);
+
+            return unit;
+        }
+
+        public static CodeCompileUnit GenerateAppBootClass(Type appClass)
+        {
+            CodeCompileUnit unit = new CodeCompileUnit();
+
+            CodeNamespace codeNamespace = new CodeNamespace(appClass.Namespace);
+
+            codeNamespace.Imports.Add(new CodeNamespaceImport("SwiftFramework.Core"));
+
+            string className = $"AppBoot";
+
+            CodeTypeDeclaration cls = new CodeTypeDeclaration(className);
+
+            cls.BaseTypes.Add(new CodeTypeReference($"AppSceneBoot<{appClass.Name}>"));
+
+            codeNamespace.Types.Add(cls);
+
+            unit.Namespaces.Add(codeNamespace);
+
+            return unit;
+        }
+
+
+        public static void SaveClassToDisc(CodeCompileUnit code, string path, bool force, Action<List<string>> postProcessor = null)
+        {
+            CodeDomProvider provider = CodeDomProvider.CreateProvider("CSharp");
+            CodeGeneratorOptions options = new CodeGeneratorOptions();
+            options.BracingStyle = "C";
+
+            string tmpLinksScript = Path.GetTempFileName();
+
+            StreamWriter sourceWriter = new StreamWriter(tmpLinksScript);
+            provider.GenerateCodeFromCompileUnit(code, sourceWriter, options);
+            sourceWriter.Close();
+
+            bool updated = false;
+
+            string dir = new FileInfo(path).Directory?.FullName;
+
+            if (string.IsNullOrEmpty(dir) == false && Directory.Exists(dir) == false)
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var file = new List<string>(File.ReadAllLines(tmpLinksScript));
+
+            for (int i = file.Count - 1; i >= 0; i--)
+            {
+                if (file[i].StartsWith("//"))
+                {
+                    file.RemoveAt(i);
+                }
+            }
+
+            file.RemoveAt(0);
+
+            postProcessor?.Invoke(file);
+
+            File.WriteAllLines(tmpLinksScript, file);
+
+            if (force || File.Exists(path) == false || File.ReadAllText(tmpLinksScript) != File.ReadAllText(path))
+            {
+                File.WriteAllText(path, File.ReadAllText(tmpLinksScript));
+                updated = true;
+            }
+
+
+
+            if (updated)
+            {
+                AssetDatabase.Refresh();
+            }
+        }
+
+        public static string GetGameNamespace()
+        {
+            Type gameClass = Util.FindChildClass(typeof(App));
+            if (gameClass != null)
+            {
+                return string.IsNullOrEmpty(gameClass.Namespace) ? "" : gameClass.Namespace.Split('.')[0];
+            }
+            return "";
+        }
 
     }
 }

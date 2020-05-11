@@ -14,14 +14,16 @@ namespace SwiftFramework.Core.Editor
     {
         private static readonly List<FieldData<Link>> links = new List<FieldData<Link>>();
         public List<Object> invalidAssets = new List<Object>();
-
+#if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Links/Get Last Validation Results")]
+#endif
         public static void GetResults()
         {
             Selection.activeObject = instance;
         }
-
+#if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Links/Validate")]
+#endif
         public static void Validate()
         {
             links.Clear();

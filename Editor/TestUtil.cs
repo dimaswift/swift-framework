@@ -23,7 +23,6 @@ namespace SwiftFramework.EditorUtils
             public string manifestType;
         }
 
-        [MenuItem("SwiftFramework/Tests/Create")]
         public static void CreateTest()
         {
             var candidates = Util.GetAllTypes(t => typeof(IModule).IsAssignableFrom(t) && t.IsInterface == false);
@@ -51,7 +50,7 @@ namespace SwiftFramework.EditorUtils
 
                 var manifest = GenerateCustomManifestClass(prefix, testNamespace, modules.ToArray());
 
-                Util.SaveClassToDisc(manifest, folder + "/" + prefix + "ModuleManifest.cs", true);
+                ScriptBuilder.SaveClassToDisc(manifest, folder + "/" + prefix + "ModuleManifest.cs", true);
 
                 var manifestClassName = manifest.Namespaces[0].Types[0].Name;
 
@@ -67,11 +66,11 @@ namespace SwiftFramework.EditorUtils
 
                 var game = GenerateGameClass(prefix, testNamespace, modules.ToArray());
 
-                Util.SaveClassToDisc(game, folder + "/" + prefix + "Game.cs", true);
+                ScriptBuilder.SaveClassToDisc(game, folder + "/" + prefix + "Game.cs", true);
 
                 var test = GenerateTestClass(prefix, testNamespace);
 
-                Util.SaveClassToDisc(test, folder + "/" + prefix + "Test.cs", true);
+                ScriptBuilder.SaveClassToDisc(test, folder + "/" + prefix + "Test.cs", true);
 
                 EditorUtility.SetDirty(instance);
             });

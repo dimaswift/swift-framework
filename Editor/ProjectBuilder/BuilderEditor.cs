@@ -44,8 +44,9 @@ namespace SwiftFramework.EditorUtils
 				? buildTargetSettings[builder.buildTarget].icon
 					: EditorGUIUtility.FindTexture("BuildSettings.Editor.Small");
 		}
-
+#if SWIFT_FRAMEWORK_INSTALLED
 		[MenuItem("SwiftFramework/Build Helper")]
+#endif
 		public static void OnOpenFromMenu()
 		{
 			GetWindow<BuilderEditor>("Project Builder");

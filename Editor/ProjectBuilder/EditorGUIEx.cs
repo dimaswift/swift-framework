@@ -6,11 +6,16 @@ using System.IO;
 
 namespace SwiftFramework.EditorUtils
 {
-    internal static class EditorGUIEx
+    public static class EditorGUIEx
     {
         private static GUIStyle warningStyle;
 
-        public static readonly Color warningRedColor = new Color(.9f, .3f, .3f, 1);
+        public static readonly Color warningRedColor = new Color(1, 0.5130347f, 0.4470588f, 1);
+
+        public static Color GreenColor { get; } = new Color(0.4481132f, 1, 0.6813686f, 1);
+
+        public static Color YellowColor { get; } = new Color(1f, 0.9068019f, 0.4470588f, 1);
+
 
         public static void FilePathField(SerializedProperty property, string title, string directory, string extension, params GUILayoutOption[] options)
         {

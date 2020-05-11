@@ -177,7 +177,7 @@ namespace SwiftFramework.Core.Editor
                 {
                     SetNextInstallOperation("Importing addressables package...");
 
-                    Util.AddDependencyToPackageManifest($"    \"com.unity.addressables\": \"{Util.AddressableVersion}\",");
+                    Util.AddDependencyToPackageManifest($"com.unity.addressables", Util.AddressableVersion);
 
                     Compile.OnFinishedCompile += EnableAddressables;
                 }

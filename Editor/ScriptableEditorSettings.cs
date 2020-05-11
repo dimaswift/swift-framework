@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Core.Editor
 {
-    internal class ScriptableEditorSettings<T> : ScriptableObject where T : ScriptableObject
+    public class ScriptableEditorSettings<T> : ScriptableObject where T : ScriptableObject
     {
         private static T instance;
 
@@ -28,7 +28,7 @@ namespace SwiftFramework.Core.Editor
                         }
                         string path = $"{folder}/{typeof(T).Name}.asset";
                         instance = CreateInstance<T>();
-                        instance.hideFlags = HideFlags.HideInHierarchy | HideFlags.NotEditable | HideFlags.HideInInspector;
+                        instance.hideFlags = HideFlags.NotEditable;
                         instance.name = typeof(T).Name;
                         AssetDatabase.CreateAsset(instance, path);
                         AssetDatabase.Refresh();

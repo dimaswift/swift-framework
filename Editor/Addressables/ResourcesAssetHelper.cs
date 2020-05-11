@@ -2,13 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Xml.Schema;
 using UnityEditor;
 using UnityEngine;
 
 namespace SwiftFramework.Core.Editor
 {
-    internal class ResourcesAssetHelper : AssetPostprocessor
+    public class ResourcesAssetHelper : AssetPostprocessor
     {
         public const string RESOURCES_ROOT_FOLDER = "Assets/Resources";
 
@@ -131,6 +130,11 @@ namespace SwiftFramework.Core.Editor
 
         private static void Process(string path)
         {
+            if (path.Contains("/InternalResources/"))
+            {
+                return;
+            }
+
             UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath(path, typeof(UnityEngine.Object));
 
             if (asset.TryGetAttribute(out Type singletonType, out AddrSingletonAttribute singleton))

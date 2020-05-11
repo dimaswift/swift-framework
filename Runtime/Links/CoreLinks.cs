@@ -50,6 +50,12 @@ namespace SwiftFramework.Core
 
     }
 
+    [Serializable()]
+    public class ScriptableObjectLink : LinkTo<ScriptableObject>
+    {
+
+    }
+
     [FlatHierarchy]
     [LinkFolder(Folders.Configs)]
     [Serializable()]

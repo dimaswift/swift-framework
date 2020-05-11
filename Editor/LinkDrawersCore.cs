@@ -32,7 +32,12 @@ namespace SwiftFramework.Core.Editor
     public class SpriteLinkDrawer : LinkPropertyDrawer<UnityEngine.Sprite>
     {
     }
-    
+
+    [CustomPropertyDrawer(typeof(SwiftFramework.Core.ScriptableObjectLink))]
+    public class ScriptableObjectLinkDrawer : LinkPropertyDrawer<UnityEngine.ScriptableObject>
+    {
+    }
+
     [CustomPropertyDrawer(typeof(SwiftFramework.Core.Texture2DLink))]
     public class Texture2DLinkDrawer : LinkPropertyDrawer<UnityEngine.Texture2D>
     {
@@ -82,129 +87,14 @@ namespace SwiftFramework.Core.Editor
     public class EventArgumentsLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.EventArguments>
     {
     }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.AbilityLink))]
-    public class AbilityLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Ability>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.PerkLink))]
-    public class PerkLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Perk>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.UnlockerLink))]
-    public class UnlockerLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.UnlockerConfig>
-    {
-    }
-    
+
     [CustomPropertyDrawer(typeof(SwiftFramework.Core.RewardLink))]
     public class RewardLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.IReward>
     {
     }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.AbilityHandlerLink))]
-    public class AbilityHandlerLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.IAbilityHandler>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.FundsSourceLink))]
-    public class FundsSourceLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.IFundsSource>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SubordinateLink))]
-    public class SubordinateLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.ISubordinate>
-    {
-    }
-    
+  
     [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.CurveLink))]
     public class CurveLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Curve>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.Upgrades.UpgradeIconsLink))]
-    public class UpgradeIconsLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Upgrades.UpgradeIcons>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.Shop.ShopItemLink))]
-    public class ShopItemLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Shop.ShopItem>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.Shop.ShopItemTagLink))]
-    public class ShopItemTagLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Shop.ShopItemTag>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.Shop.ShopSectionLink))]
-    public class ShopSectionLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Shop.ShopSection>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.Shop.OfferSystem.OfferAppearHandlerLink))]
-    public class OfferAppearHandlerLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Shop.OfferSystem.OfferAppearHandler>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.Shop.OfferSystem.OfferConditionHandlerLink))]
-    public class OfferConditionHandlerLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Shop.OfferSystem.OfferConditionHandler>
-    {
-    }
-
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.Shop.OfferSystem.OfferTriggerLink))]
-    public class OfferTriggerLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Shop.OfferSystem.OfferTrigger>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.SeasonPass.SeasonLink))]
-    public class SeasonLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.SeasonPass.Season>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.Inventory.InventoryItemLink))]
-    public class InventoryItemLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.IInventoryItem>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Boosters.BoosterConfigLink))]
-    public class BoosterConfigLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Boosters.BoosterConfig>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Boosters.BoosterManagerConfigLink))]
-    public class BoosterManagerConfigLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Boosters.BoosterManagerConfig>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Boosters.BoosterTargetLink))]
-    public class BoosterTargetLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Boosters.BoosterTarget>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Boosters.BoosterTemplateLink))]
-    public class BoosterTemplateLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Boosters.BoosterTemplate>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Supervisors.SupervisorLink))]
-    public class SupervisorLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Supervisors.Supervisor>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Supervisors.SupervisorFamilyLink))]
-    public class SupervisorFamilyLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Supervisors.SupervisorFamily>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Supervisors.SupervisorSkinLink))]
-    public class SupervisorSkinLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Supervisors.SupervisorSkin>
-    {
-    }
-    
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Supervisors.SupervisorTemplateLink))]
-    public class SupervisorTemplateLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.Supervisors.SupervisorTemplate>
     {
     }
 }

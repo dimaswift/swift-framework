@@ -537,34 +537,6 @@ namespace SwiftFramework.Core
             }
         }
 
-        public static string GetDescription(this ITimeLimit timeLimit)
-        {
-            if (timeLimit.TimeTillStart > 0)
-            {
-                return App.Core.Local.GetText("starts_in", timeLimit.TimeTillStart.ToDurationString(App.Core.Local));
-            }
-            else if (timeLimit.TimeTillEnd > 0)
-            {
-                return App.Core.Local.GetText("ends_in", timeLimit.TimeTillEnd.ToDurationString(App.Core.Local));
-            }
-
-            return App.Core.Local.GetText("coming_soon");
-        }
-
-        public static bool IsComingSoon(this ITimeLimit timeLimit)
-        {
-            if (timeLimit.TimeTillStart > 0)
-            {
-                return false;
-            }
-            else if (timeLimit.TimeTillEnd > 0)
-            {
-                return false;
-            }
-            return true;
-        }
-
-
         public static Coroutine Show(this IAppearAnimationHandler handler, float appearTime, float duration = -1)
         {
             return App.Core.Coroutine.Begin(ShowRoutine(handler, appearTime, duration, false, null));

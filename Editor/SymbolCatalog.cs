@@ -1,16 +1,15 @@
-﻿using SwiftFramework.Core.Editor;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace SwiftFramework.Editor
+namespace SwiftFramework.Core.Editor
 {
-	internal class SymbolCatalog : ScriptableEditorSettings<SymbolCatalog>
+	public class SymbolCatalog : ScriptableEditorSettings<SymbolCatalog>
     {
         public List<Symbol> list = new List<Symbol>()
-        {
+        { 
             
 		};
 
@@ -107,7 +106,6 @@ namespace SwiftFramework.Editor
 
 	internal class SymbolCatalogEditor : EditorWindow
 	{
-		private SymbolCatalog catalog;
 		private string currentDefine;
 		private string focus;
 		private Vector2 scrollPosition;
@@ -152,7 +150,7 @@ namespace SwiftFramework.Editor
 			styleHeader.alignment = TextAnchor.MiddleLeft;
 			styleHeader.wordWrap = false;
 
-			ro = new ReorderableList(new List<SymbolCatalog>(), typeof(SymbolCatalog));
+			ro = new ReorderableList(new List<SymbolCatalog.Symbol>(), typeof(SymbolCatalog.Symbol));
 			ro.drawElementCallback = DrawSymbol;
 			ro.headerHeight = 0;
 			ro.onAddDropdownCallback = (rect, list) =>
@@ -163,8 +161,8 @@ namespace SwiftFramework.Editor
 				gm.AddItem(new GUIContent("Separator"), false, () => AddSymbol(SymbolCatalog.SymbolStyle.Separator));
 				gm.DropDown(rect);
 			};
-			ro.onRemoveCallback = list => RemoveSymbol(catalog.list[list.index]);
-			ro.onCanRemoveCallback = list => (0 <= list.index && list.index < catalog.list.Count);
+			ro.onRemoveCallback = list => RemoveSymbol(SymbolCatalog.Instance.list[list.index]);
+			ro.onCanRemoveCallback = list => (0 <= list.index && list.index < SymbolCatalog.Instance.list.Count);
 			ro.elementHeight = 44;
 			ro.onSelectCallback = (list) => EditorGUIUtility.keyboardControl = 0;
 
@@ -182,7 +180,7 @@ namespace SwiftFramework.Editor
 		{
 			Initialize();
 
-            catalog = SymbolCatalog.Instance;
+            var catalog = SymbolCatalog.Instance;
 
 			string define = PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
 			if (currentDefine != define)
@@ -244,20 +242,20 @@ namespace SwiftFramework.Editor
 					break;
 			}
 
-			catalog.list.Add(symbol);
+			SymbolCatalog.Instance.list.Add(symbol);
 
-			focus = string.Format("symbol neme {0}", catalog.list.IndexOf(symbol));
+			focus = string.Format("symbol neme {0}", SymbolCatalog.Instance.list.IndexOf(symbol));
 
-			EditorUtility.SetDirty(catalog);
+			EditorUtility.SetDirty(SymbolCatalog.Instance);
 		}
 
         private void RemoveSymbol(SymbolCatalog.Symbol symbol)
 		{
 			EditorApplication.delayCall += () =>
 			{
-				catalog.list.Remove(symbol);
-				ro.index = Mathf.Clamp(ro.index, 0, catalog.list.Count - 1);
-				EditorUtility.SetDirty(catalog);
+				SymbolCatalog.Instance.list.Remove(symbol);
+				ro.index = Mathf.Clamp(ro.index, 0, SymbolCatalog.Instance.list.Count - 1);
+				EditorUtility.SetDirty(SymbolCatalog.Instance);
 				Repaint();
 			};
 		}
@@ -285,7 +283,7 @@ namespace SwiftFramework.Editor
 
         private void DrawHeader(Rect rect, SymbolCatalog.Symbol symbol)
 		{
-			int index = catalog.list.IndexOf(symbol);
+			int index = SymbolCatalog.Instance.list.IndexOf(symbol);
 
 			GUI.contentColor = Color.black;
 			string symbolNameId = string.Format("symbol neme {0}", index);
@@ -297,7 +295,7 @@ namespace SwiftFramework.Editor
 
         private void DrawDefaultSymbol(Rect rect, SymbolCatalog.Symbol symbol)
 		{
-			int index = catalog.list.IndexOf(symbol);
+			int index = SymbolCatalog.Instance.list.IndexOf(symbol);
 
 			string symbolDescriptionId = string.Format("symbol desctription {0}", index);
 			GUI.SetNextControlName(symbolDescriptionId);

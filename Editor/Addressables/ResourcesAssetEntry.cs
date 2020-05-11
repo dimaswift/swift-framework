@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Core.Editor
 {
-    internal class ResourcesAssetEntry
+    public class ResourcesAssetEntry
     {
         public string AssetPath;
         public string address;

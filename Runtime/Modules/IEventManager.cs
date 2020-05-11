@@ -36,6 +36,7 @@ namespace SwiftFramework.Core
     public interface IImage
     {
         void SetSprite(SpriteLink sprite);
+        void SetSprite(Sprite sprite);
         void SetAlpha(float alpha);
     }
 
@@ -47,6 +48,15 @@ namespace SwiftFramework.Core
         void SetAsync<T>(IPromise<T> promise, string format);
     }
 
+    public interface IInputText
+    {
+        int CharacterLimit { get; set; }
+        string Text { get; set; }
+        void AddListener(UnityAction<string> action);
+    }
+
+    [Serializable]
+    public class GenericInputText : InterfaceComponentField<IInputText> { }
 
     [Serializable]
     public class GenericImage : InterfaceComponentField<IImage> { }
@@ -61,7 +71,25 @@ namespace SwiftFramework.Core
     }
 
     [Serializable]
-    public class GenericText : InterfaceComponentField<IText> { }
+    public class GenericText : InterfaceComponentField<IText> 
+    { 
+
+
+        public string Text
+        {
+            get
+            {
+                return Value?.Text;
+            }
+            set
+            {
+                if (HasValue)
+                {
+                    Value.Text = value;
+                }
+            }
+        }
+    }
 
     [Serializable]
     public class AffordableHandler : InterfaceComponentField<IAffordableHandler> { }

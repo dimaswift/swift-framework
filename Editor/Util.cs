@@ -16,7 +16,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SwiftFramework.EditorUtils
 {
-    internal static class EditorUtilExtentions
+    public static class EditorUtilExtentions
     {
         public static void MoveToCenter(this EditorWindow window)
         {
@@ -87,6 +87,33 @@ namespace SwiftFramework.EditorUtils
             public string type;
         }
 
+        public static void DeleteEmptyFolders()
+        {
+            var directoryInfo = new DirectoryInfo(Application.dataPath);
+            foreach (var subDirectory in directoryInfo.GetDirectories("*.*", SearchOption.AllDirectories))
+            {
+                if (subDirectory.Exists)
+                {
+                    ScanDirectory(subDirectory);
+                }
+            }
+        }
+
+        private static void ScanDirectory(DirectoryInfo subDirectory)
+        {
+            var filesInSubDirectory = subDirectory.GetFiles("*.*", SearchOption.AllDirectories);
+
+            if (filesInSubDirectory.Length == 0 ||
+                !filesInSubDirectory.Any(t => t.FullName.EndsWith(".meta") == false))
+            {
+                subDirectory.Delete(true);
+                if (File.Exists(subDirectory.FullName + ".meta"))
+                {
+                    File.Delete(subDirectory.FullName + ".meta");
+                }
+            }
+        }
+
         private static string ManifestPackagePath
         {
             get
@@ -102,11 +129,22 @@ namespace SwiftFramework.EditorUtils
             return manifestText.Contains(dependencyName);
         }
 
-        public static void AddDependencyToPackageManifest(string dependency)
+        public static void AddDependencyToPackageManifest(string dependency, string version)
         {
+            if (string.IsNullOrEmpty(dependency) || string.IsNullOrEmpty(version))
+            {
+                Debug.LogError($"Cannot add package {dependency}:{version}. Invalid name and/or version");
+                return;
+            }
+
+            var dep = $"\"{dependency}\": \"{version}\"";
+            if (HasPackageDependency(dep))
+            {
+                return;
+            }
             var manifestLines = new List<string>(File.ReadAllLines(ManifestPackagePath));
             var startIndex = manifestLines.FindIndex(l => l.Contains($"dependencies\": {{")) + 1;
-            manifestLines.Insert(startIndex, dependency);
+            manifestLines.Insert(startIndex, $"   {dep},");
             File.WriteAllLines(ManifestPackagePath, manifestLines);
         }
 
@@ -138,11 +176,14 @@ namespace SwiftFramework.EditorUtils
             EditorUtility.SetDirty(instance);
         }
 
-        public static void CopyDirectory(string source, string destination, string exceptFilesWithExtentions = null)
+        public static IEnumerable<string> CopyDirectory(string source, string destination, string exceptFilesWithExtentions = null)
         {
-            foreach (string dirPath in Directory.GetDirectories(source, "*",
-                SearchOption.AllDirectories))
-                Directory.CreateDirectory(dirPath.Replace(source, destination));
+            foreach (string dirPath in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
+            {
+                var newDir = dirPath.Replace(source, destination);
+                Directory.CreateDirectory(newDir);
+            }
+
 
             foreach (string newPath in Directory.GetFiles(source, "*.*", SearchOption.AllDirectories))
             {
@@ -150,7 +191,22 @@ namespace SwiftFramework.EditorUtils
                 {
                     continue;
                 }
-                AssetDatabase.MoveAsset(ToRelativePath(newPath), ToRelativePath(newPath.Replace(source, destination)));
+
+                var dir = new FileInfo(newPath.Replace(source, destination)).Directory.FullName;
+
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                var newFile = newPath.Replace(source, destination);
+
+                if (File.Exists(newFile) == false)
+                {
+                    File.Copy(newPath, newFile);
+                }
+
+                yield return newFile;
             }
         }
 

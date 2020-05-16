@@ -284,6 +284,8 @@ namespace SwiftFramework.EditorUtils
             return absolutePath;
         }
 
+        public const string PackageRelativeRootFolder = "Packages/com.dimaswift.swiftframework/";
+
         public static string ToAbsolutePath(string relativePath)
         {
             return Application.dataPath + relativePath.Remove(0, 6);

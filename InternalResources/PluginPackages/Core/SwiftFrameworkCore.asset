@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b63ac1226092cb4c836d3d290152aa1, type: 3}
+  m_Name: SwiftFrameworkCore
+  m_EditorClassIdentifier: 
+  priority: 5
+  defineSymbols: []
+  description: SwiftFramework Core
+  packageDependencies: []
+  version: 1
+  displayVersion: 0.0.1
+  canBeRemoved: 1
+  canBeUpdated: 0
+  nameSpace: MyGame
+  appName: Root
+  useAddressables: 0
+  modules: []
+  selectedModule: 0
+  show: 1

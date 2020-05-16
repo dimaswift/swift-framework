@@ -18,7 +18,12 @@ namespace SwiftFramework.Core
             {
                 try
                 {
-                    return Type.GetType(interfaceType);
+                    var t = Type.GetType(interfaceType);
+                    if (t != null)
+                    {
+                        return t;
+                    }
+                    return null;
                 }
                 catch
                 {
@@ -40,6 +45,10 @@ namespace SwiftFramework.Core
                 {
                     return null;
                 }
+            }
+            set
+            {
+                implementationType = value.AssemblyQualifiedName;
             }
 
         }
@@ -74,6 +83,11 @@ namespace SwiftFramework.Core
         public void SetConfigPath(string path)
         {
             configLink = Link.Create<ModuleConfigLink>(path);
+        }
+
+        public void SetBehaviourPath(string path)
+        {
+            behaviourLink = Link.Create<BehaviourModuleLink>(path);
         }
 
         public static ModuleLink Create(Type type)

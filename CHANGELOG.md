@@ -9,3 +9,6 @@ First stable version
 
 ## [0.0.2] - 2020-11-05
 Added Framework Install wizard
+
+## [0.0.3] - 2020-17-05
+Refactored plugin installer. Added ability to pacth module manifest.

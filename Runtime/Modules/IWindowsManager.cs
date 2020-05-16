@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Core
 {
-    [ModuleGroup(ModuleGroups.Custom)]
+    [ModuleGroup(ModuleGroups.Core)]
     public interface IWindowsManager : IModule
     {
         IPromise<IWindow> Show(WindowLink link);

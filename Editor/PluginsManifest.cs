@@ -43,6 +43,7 @@ namespace SwiftFramework.Core.Editor
                 {
                     return null;
                 }
+
                 var path = AssetDatabase.GetAssetPath(currentPlugin);
                 return pluginsData.Find(d => d.path == path);
             }
@@ -56,6 +57,7 @@ namespace SwiftFramework.Core.Editor
                 {
                     serializedObject = new SerializedObject(this);
                 }
+
                 return serializedObject;
             }
         }
@@ -89,5 +91,4 @@ namespace SwiftFramework.Core.Editor
         public int version;
         public List<string> copiedFiles = new List<string>();
     }
-
 }

@@ -15,7 +15,7 @@ namespace SwiftFramework.Core
 
         protected Bounds cameraBounds;
 
-        protected IEventManager eventManager;
+        private IEventManager eventManager;
 
         private void OnEnable()
         {
@@ -37,16 +37,18 @@ namespace SwiftFramework.Core
             UpdateBounds();
         }
 
-        public void UpdateBounds()
+        private void UpdateBounds()
         {
             if (!cam)
             {
                 return;
             }
+
+            float orthographicSize;
             cameraBounds = new Bounds()
             {
                 center = Vector2.zero,
-                extents = new Vector3(cam.aspect * cam.orthographicSize, cam.orthographicSize, 0)
+                extents = new Vector3(cam.aspect * (orthographicSize = cam.orthographicSize), orthographicSize, 0)
             };
         }
 
@@ -60,20 +62,20 @@ namespace SwiftFramework.Core
         protected bool IsPointerDown()
         {
             return Input.GetMouseButtonDown(0)
-                && (eventManager == null || eventManager.IsPointerHandledByUI == false);
+                   && (eventManager == null || eventManager.IsPointerHandledByUI == false);
         }
 
-        protected bool IsPointerUp()
+        protected static bool IsPointerUp()
         {
             return Input.GetMouseButtonUp(0);
         }
 
         protected Vector3 GetWorldPointer()
         {
-            var y = (Input.mousePosition.y / Screen.height) * (cam.orthographicSize * 2);
-            var x = (Input.mousePosition.x / Screen.width) * (cam.orthographicSize * 2 * cam.aspect);
+            var orthographicSize = cam.orthographicSize;
+            var y = (Input.mousePosition.y / Screen.height) * (orthographicSize * 2);
+            var x = (Input.mousePosition.x / Screen.width) * (orthographicSize * 2 * cam.aspect);
             return new Vector3(x, y);
         }
-
     }
 }

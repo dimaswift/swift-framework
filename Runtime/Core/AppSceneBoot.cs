@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace SwiftFramework.Core
 {
@@ -6,40 +7,32 @@ namespace SwiftFramework.Core
     {
         [SerializeField] private SceneLink mainScene = null;
 
-        [SerializeField]
-        [CheckInterface(InterfaceSearch.Scene, typeof(ILoadingScreen))]
+        [SerializeField] [CheckInterface(InterfaceSearch.Scene, typeof(ILoadingScreen))]
         private GameObject loadingScreenWrapper = null;
 
-        protected virtual int targetFrameRate { get; } = 60;
-        protected virtual int sleepTimeout { get; } = SleepTimeout.NeverSleep;
+        protected virtual int TargetFrameRate { get; } = 60;
+        protected virtual int SleepTimeout { get; } = UnityEngine.SleepTimeout.NeverSleep;
         private ILoadingScreen loadingScreen;
 
         private bool isUnloading;
 
         protected override bool IsReadyToRestart()
         {
-            if (isUnloading)
-            {
-                return false;
-            }
-            return true;
+            return !isUnloading;
         }
 
         protected override void OnAppWillBoot()
         {
-            Application.targetFrameRate = targetFrameRate;
+            Application.targetFrameRate = TargetFrameRate;
 
-            Screen.sleepTimeout = sleepTimeout;
+            Screen.sleepTimeout = SleepTimeout;
 
             if (loadingScreenWrapper != null)
             {
                 loadingScreen = loadingScreenWrapper.GetComponent<ILoadingScreen>();
             }
 
-            if (loadingScreen != null)
-            {
-                loadingScreen.SetVersion(Application.version);
-            }
+            loadingScreen?.SetVersion(Application.version);
 
             ShowLoadingScreen();
 
@@ -53,6 +46,7 @@ namespace SwiftFramework.Core
             {
                 return Promise.Resolved();
             }
+
             loadingScreen.SetLoadProgress(0);
             return loadingScreen.Show();
         }
@@ -60,14 +54,16 @@ namespace SwiftFramework.Core
         protected override void OnAppInitialized()
         {
             base.OnAppInitialized();
-            LoadMainScene().Always(success => 
+            LoadMainScene().Always(success =>
             {
                 HideLoadingScreen();
                 OnMainSceneLoaded();
             });
         }
 
-        protected virtual void OnMainSceneLoaded() { }
+        protected virtual void OnMainSceneLoaded()
+        {
+        }
 
         protected override void OnLoadingProgressChanged(float progress)
         {
@@ -80,6 +76,7 @@ namespace SwiftFramework.Core
             {
                 return Promise.Resolved();
             }
+
             return loadingScreen.Hide();
         }
 
@@ -93,13 +90,7 @@ namespace SwiftFramework.Core
 
         protected virtual IPromise<bool> LoadMainScene()
         {
-            if (mainScene.HasValue == false)
-            {
-                return Promise<bool>.Resolved(true);
-            }
-            
-            return mainScene.Load(UnityEngine.SceneManagement.LoadSceneMode.Additive);
+            return mainScene.HasValue == false ? Promise<bool>.Resolved(true) : mainScene.Load(LoadSceneMode.Additive);
         }
-
     }
 }

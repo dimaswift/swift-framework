@@ -12,10 +12,7 @@ namespace SwiftFramework.Core.Views
 
         public bool Active
         {
-            get
-            {
-                return isActive;
-            }
+            get => isActive;
             set
             {
                 isActive = value;

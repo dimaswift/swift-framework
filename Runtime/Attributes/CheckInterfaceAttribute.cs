@@ -7,7 +7,7 @@ namespace SwiftFramework.Core
     [AttributeUsage(AttributeTargets.Field)]
     public class CheckInterfaceAttribute : PropertyAttribute
     {
-        public readonly InterfaceSearch autoSeach = InterfaceSearch.None;
+        private readonly InterfaceSearch autoSearch;
         public readonly List<Type> interfaces;
 
         public CheckInterfaceAttribute(params Type[] interfaces)
@@ -15,9 +15,9 @@ namespace SwiftFramework.Core
             this.interfaces = new List<Type>(interfaces);
         }
 
-        public CheckInterfaceAttribute(InterfaceSearch autoSeach, params Type[] interfaces)
+        public CheckInterfaceAttribute(InterfaceSearch autoSearch, params Type[] interfaces)
         {
-            this.autoSeach = autoSeach;
+            this.autoSearch = autoSearch;
             this.interfaces = new List<Type>(interfaces);
         }
     }
@@ -56,8 +56,10 @@ namespace SwiftFramework.Core
                         Debug.LogError($"Unassigned variable on InterfaceComponentField: {typeof(T).Name}");
                         return null;
                     }
+
                     value = target.GetComponent<T>();
                 }
+
                 return value;
             }
         }
@@ -70,6 +72,8 @@ namespace SwiftFramework.Core
     [Flags]
     public enum InterfaceSearch
     {
-        None = 0, Scene = 1, Assets = 2
+        None = 0,
+        Scene = 1,
+        Assets = 2
     }
 }

@@ -9,7 +9,7 @@ namespace SwiftFramework.EditorUtils
 {
     public class DelayedEvents : ScriptableSingleton<DelayedEvents>
     {
-        [SerializeField] List<DelayedEvent> delayedEvents = new List<DelayedEvent>();
+        [SerializeField] private List<DelayedEvent> delayedEvents = new List<DelayedEvent>();
 
         private class DelayedEvent
         {
@@ -19,8 +19,8 @@ namespace SwiftFramework.EditorUtils
 
         public static void AddListener(Action action, string key)
         {
-            string path = string.Format("{0}.{1}", action.Method.DeclaringType.FullName, action.Method.Name);
-            var delayedEvent = new DelayedEvent()
+            string path = $"{action.Method.DeclaringType?.FullName}.{action.Method.Name}";
+            DelayedEvent delayedEvent = new DelayedEvent()
             {
                 path = path,
                 key = key
@@ -37,26 +37,28 @@ namespace SwiftFramework.EditorUtils
 
         public static void Invoke(string key)
         {
-            foreach (var e in instance.delayedEvents.ToArray())
+            foreach (DelayedEvent e in instance.delayedEvents.ToArray())
             {
                 if (e.key != key)
                 {
                     return;
                 }
+
                 try
                 {
                     string className = Path.GetFileNameWithoutExtension(e.path);
-                    string methodName = Path.GetExtension(e.path).TrimStart('.');
-                    MethodInfo ret = Type.GetType(className).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
-                    ret.Invoke(null, new object[] { });
+                    string methodName = Path.GetExtension(e.path)?.TrimStart('.');
+                    MethodInfo ret = Type.GetType(className)?.GetMethod(methodName,
+                        BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
+                    if (ret != null) ret.Invoke(null, new object[] { });
                 }
                 catch (Exception exc)
                 {
-                    Debug.LogError(e.path + " cannnot call. " + exc.Message);
+                    Debug.LogError(e.path + " cannot call. " + exc.Message);
                 }
+
                 instance.delayedEvents.RemoveAll(_e => _e.path == e.path);
             }
         }
-
     }
 }

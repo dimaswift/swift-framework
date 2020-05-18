@@ -1,8 +1,9 @@
-﻿using SwiftFramework.EditorUtils;
-using System;
+﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using SwiftFramework.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,7 +25,9 @@ namespace SwiftFramework.Core.Editor
 
         [NonSerialized] private string[] moduleNames = new string[0];
         [NonSerialized] private string[] moduleTypes = new string[0];
-        [NonSerialized] private List<(string name, string fullName)> moduleNamesBuffer = new List<(string name, string fullName)>();
+
+        [NonSerialized]
+        private readonly List<(string name, string fullName)> moduleNamesBuffer = new List<(string name, string fullName)>();
 
         private bool allModulesAdded;
 
@@ -79,6 +82,7 @@ namespace SwiftFramework.Core.Editor
                     {
                         continue;
                     }
+
                     moduleNamesBuffer.Add((type.Name, type.AssemblyQualifiedName));
                 }
 
@@ -100,9 +104,14 @@ namespace SwiftFramework.Core.Editor
 
             if (moduleNames.Length > 0)
             {
-                selectedModule = EditorGUI.Popup(new Rect(addModuleRect.x, addModuleRect.y, addModuleRect.width - 50, addModuleRect.height), selectedModule, moduleNames);
+                selectedModule =
+                    EditorGUI.Popup(
+                        new Rect(addModuleRect.x, addModuleRect.y, addModuleRect.width - 50, addModuleRect.height),
+                        selectedModule, moduleNames);
 
-                if (GUI.Button(new Rect(addModuleRect.x + addModuleRect.width - 50, addModuleRect.y, 50, addModuleRect.height), "Add"))
+                if (GUI.Button(
+                    new Rect(addModuleRect.x + addModuleRect.width - 50, addModuleRect.y, 50, addModuleRect.height),
+                    "Add"))
                 {
                     modulesProp.InsertArrayElementAtIndex(0);
                     modulesProp.GetArrayElementAtIndex(0).stringValue = moduleTypes[selectedModule];
@@ -119,19 +128,20 @@ namespace SwiftFramework.Core.Editor
 
             for (int i = 0; i < modulesProp.arraySize; i++)
             {
-                var moduleType = Type.GetType(modulesProp.GetArrayElementAtIndex(i).stringValue);
+                Type moduleType = Type.GetType(modulesProp.GetArrayElementAtIndex(i).stringValue);
                 if (moduleType == null)
                 {
                     modulesProp.DeleteArrayElementAtIndex(i);
                     continue;
                 }
-                var rect = EditorGUILayout.GetControlRect(false);
-                var buttonSize = 50;
+
+                Rect rect = EditorGUILayout.GetControlRect(false);
+                const int buttonSize = 50;
 
                 rect.width -= buttonSize;
 
                 EditorGUI.LabelField(rect, moduleType.Name, EditorStyles.boldLabel);
-                 
+
                 rect.x += rect.width;
                 rect.width = buttonSize;
 
@@ -155,7 +165,6 @@ namespace SwiftFramework.Core.Editor
         }
 
 
-
         private static string GetScriptPath(string scriptName) => $"Assets/Scripts/{scriptName}.cs";
 
         public override bool CanInstall()
@@ -177,7 +186,7 @@ namespace SwiftFramework.Core.Editor
 
             SymbolCatalog.Add("SWIFT_FRAMEWORK_INSTALLED", "SwiftFramework was installed");
 
-            var c = ScriptBuilder.GenerateAppClass(appName, nameSpace);
+            CodeCompileUnit c = ScriptBuilder.GenerateAppClass(appName, nameSpace);
             ScriptBuilder.SaveClassToDisc(c, GetScriptPath(appName), true, ProcessAppClass);
             RegisterFile(GetScriptPath(appName));
             Compile.OnFinishedCompile += GenerateAppBoot;
@@ -187,7 +196,7 @@ namespace SwiftFramework.Core.Editor
                 if (Util.HasPackageDependency("com.unity.addressables") == false)
                 {
                     EditorUtility.DisplayProgressBar("Installing", "Importing addressables package...", .2f);
-                    Util.AddDependencyToPackageManifest($"com.unity.addressables", Util.AddressableVersion);
+                    Util.AddDependencyToPackageManifest($"com.unity.addressables", Util.ADDRESSABLE_VERSION);
 
                     Compile.OnFinishedCompile += EnableAddressables;
                 }
@@ -208,16 +217,16 @@ namespace SwiftFramework.Core.Editor
         {
             EditorUtility.DisplayProgressBar("Installing", "Generating boot...", .5f);
 
-            var appClass = Util.FindChildClass(typeof(App));
-            var bootClass = ScriptBuilder.GenerateAppBootClass(appClass);
-            var bootPath = $"Assets/Scripts/AppBoot.cs";
+            Type appClass = Util.FindChildClass(typeof(App));
+            CodeCompileUnit bootClass = ScriptBuilder.GenerateAppBootClass(appClass);
+            string bootPath = $"Assets/Scripts/AppBoot.cs";
             ScriptBuilder.SaveClassToDisc(bootClass, bootPath, true);
 
-            var data = PluginsManifest.Instance.CurrentPluginData;
+            PluginData data = PluginsManifest.Instance.CurrentPluginData;
 
             data.copiedFiles.Add(bootPath);
 
-            var manifest = ScriptBuilder.GenerateManifestClass(appClass.Namespace, appClass);
+            CodeCompileUnit manifest = ScriptBuilder.GenerateManifestClass(appClass.Namespace, appClass);
             var manifestPath = GetScriptPath($"ModuleManifest");
             ScriptBuilder.SaveClassToDisc(manifest, manifestPath, true);
 
@@ -234,6 +243,7 @@ namespace SwiftFramework.Core.Editor
             {
                 return;
             }
+
             data.copiedFiles.Add(localPath);
             EditorUtility.SetDirty(PluginsManifest.Instance);
         }
@@ -261,7 +271,8 @@ namespace SwiftFramework.Core.Editor
 
             Type manifestType = Util.FindChildClass(typeof(BaseModuleManifest));
 
-            BaseModuleManifest manifest = Util.CreateScriptable(manifestType, "ModuleManifest", configsFolder) as BaseModuleManifest;
+            BaseModuleManifest manifest =
+                Util.CreateScriptable(manifestType, "ModuleManifest", configsFolder) as BaseModuleManifest;
 
             RegisterFile(AssetDatabase.GetAssetPath(manifest));
 
@@ -283,18 +294,21 @@ namespace SwiftFramework.Core.Editor
                     scriptLines.Insert(firstLine, $"");
                 }
 
-                var moduleType = Type.GetType(module);
-                var moduleName = moduleType.Name;
-                var fieldName = moduleName.Remove(0, 1);
+                Type moduleType = Type.GetType(module);
+                string moduleName = moduleType?.Name;
+                string fieldName = moduleName?.Remove(0, 1);
 
-                fieldName = fieldName.ToString().ToLower()[0] + fieldName.Substring(1, fieldName.Length - 1);
+                if (fieldName != null)
+                {
+                    fieldName = fieldName.ToLower()[0] + fieldName.Substring(1, fieldName.Length - 1);
 
-                scriptLines.Insert(firstLine, $"        public {moduleName} {moduleName.Remove(0, 1)} => GetCachedModule(ref {fieldName});");
-                scriptLines.Insert(firstLine, $"        private {moduleName} {fieldName};");
+                    scriptLines.Insert(firstLine,
+                        $"        public {moduleName} {moduleName.Remove(0, 1)} => GetCachedModule(ref {fieldName});");
+                    scriptLines.Insert(firstLine, $"        private {moduleName} {fieldName};");
+                }
 
                 i++;
             }
-
         }
 
         private bool IsModuleEligible(Type type)
@@ -309,21 +323,14 @@ namespace SwiftFramework.Core.Editor
                 return false;
             }
 
-            var group = type.GetCustomAttribute<ModuleGroupAttribute>();
+            ModuleGroupAttribute group = type.GetCustomAttribute<ModuleGroupAttribute>();
 
             if (group != null && group.GroupId == ModuleGroups.Core)
             {
                 return false;
             }
 
-            if (modules.Find(m => Type.GetType(m) == type) != null)
-            {
-                return false;
-            }
-
-            return true;
-
+            return modules.Find(m => Type.GetType(m) == type) == null;
         }
-
     }
 }

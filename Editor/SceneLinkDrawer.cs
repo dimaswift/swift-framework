@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -16,6 +17,7 @@ namespace SwiftFramework.Core.Editor
             {
                 drawer = new SceneLinkDrawer(typeof(SceneAsset), fieldInfo);
             }
+
             drawer.Draw(position, property, label);
         }
     }
@@ -23,13 +25,14 @@ namespace SwiftFramework.Core.Editor
 
     internal class SceneLinkDrawer : BaseLinkDrawer
     {
-        public SceneLinkDrawer(System.Type type, FieldInfo fieldInfo) : base(type, fieldInfo)
+        public SceneLinkDrawer(Type type, FieldInfo fieldInfo) : base(type, fieldInfo)
         {
         }
 
         protected override void OnAssetChanged(string previousAssetPath, string newAssetPath)
         {
-            List<EditorBuildSettingsScene> editorBuildSettingsScenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            List<EditorBuildSettingsScene> editorBuildSettingsScenes =
+                new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
             editorBuildSettingsScenes.RemoveAll(s => s.path == previousAssetPath);
 
             if (editorBuildSettingsScenes.FindIndex(s => s.path == newAssetPath) == -1)
@@ -41,7 +44,8 @@ namespace SwiftFramework.Core.Editor
 
         protected override void OnNullSelected(string previousAssetPath)
         {
-            List<EditorBuildSettingsScene> editorBuildSettingsScenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            List<EditorBuildSettingsScene> editorBuildSettingsScenes =
+                new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
             editorBuildSettingsScenes.RemoveAll(s => s.path == previousAssetPath);
             EditorBuildSettings.scenes = editorBuildSettingsScenes.ToArray();
         }
@@ -54,7 +58,6 @@ namespace SwiftFramework.Core.Editor
 #else
             assets.AddRange(ResourcesAssetHelper.GetScenes());
 #endif
-
         }
     }
 }

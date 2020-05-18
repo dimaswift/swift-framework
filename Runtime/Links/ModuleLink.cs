@@ -46,11 +46,7 @@ namespace SwiftFramework.Core
                     return null;
                 }
             }
-            set
-            {
-                implementationType = value.AssemblyQualifiedName;
-            }
-
+            set => implementationType = value.AssemblyQualifiedName;
         }
 
         public ModuleLink()

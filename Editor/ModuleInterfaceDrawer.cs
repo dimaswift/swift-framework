@@ -14,9 +14,11 @@ namespace SwiftFramework.Core.Editor
         {
             if (interfaceDrawer == null)
             {
-                interfaceDrawer = new ClassPropertyDrawer("Module Interface", IsModule, property.FindPropertyRelative("interfaceType"));
+                interfaceDrawer = new ClassPropertyDrawer("Module Interface", IsModule,
+                    property.FindPropertyRelative("interfaceType"));
 
-                implementationDrawer = new ClassPropertyDrawer("Implementation", IsImplementation, property.FindPropertyRelative("implementationType"));
+                implementationDrawer = new ClassPropertyDrawer("Implementation", IsImplementation,
+                    property.FindPropertyRelative("implementationType"));
 
                 interfaceDrawer.OnSelectionChanged += implementationDrawer.Rebuild;
             }
@@ -41,11 +43,12 @@ namespace SwiftFramework.Core.Editor
             {
                 return false;
             }
+
             if (interfaceDrawer.SelectedType != type && interfaceDrawer.SelectedType.IsAssignableFrom(type))
             {
                 return true;
             }
-             
+
             return false;
         }
 
@@ -56,13 +59,7 @@ namespace SwiftFramework.Core.Editor
                 return false;
             }
 
-            if (typeof(IModule).IsAssignableFrom(type) == false)
-            {
-                return false;
-            }
-
-            return true;
-
+            return typeof(IModule).IsAssignableFrom(type);
         }
     }
 }

@@ -5,9 +5,9 @@ namespace SwiftFramework.EditorUtils
     [System.Serializable]
     internal class BuildTargetSettings_WebGL : IBuildTargetSettings
     {
-        public BuildTarget buildTarget { get { return BuildTarget.WebGL; } }
+        public BuildTarget BuildTarget => BuildTarget.WebGL;
 
-        public Texture icon { get { return EditorGUIUtility.FindTexture("BuildSettings.WebGL.Small"); } }
+        public Texture Icon => EditorGUIUtility.FindTexture("BuildSettings.WebGL.Small");
 
         public void Reset() { }
 

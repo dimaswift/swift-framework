@@ -1,8 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
-using System;
-using System.IO;
-
 
 namespace SwiftFramework.EditorUtils
 {
@@ -10,14 +10,14 @@ namespace SwiftFramework.EditorUtils
     {
         private static GUIStyle warningStyle;
 
-        public static readonly Color warningRedColor = new Color(1, 0.5130347f, 0.4470588f, 1);
+        public static readonly Color WarningRedColor = new Color(1, 0.5130347f, 0.4470588f, 1);
 
         public static Color GreenColor { get; } = new Color(0.4481132f, 1, 0.6813686f, 1);
 
         public static Color YellowColor { get; } = new Color(1f, 0.9068019f, 0.4470588f, 1);
 
-
-        public static void FilePathField(SerializedProperty property, string title, string directory, string extension, params GUILayoutOption[] options)
+        public static void FilePathField(SerializedProperty property, string title, string directory, string extension,
+            params GUILayoutOption[] options)
         {
             FilePathField(property, new GUIContent(property.displayName), title, directory, extension, options);
         }
@@ -30,12 +30,14 @@ namespace SwiftFramework.EditorUtils
             {
                 if (boldCenteredLabel == null)
                 {
-                    boldCenteredLabel = new GUIStyle("RL Header");
-                    boldCenteredLabel.alignment = TextAnchor.MiddleCenter;
-                    boldCenteredLabel.richText = true;
-                    boldCenteredLabel.fontSize = 15;
-                    boldCenteredLabel.fontStyle = FontStyle.Bold;
-                    boldCenteredLabel.stretchWidth = true;
+                    boldCenteredLabel = new GUIStyle("RL Header")
+                    {
+                        alignment = TextAnchor.MiddleCenter,
+                        richText = true,
+                        fontSize = 15,
+                        fontStyle = FontStyle.Bold,
+                        stretchWidth = true
+                    };
 
                     boldCenteredLabel.stretchWidth = true;
                     boldCenteredLabel.stretchHeight = false;
@@ -43,6 +45,7 @@ namespace SwiftFramework.EditorUtils
 
                     boldCenteredLabel.clipping = TextClipping.Overflow;
                 }
+
                 return boldCenteredLabel;
             }
         }
@@ -58,10 +61,10 @@ namespace SwiftFramework.EditorUtils
             EditorGUI.LabelField(rect, message, warningStyle);
         }
 
-        public static void FilePathField(SerializedProperty property, GUIContent label, string title, string directory, string extension, params GUILayoutOption[] options)
+        private static void FilePathField(SerializedProperty property, GUIContent label, string title, string directory,
+            string extension, params GUILayoutOption[] options)
         {
-
-            var r = GUILayoutUtility.GetRect(label, EditorStyles.textField, options);
+            Rect r = GUILayoutUtility.GetRect(label, EditorStyles.textField, options);
             label = EditorGUI.BeginProperty(r, label, property);
 
             EditorGUI.BeginChangeCheck();
@@ -72,7 +75,7 @@ namespace SwiftFramework.EditorUtils
                     property.stringValue = newValue;
             }
 
-            var rButton = new Rect(r.x + r.width - 1, r.y, 20, 17);
+            Rect rButton = new Rect(r.x + r.width - 1, r.y, 20, 17);
             if (GUI.Button(rButton, EditorGUIUtility.FindTexture("project"), EditorStyles.label))
             {
                 string path = EditorUtility.OpenFilePanel(title, directory, extension);
@@ -80,13 +83,16 @@ namespace SwiftFramework.EditorUtils
                 {
                     property.stringValue = path.Replace(Environment.CurrentDirectory + Path.DirectorySeparatorChar, "");
                 }
+
                 GUIUtility.keyboardControl = 0;
             }
+
             EditorGUI.EndProperty();
         }
 
 
-        public static void DirectoryPathField(Rect position, SerializedProperty property, GUIContent label, string title, params GUILayoutOption[] options)
+        public static void DirectoryPathField(Rect position, SerializedProperty property, GUIContent label,
+            string title, params GUILayoutOption[] options)
         {
             label = EditorGUI.BeginProperty(position, label, property);
 
@@ -98,33 +104,41 @@ namespace SwiftFramework.EditorUtils
                     property.stringValue = newValue;
             }
 
-            var rButton = new Rect(position.x + position.width - 1, position.y, 20, 17);
+            Rect rButton = new Rect(position.x + position.width - 1, position.y, 20, 17);
             if (GUI.Button(rButton, EditorGUIUtility.FindTexture("project"), EditorStyles.label))
             {
-                string directory = 0 < property.stringValue.Length && Directory.Exists(property.stringValue) ? property.stringValue : "Assets/";
+                string directory = 0 < property.stringValue.Length && Directory.Exists(property.stringValue)
+                    ? property.stringValue
+                    : "Assets/";
                 string path = EditorUtility.OpenFolderPanel(title, directory, "");
                 if (!string.IsNullOrEmpty(path))
                 {
                     property.stringValue = path.Replace(Environment.CurrentDirectory + Path.DirectorySeparatorChar, "");
                 }
+
                 GUIUtility.keyboardControl = 0;
             }
+
             EditorGUI.EndProperty();
         }
 
-        public static void TextFieldWithTemplate(SerializedProperty property, string[] displayedOptions, bool maskable, params GUILayoutOption[] options)
+        public static void TextFieldWithTemplate(SerializedProperty property, string[] displayedOptions, bool maskable,
+            params GUILayoutOption[] options)
         {
             TextFieldWithTemplate(property, new GUIContent(property.displayName), displayedOptions, maskable, options);
         }
 
-        public static void TextFieldWithTemplate(SerializedProperty property, GUIContent label, string[] displayedOptions, bool maskable, params GUILayoutOption[] options)
+        private static void TextFieldWithTemplate(SerializedProperty property, GUIContent label,
+            string[] displayedOptions, bool maskable, params GUILayoutOption[] options)
         {
-            TextFieldWithTemplate(GUILayoutUtility.GetRect(label, EditorStyles.textField, options), property, new GUIContent(property.displayName), displayedOptions, maskable, options);
+            TextFieldWithTemplate(GUILayoutUtility.GetRect(label, EditorStyles.textField, options), property,
+                new GUIContent(property.displayName), displayedOptions, maskable, options);
         }
 
-        public static void TextFieldWithTemplate(Rect r, SerializedProperty property, GUIContent label, string[] displayedOptions, bool maskable, params GUILayoutOption[] options)
+        public static void TextFieldWithTemplate(Rect r, SerializedProperty property, GUIContent label,
+            IEnumerable<string> displayedOptions, bool maskable, params GUILayoutOption[] options)
         {
-            var content = EditorGUI.BeginProperty(r, label, property);
+            GUIContent content = EditorGUI.BeginProperty(r, label, property);
             if (maskable)
                 content.text += " (;)";
 
@@ -136,11 +150,10 @@ namespace SwiftFramework.EditorUtils
                     property.stringValue = newValue;
             }
 
-            var rButton = new Rect(r.x + r.width + 2, r.y + 5, 14, 10);
+            Rect rButton = new Rect(r.x + r.width + 2, r.y + 5, 14, 10);
             if (GUI.Button(rButton, EditorGUIUtility.FindTexture("icon dropdown"), EditorStyles.label))
             {
-
-                var menu = new GenericMenu();
+                GenericMenu menu = new GenericMenu();
                 foreach (var op in displayedOptions)
                 {
                     string item = op;
@@ -150,51 +163,59 @@ namespace SwiftFramework.EditorUtils
                         {
                             if (maskable)
                             {
-                                property.stringValue = active ? property.stringValue.Replace(item, "") : property.stringValue + ";" + item;
+                                property.stringValue =
+                                    active ? property.stringValue.Replace(item, "") : property.stringValue + ";" + item;
                                 property.stringValue = property.stringValue.Replace(";;", ";").Trim(';');
                             }
                             else
                             {
                                 property.stringValue = item;
                             }
+
                             property.serializedObject.ApplyModifiedProperties();
                         });
                 }
 
 
                 GUIUtility.keyboardControl = 0;
-                menu.DropDown(new Rect(r.x + EditorGUIUtility.labelWidth, r.y, r.width - EditorGUIUtility.labelWidth + 14, r.height));
+                menu.DropDown(new Rect(r.x + EditorGUIUtility.labelWidth, r.y,
+                    r.width - EditorGUIUtility.labelWidth + 14, r.height));
             }
+
             EditorGUI.EndProperty();
         }
 
         public class GroupScope : IDisposable
         {
-            static GUIStyle styleHeader;
-            static GUIStyle styleInner;
+            private static GUIStyle styleHeader;
+            private static GUIStyle styleInner;
 
-            static void CacheGUI()
+            private static void CacheGUI()
             {
                 if (styleHeader != null)
                     return;
 
-                styleHeader = new GUIStyle("RL Header");
-                styleHeader.alignment = TextAnchor.MiddleLeft;
-                styleHeader.richText = true;
-                styleHeader.fontSize = 11;
-                styleHeader.fontStyle = FontStyle.Bold;
-                styleHeader.stretchWidth = true;
-                styleHeader.margin = new RectOffset(4, 0, 2, 0);
-                styleHeader.padding = new RectOffset(6, 4, 0, 0);
+                styleHeader = new GUIStyle("RL Header")
+                {
+                    alignment = TextAnchor.MiddleLeft,
+                    richText = true,
+                    fontSize = 11,
+                    fontStyle = FontStyle.Bold,
+                    stretchWidth = true,
+                    margin = new RectOffset(4, 0, 2, 0),
+                    padding = new RectOffset(6, 4, 0, 0)
+                };
                 styleHeader.stretchWidth = true;
                 styleHeader.stretchHeight = false;
                 styleHeader.normal.textColor = EditorStyles.label.normal.textColor;
 
-                styleInner = new GUIStyle("RL Background");
-                styleInner.border = new RectOffset(10, 10, 1, 8);
-                styleInner.margin = new RectOffset(4, 0, 0, 2);
-                styleInner.padding = new RectOffset(4, 4, 3, 6);
-                styleInner.clipping = TextClipping.Clip;
+                styleInner = new GUIStyle("RL Background")
+                {
+                    border = new RectOffset(10, 10, 1, 8),
+                    margin = new RectOffset(4, 0, 0, 2),
+                    padding = new RectOffset(4, 4, 3, 6),
+                    clipping = TextClipping.Clip
+                };
             }
 
             public static GUIStyle GetInnerStyle()
@@ -209,8 +230,7 @@ namespace SwiftFramework.EditorUtils
                 return styleHeader;
             }
 
-
-            void SetScope(GUIContent content, params GUILayoutOption[] option)
+            static void SetScope(GUIContent content, params GUILayoutOption[] option)
             {
                 CacheGUI();
 

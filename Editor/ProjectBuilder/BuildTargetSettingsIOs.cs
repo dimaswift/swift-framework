@@ -1,9 +1,6 @@
-﻿using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System;
 using UnityEditor;
 using UnityEngine;
-using UnityEditor.Callbacks;
 
 #if UNITY_IOS
 using UnityEditor.iOS.Xcode;
@@ -11,26 +8,24 @@ using UnityEditor.iOS.Xcode;
 
 namespace SwiftFramework.EditorUtils
 {
-    [System.Serializable]
-    internal class BuildTargetSettings_iOS : IBuildTargetSettings
+    [Serializable]
+    internal class BuildTargetSettingsIOs : IBuildTargetSettings
     {
-        public BuildTarget buildTarget { get { return BuildTarget.iOS; } }
+        public BuildTarget BuildTarget => BuildTarget.iOS;
 
-        public Texture icon { get { return EditorGUIUtility.FindTexture("BuildSettings.iPhone.Small"); } }
+        public Texture Icon => EditorGUIUtility.FindTexture("BuildSettings.iPhone.Small");
 
         [Tooltip("Enable automatically sign.")]
         public bool automaticallySign = false;
 
-        [Tooltip("Developer Team Id.")]
-        public string developerTeamId = "";
+        [Tooltip("Developer Team Id.")] public string developerTeamId = "";
 
-        [Tooltip("Code Sign Identifier.")]
-        public string codeSignIdentity = "";
+        [Tooltip("Code Sign Identifier.")] public string codeSignIdentity = "";
 
         [Tooltip("Provisioning Profile Id.\nFor example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")]
         public string profileId = "";
 
-        [Tooltip("Provisioning Profile Specifier.\nFor example: com campany app_name")]
+        [Tooltip("Provisioning Profile Specifier.\nFor example: com company app_name")]
         public string profileSpecifier = "";
 
         [Tooltip("Support languages.\nIf you have multiple definitions, separate with a semicolon(;)")]
@@ -39,7 +34,8 @@ namespace SwiftFramework.EditorUtils
         [Tooltip("Generate exportOptions.plist under build path for xcodebuild (XCode7 and later).")]
         public bool generateExportOptionPlist = false;
 
-        [Tooltip("The method of distribution, which can be set as any of the following:\napp-store, ad-hoc, package, enterprise, development, developer-id.")]
+        [Tooltip(
+            "The method of distribution, which can be set as any of the following:\napp-store, ad-hoc, package, enterprise, development, developer-id.")]
         public string exportMethod = "development";
 
         [Tooltip("Option to include Bitcode.")]
@@ -57,7 +53,7 @@ namespace SwiftFramework.EditorUtils
         [Tooltip("Additional frameworks.\nIf you have multiple definitions, separate with a semicolon(;)")]
         public string frameworks = "";
 
-        static readonly string[] s_AvailableExportMethods =
+        private static readonly string[] availableExportMethods =
         {
             "app-store",
             "ad-hoc",
@@ -67,19 +63,19 @@ namespace SwiftFramework.EditorUtils
             "developer-id",
         };
 
-        static readonly string[] s_AvailableLanguages =
+        private static readonly string[] availableLanguages =
         {
-            "jp",
+            "ru",
             "en",
         };
 
 
-        static readonly string[] s_AvailableFrameworks =
+        private static readonly string[] availableFrameworks =
         {
             "iAd.framework",
         };
 
-        static readonly string[] s_AvailableServices =
+        private static readonly string[] availableServices =
         {
             "com.apple.ApplePay",
             "com.apple.ApplicationGroups.iOS",
@@ -102,7 +98,6 @@ namespace SwiftFramework.EditorUtils
             "com.apple.Wallet",
             "com.apple.iCloud",
         };
-
 
 
         public void Reset()
@@ -134,22 +129,26 @@ namespace SwiftFramework.EditorUtils
 
         public void DrawSetting(SerializedObject serializedObject)
         {
-            var settings = serializedObject.FindProperty("iosSettings");
+            SerializedProperty settings = serializedObject.FindProperty("iosSettings");
 
             using (new EditorGUIEx.GroupScope("iOS Settings"))
             {
                 EditorGUILayout.LabelField("XCode Project", EditorStyles.boldLabel);
                 EditorGUI.indentLevel++;
                 {
-                    EditorGUIEx.TextFieldWithTemplate(settings.FindPropertyRelative("languages"), s_AvailableLanguages, true);
-                    EditorGUIEx.TextFieldWithTemplate(settings.FindPropertyRelative("frameworks"), s_AvailableFrameworks, true);
-                    EditorGUIEx.TextFieldWithTemplate(settings.FindPropertyRelative("services"), s_AvailableServices, true);
-                    EditorGUIEx.FilePathField(settings.FindPropertyRelative("entitlementsFile"), "Select entitlement file.", "", "entitlements");
+                    EditorGUIEx.TextFieldWithTemplate(settings.FindPropertyRelative("languages"), availableLanguages,
+                        true);
+                    EditorGUIEx.TextFieldWithTemplate(settings.FindPropertyRelative("frameworks"),
+                        availableFrameworks, true);
+                    EditorGUIEx.TextFieldWithTemplate(settings.FindPropertyRelative("services"), availableServices,
+                        true);
+                    EditorGUIEx.FilePathField(settings.FindPropertyRelative("entitlementsFile"),
+                        "Select entitlement file.", "", "entitlements");
                 }
                 EditorGUI.indentLevel--;
 
                 EditorGUILayout.LabelField("Signing", EditorStyles.boldLabel);
-                var spAutomaticallySign = settings.FindPropertyRelative("automaticallySign");
+                SerializedProperty spAutomaticallySign = settings.FindPropertyRelative("automaticallySign");
                 EditorGUI.indentLevel++;
                 {
                     EditorGUILayout.PropertyField(spAutomaticallySign);
@@ -166,11 +165,12 @@ namespace SwiftFramework.EditorUtils
                 EditorGUILayout.LabelField("exportOptions.plist Setting", EditorStyles.boldLabel);
                 EditorGUI.indentLevel++;
                 {
-                    var spGenerate = settings.FindPropertyRelative("generateExportOptionPlist");
+                    SerializedProperty spGenerate = settings.FindPropertyRelative("generateExportOptionPlist");
                     EditorGUILayout.PropertyField(spGenerate, new GUIContent("Generate Automatically"));
                     if (spGenerate.boolValue)
                     {
-                        EditorGUIEx.TextFieldWithTemplate(settings.FindPropertyRelative("exportMethod"), s_AvailableExportMethods, false);
+                        EditorGUIEx.TextFieldWithTemplate(settings.FindPropertyRelative("exportMethod"),
+                            availableExportMethods, false);
                         EditorGUILayout.PropertyField(settings.FindPropertyRelative("uploadBitcode"));
                         EditorGUILayout.PropertyField(settings.FindPropertyRelative("uploadSymbols"));
                     }

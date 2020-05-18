@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace SwiftFramework.Core
 {
@@ -16,8 +17,6 @@ namespace SwiftFramework.Core
 
         protected override void OnInit()
         {
-            
-
         }
 
         private void Update()
@@ -47,12 +46,12 @@ namespace SwiftFramework.Core
             if (dragging)
             {
                 Vector3 screenPoint = GetWorldPointer();
-                var pos = transform.position;
-                var offset = pressedScreenPoint - screenPoint;
+                Vector3 pos = transform.position;
+                Vector3 offset = pressedScreenPoint - screenPoint;
 
                 if (offset.sqrMagnitude >= dragStartThresholdDistance)
                 {
-                    var targetPos = GetClampedPosition(pressedPoint + (pressedScreenPoint - screenPoint));
+                    Vector3 targetPos = GetClampedPosition(pressedPoint + (pressedScreenPoint - screenPoint));
                     transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * dragSpeed);
                 }
 
@@ -69,18 +68,18 @@ namespace SwiftFramework.Core
                 {
                     dragVelocity = Vector3.Lerp(dragVelocity, Vector3.zero, damping * Time.deltaTime);
                 }
+
                 Move(dragVelocity);
             }
-          
-
         }
 
         private void Move(Vector3 delta)
         {
-            if (delta.sqrMagnitude == 0)
+            if (Math.Abs(delta.sqrMagnitude) < float.Epsilon)
             {
                 return;
             }
+
             Vector3 targetPos = transform.position;
             targetPos += delta;
             targetPos = GetClampedPosition(targetPos);
@@ -90,8 +89,10 @@ namespace SwiftFramework.Core
         private Vector3 GetClampedPosition(Vector3 pos)
         {
             pos.z = transform.position.z;
-            pos.x = Mathf.Clamp(pos.x, -bounds.extents.x + cameraBounds.extents.x, bounds.extents.x - cameraBounds.extents.x);
-            pos.y = Mathf.Clamp(pos.y, -bounds.extents.y + cameraBounds.extents.y, bounds.extents.y - cameraBounds.extents.y);
+            pos.x = Mathf.Clamp(pos.x, -bounds.extents.x + cameraBounds.extents.x,
+                bounds.extents.x - cameraBounds.extents.x);
+            pos.y = Mathf.Clamp(pos.y, -bounds.extents.y + cameraBounds.extents.y,
+                bounds.extents.y - cameraBounds.extents.y);
             return pos;
         }
 

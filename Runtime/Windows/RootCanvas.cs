@@ -7,14 +7,8 @@ namespace SwiftFramework.Core.Windows
     {
         public CanvasType Type
         {
-            get
-            {
-                return type;
-            }
-            set
-            {
-                type = value;
-            }
+            get => type;
+            set => type = value;
         }
 
         public RectTransform RectTransform

@@ -793,20 +793,20 @@ namespace SwiftFramework.Utils
 
         public Expose this[string i]
         {
-            set { Set(i, value); }
-            get { return Get(i); }
+            set => Set(i, value);
+            get => Get(i);
         }
 
         public Expose this[object i]
         {
-            set { Set(i, value); }
-            get { return Get(i); }
+            set => Set(i, value);
+            get => Get(i);
         }
 
         public Expose this[params object[] i]
         {
-            set { Set(i, value); }
-            get { return Get(i); }
+            set => Set(i, value);
+            get => Get(i);
         }
 
         public static bool Is(Type actual, Type expected)

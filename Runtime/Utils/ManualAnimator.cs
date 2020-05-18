@@ -31,14 +31,8 @@ namespace SwiftFramework.Utils
 
         public bool IsAnimating
         {
-            get
-            {
-                return Animator.enabled;
-            }
-            set
-            {
-                Animator.enabled = value;
-            }
+            get => Animator.enabled;
+            set => Animator.enabled = value;
         }
 
         private float Normalize(float time)

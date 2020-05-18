@@ -17,6 +17,7 @@ namespace SwiftFramework.Core
             {
                 cam = Camera.main;
             }
+
             if (aspect != cam.aspect)
             {
                 aspect = cam.aspect;
@@ -31,30 +32,30 @@ namespace SwiftFramework.Core
                         break;
                     case TextAnchor.UpperCenter:
                         targetPosition.y = targetPosition.y + cameraBounds.extents.y + offset.y;
-                        targetPosition.x = targetPosition.x + offset.x;
+                        targetPosition.x += offset.x;
                         break;
                     case TextAnchor.UpperRight:
                         targetPosition.x = targetPosition.x + cameraBounds.extents.x + offset.x;
                         targetPosition.y = targetPosition.y + cameraBounds.extents.y + offset.y;
                         break;
                     case TextAnchor.MiddleLeft:
-                        targetPosition.y = targetPosition.y + offset.y;
+                        targetPosition.y += offset.y;
                         targetPosition.x = targetPosition.x - cameraBounds.extents.x + offset.x;
                         break;
                     case TextAnchor.MiddleCenter:
-                        targetPosition.x = targetPosition.x + offset.x;
-                        targetPosition.y = targetPosition.y + offset.y;
+                        targetPosition.x += offset.x;
+                        targetPosition.y += offset.y;
                         break;
                     case TextAnchor.MiddleRight:
                         targetPosition.x = targetPosition.x + cameraBounds.extents.x + offset.x;
-                        targetPosition.y = targetPosition.y + offset.y;
+                        targetPosition.y += offset.y;
                         break;
                     case TextAnchor.LowerLeft:
                         targetPosition.x = targetPosition.x - cameraBounds.extents.x + offset.x;
                         targetPosition.y = targetPosition.y - cameraBounds.extents.y + offset.y;
                         break;
                     case TextAnchor.LowerCenter:
-                        targetPosition.x = targetPosition.x + offset.x;
+                        targetPosition.x += offset.x;
                         targetPosition.y = targetPosition.y - cameraBounds.extents.y + offset.y;
                         break;
                     case TextAnchor.LowerRight:

@@ -12,10 +12,7 @@ namespace SwiftFramework.Core
 
             T boot = new GameObject(typeof(T).Name).AddComponent<T>();
 
-            boot.OnInitialized += () =>
-            {
-                bootPromise.Resolve();
-            };
+            boot.OnInitialized += () => { bootPromise.Resolve(); };
 
             return bootPromise;
         }
@@ -40,37 +37,34 @@ namespace SwiftFramework.Core
 
         private void Start()
         {
-            AssetCache.LoadSingletonAsset<BootConfig>().Then(bootConfig => 
-            {
-                Config = bootConfig;
-
-                transform.SetParent(null);
-
-                DontDestroyOnLoad(gameObject);
-
-                OnAppWillBoot();
-
-                App.InitPromise.Progress(p =>
+            AssetCache.LoadSingletonAsset<BootConfig>().Then(bootConfig =>
                 {
-                    OnLoadingProgressChanged(p);
-                });
+                    Config = bootConfig;
 
-                bootConfig.modulesManifest.Load().Then(manifest =>
-                {
-                    App<A>.Create(this, GetLogger(), manifest, debugMode).Then(() =>
-                    {
-                        OnInitialized();
-                        OnAppInitialized();
-                        if (onAppInitialized.HasValue)
+                    transform.SetParent(null);
+
+                    DontDestroyOnLoad(gameObject);
+
+                    OnAppWillBoot();
+
+                    App.InitPromise.Progress(p => { OnLoadingProgressChanged(p); });
+
+                    bootConfig.modulesManifest.Load().Then(manifest =>
                         {
-                            onAppInitialized.Value.Invoke();
-                        }
-                    })
-                    .LogException();
+                            App<A>.Create(this, GetLogger(), manifest, debugMode).Then(() =>
+                                {
+                                    OnInitialized();
+                                    OnAppInitialized();
+                                    if (onAppInitialized.HasValue)
+                                    {
+                                        onAppInitialized.Value.Invoke();
+                                    }
+                                })
+                                .LogException();
+                        })
+                        .LogException();
                 })
-                .LogException();
-            })
-            .Catch(e => Debug.LogException(e));
+                .Catch(e => Debug.LogException(e));
         }
 
         protected virtual bool IsSetUpValid()
@@ -96,19 +90,33 @@ namespace SwiftFramework.Core
             return logger;
         }
 
-        protected virtual void OnAppWillBoot() { }
+        protected virtual void OnAppWillBoot()
+        {
+        }
 
-        protected virtual void OnAppInitialized() { }
+        protected virtual void OnAppInitialized()
+        {
+        }
 
-        protected virtual void OnAppPaused() { }
+        protected virtual void OnAppPaused()
+        {
+        }
 
-        protected virtual void OnAppResumed() { }
+        protected virtual void OnAppResumed()
+        {
+        }
 
-        protected virtual void OnAppFocusChanged(bool focused) { }
+        protected virtual void OnAppFocusChanged(bool focused)
+        {
+        }
 
-        protected virtual void OnAppWillBeRestarted() { }
+        protected virtual void OnAppWillBeRestarted()
+        {
+        }
 
-        protected virtual void OnLoadingProgressChanged(float progress) { }
+        protected virtual void OnLoadingProgressChanged(float progress)
+        {
+        }
 
         public IPromise Restart()
         {
@@ -127,29 +135,27 @@ namespace SwiftFramework.Core
             {
                 yield return null;
             }
+
             Resources.UnloadUnusedAssets();
             GC.Collect();
             App<A>.Create(this, GetLogger(), Config.modulesManifest.Value, debugMode).Then(() =>
-            {
-                OnAppInitialized();
-                OnInitialized();
-                result.Resolve();
-            })
-            .Catch(e =>
-            {
-                Debug.LogException(e);
-            });
+                {
+                    OnAppInitialized();
+                    OnInitialized();
+                    result.Resolve();
+                })
+                .Catch(e => { Debug.LogException(e); });
         }
 
         protected virtual bool IsReadyToRestart() => true;
 
         private void OnApplicationPause(bool pause)
         {
-
             if (App.Initialized == false)
             {
                 return;
             }
+
             if (pause)
             {
                 if (ignoreNextPauseEvent == false)
@@ -168,6 +174,7 @@ namespace SwiftFramework.Core
                         OnAppResumed();
                     });
                 }
+
                 App.Core.Timer.WaitForNextFrame().Done(() => ignoreNextPauseEvent = false);
             }
         }
@@ -178,17 +185,18 @@ namespace SwiftFramework.Core
             {
                 return;
             }
+
             if (focus == false)
             {
-                OnAppFocusChanged(focus);
-                OnFocused(focus);
+                OnAppFocusChanged(false);
+                OnFocused(false);
             }
             else
             {
                 App.Core.Timer.WaitForNextFrame().Done(() =>
                 {
-                    OnFocused(focus);
-                    OnAppFocusChanged(focus);
+                    OnFocused(true);
+                    OnAppFocusChanged(true);
                 });
             }
         }
@@ -199,6 +207,7 @@ namespace SwiftFramework.Core
             {
                 return;
             }
+
             OnPaused();
             OnAppPaused();
         }
@@ -206,10 +215,7 @@ namespace SwiftFramework.Core
         public void IgnoreNextPauseEvent()
         {
             ignoreNextPauseEvent = true;
-            App.Core.Timer.WaitFor(1).Done(() =>
-            {
-                ignoreNextPauseEvent = false;
-            });
+            App.Core.Timer.WaitFor(1).Done(() => { ignoreNextPauseEvent = false; });
         }
     }
 }

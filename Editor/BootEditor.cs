@@ -1,9 +1,7 @@
-﻿using SwiftFramework.Editor;
-using SwiftFramework.EditorUtils;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.CodeDom;
 using System.IO;
-using System.Reflection;
+using SwiftFramework.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,8 +16,9 @@ namespace SwiftFramework.Core.Editor
         {
             Type appClass = Util.FindChildClass(typeof(App));
             Type bootClass = Util.FindChildClass(typeof(AppBoot));
-            var manifest = ScriptBuilder.GenerateManifestClass(bootClass.Namespace, appClass);
-            ScriptBuilder.SaveClassToDisc(manifest, Path.Combine(Application.dataPath, Util.GetScriptFolder(bootClass), $"ModuleManifest.cs"), false);
+            CodeCompileUnit manifest = ScriptBuilder.GenerateManifestClass(bootClass.Namespace, appClass);
+            ScriptBuilder.SaveClassToDisc(manifest,
+                Path.Combine(Application.dataPath, Util.GetScriptFolder(bootClass), $"ModuleManifest.cs"), false);
         }
 
         private static T EnsureConfigExists<T>(string configsFolder) where T : ScriptableObject
@@ -30,6 +29,7 @@ namespace SwiftFramework.Core.Editor
                 Util.EnsureProjectFolderExists(configsFolder);
                 config = Util.CreateScriptable<T>(typeof(T).Name, configsFolder);
             }
+
             return config;
         }
 
@@ -44,8 +44,9 @@ namespace SwiftFramework.Core.Editor
             ScriptableObject manifest = Util.FindScriptableObject(manifestClass);
             if (manifest == null)
             {
-                Debug.Log($"{"Manifest not found"}");
+                Debug.Log("Manifest not found");
             }
+
             return manifest;
         }
 
@@ -68,9 +69,8 @@ namespace SwiftFramework.Core.Editor
                 Debug.LogError("Module Manifest not found!");
                 return;
             }
+
             Selection.activeObject = manifest;
         }
-
-
     }
 }

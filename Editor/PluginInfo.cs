@@ -22,15 +22,18 @@ namespace SwiftFramework.Core.Editor
 
         public virtual bool CanInstall() => true;
         public virtual bool CanRemove() => canBeRemoved;
+
         public virtual void OnInstall()
         {
             PluginInstaller.FinishInstalling();
         }
-        public virtual void OnUpdate(int oldVersion, int newVersion) { }
+
+        public virtual void OnUpdate(int oldVersion, int newVersion)
+        {
+        }
 
         public virtual void OnRemoved()
         {
-
         }
 
         public IEnumerable<(string symbolName, string symbolDesc)> GetSymbols()
@@ -41,7 +44,9 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
-        public virtual void DrawCustomGUI(Action repaintHandler, PluginData data) { }
+        public virtual void DrawCustomGUI(Action repaintHandler, PluginData data)
+        {
+        }
 
         [Serializable]
         public class PackageDependency
@@ -50,5 +55,4 @@ namespace SwiftFramework.Core.Editor
             public string version;
         }
     }
-
 }

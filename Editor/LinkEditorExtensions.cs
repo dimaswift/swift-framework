@@ -2,7 +2,7 @@
 
 namespace SwiftFramework.Core.Editor
 {
-    public static class LinkEditorExtentions
+    public static class LinkEditorExtensions
     {
         public static T ToLink<T>(this SerializedProperty serializedProperty) where T : Link, new()
         {

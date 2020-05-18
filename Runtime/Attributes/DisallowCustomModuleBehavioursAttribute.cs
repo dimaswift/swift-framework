@@ -3,6 +3,7 @@
 namespace SwiftFramework.Core
 {
     [AttributeUsage(AttributeTargets.Class)]
-    public class DisallowCustomModuleBehavioursAttribute : Attribute {}
-
+    public class DisallowCustomModuleBehavioursAttribute : Attribute
+    {
+    }
 }

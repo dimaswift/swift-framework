@@ -1,11 +1,10 @@
-﻿using SwiftFramework.Core;
-using SwiftFramework.Core.Editor;
-using System;
+﻿using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
+using SwiftFramework.Core;
+using SwiftFramework.Core.Editor;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
@@ -26,11 +25,11 @@ namespace SwiftFramework.EditorUtils
         public static void CreateTest()
         {
             var candidates = Util.GetAllTypes(t => typeof(IModule).IsAssignableFrom(t) && t.IsInterface == false);
-            TypeSelectorWindow.Open(candidates, "Choose Modules").Done(moduleToTest => 
+            TypeSelectorWindow.Open(candidates, "Choose Modules").Done(moduleToTest =>
             {
-                var modules = new List<Type>() { moduleToTest.GetInterfaces()[1] };
+                List<Type> modules = new List<Type>() {moduleToTest.GetInterfaces()[1]};
 
-                var deps = moduleToTest.GetCustomAttribute<DependsOnModulesAttribute>();
+                DependsOnModulesAttribute deps = moduleToTest.GetCustomAttribute<DependsOnModulesAttribute>();
 
                 if (deps != null)
                 {
@@ -38,8 +37,8 @@ namespace SwiftFramework.EditorUtils
                 }
 
 
-
-                var folder = EditorUtility.SaveFolderPanel("Choose test folder", Util.RelativeFrameworkRootFolder + "/Tests", "NewTest");
+                var folder = EditorUtility.SaveFolderPanel("Choose test folder",
+                    Util.RelativeFrameworkRootFolder + "/Tests", "NewTest");
 
                 Directory.CreateDirectory(folder + "/Resources");
                 Directory.CreateDirectory(folder + "/Resources/Configs");
@@ -48,7 +47,7 @@ namespace SwiftFramework.EditorUtils
                 string testNamespace = "SwiftFramework.Tests." + name;
                 string prefix = $"{name}__";
 
-                var manifest = GenerateCustomManifestClass(prefix, testNamespace, modules.ToArray());
+                CodeCompileUnit manifest = GenerateCustomManifestClass(prefix, testNamespace, modules.ToArray());
 
                 ScriptBuilder.SaveClassToDisc(manifest, folder + "/" + prefix + "ModuleManifest.cs", true);
 
@@ -64,18 +63,16 @@ namespace SwiftFramework.EditorUtils
                     manifestType = manifestClassName
                 });
 
-                var game = GenerateGameClass(prefix, testNamespace, modules.ToArray());
+                CodeCompileUnit game = GenerateGameClass(prefix, testNamespace, modules.ToArray());
 
                 ScriptBuilder.SaveClassToDisc(game, folder + "/" + prefix + "Game.cs", true);
 
-                var test = GenerateTestClass(prefix, testNamespace);
+                CodeCompileUnit test = GenerateTestClass(prefix, testNamespace);
 
                 ScriptBuilder.SaveClassToDisc(test, folder + "/" + prefix + "Test.cs", true);
 
                 EditorUtility.SetDirty(instance);
             });
-
-            
         }
 
         [DidReloadScripts(1000)]
@@ -85,36 +82,37 @@ namespace SwiftFramework.EditorUtils
             {
                 return;
             }
+
             AssetDatabase.Refresh();
 
-            foreach (var t in instance.pendingTests)
+            foreach (TestConfig test in instance.pendingTests)
             {
-                BaseModuleManifest manifest = AssetDatabase.LoadAssetAtPath<BaseModuleManifest>(t.manifestPath);
+                BaseModuleManifest manifest = AssetDatabase.LoadAssetAtPath<BaseModuleManifest>(test.manifestPath);
 
-                var serializedObject = new SerializedObject(manifest);
+                SerializedObject serializedObject = new SerializedObject(manifest);
 
-                foreach (var item in manifest.GetAllModuleLinks())
+                foreach ((FieldInfo field, ModuleLink _) in manifest.GetAllModuleLinks())
                 {
-                   
                     Type implementationType = null;
-               
-                    
-                    SerializedProperty prop = serializedObject.FindProperty(item.field.Name);
+
+
+                    SerializedProperty prop = serializedObject.FindProperty(field.Name);
 
                     if (prop != null)
                     {
-                        Type interfaceType = item.field.GetCustomAttribute<LinkFilterAttribute>().interfaceType;
-                           
+                        Type interfaceType = field.GetCustomAttribute<LinkFilterAttribute>().interfaceType;
+
                         implementationType = RuntimeModuleFactory.FindFirstModuleImplementation(interfaceType);
 
                         if (implementationType != null)
                         {
-                            prop.FindPropertyRelative("implementationType").stringValue = implementationType.AssemblyQualifiedName;
+                            prop.FindPropertyRelative("implementationType").stringValue =
+                                implementationType.AssemblyQualifiedName;
                             serializedObject.ApplyModifiedProperties();
                         }
                     }
 
-                    if(implementationType != null)
+                    if (implementationType != null)
                     {
                         ConfigurableAttribute attr = implementationType.GetCustomAttribute<ConfigurableAttribute>();
                         if (attr != null)
@@ -124,15 +122,22 @@ namespace SwiftFramework.EditorUtils
                             if (config == null)
                             {
                                 config = CreateInstance(attr.configType);
-                                AssetDatabase.CreateAsset(config, Util.ToRelativePath(new DirectoryInfo(t.manifestPath).Parent.FullName) + "/" + attr.configType.Name + ".asset");
+                                DirectoryInfo directoryInfo = new DirectoryInfo(test.manifestPath).Parent;
+                                if (directoryInfo != null)
+                                    AssetDatabase.CreateAsset(config,
+                                        Util.ToRelativePath(directoryInfo.FullName) +
+                                        "/" +
+                                        attr.configType.Name + ".asset");
                             }
-                            prop.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue = "Tests/" + config.name;
+
+                            prop.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue =
+                                "Tests/" + config.name;
                             serializedObject.ApplyModifiedProperties();
                         }
                     }
 
                     EditorUtility.SetDirty(manifest);
-                } 
+                }
             }
 
             AssetDatabase.Refresh();
@@ -144,7 +149,7 @@ namespace SwiftFramework.EditorUtils
             instance.pendingTests.Clear();
         }
 
-        public static CodeCompileUnit GenerateTestClass(string prefix, string classNamespace)
+        private static CodeCompileUnit GenerateTestClass(string prefix, string classNamespace)
         {
             CodeCompileUnit file = new CodeCompileUnit();
 
@@ -160,15 +165,17 @@ namespace SwiftFramework.EditorUtils
 
             CodeTypeDeclaration gameClass = new CodeTypeDeclaration(className);
 
-            CodeMemberMethod testMethod = new CodeMemberMethod();
-
-            testMethod.Name = "Test";
-
+            CodeMemberMethod testMethod = new CodeMemberMethod { Name = "Test" };
+            
             testMethod.CustomAttributes.Add(new CodeAttributeDeclaration("Test"));
 
-            testMethod.Statements.Add(new CodeVariableDeclarationStatement(prefix + "ModuleManifest", "manifest", new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("Resources"), $"Load<{prefix + "ModuleManifest"}>", new CodePrimitiveExpression("Tests/" + prefix + "ModuleManifest"))));
+            testMethod.Statements.Add(new CodeVariableDeclarationStatement(prefix + "ModuleManifest", "manifest",
+                new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("Resources"),
+                    $"Load<{prefix + "ModuleManifest"}>",
+                    new CodePrimitiveExpression("Tests/" + prefix + "ModuleManifest"))));
 
-            testMethod.Statements.Add( new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("Assert"), $"NotNull", new CodeVariableReferenceExpression("manifest")));
+            testMethod.Statements.Add(new CodeMethodInvokeExpression(new CodeTypeReferenceExpression("Assert"),
+                $"NotNull", new CodeVariableReferenceExpression("manifest")));
 
             CodeExpression[] createArgs =
             {
@@ -178,15 +185,19 @@ namespace SwiftFramework.EditorUtils
                 new CodePrimitiveExpression(false)
             };
 
-            testMethod.Statements.Add(new CodeVariableDeclarationStatement("IPromise", "create", new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(prefix + "Game"), $"Create", createArgs)));
+            testMethod.Statements.Add(new CodeVariableDeclarationStatement("IPromise", "create",
+                new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(prefix + "Game"), $"Create",
+                    createArgs)));
 
-            testMethod.Statements.Add(new CodeMethodInvokeExpression(new CodeVariableReferenceExpression("create"), $"Done", new CodeVariableReferenceExpression("OnAppInitialized")));
+            testMethod.Statements.Add(new CodeMethodInvokeExpression(new CodeVariableReferenceExpression("create"),
+                $"Done", new CodeVariableReferenceExpression("OnAppInitialized")));
 
-            testMethod.Statements.Add(new CodeMethodInvokeExpression(new CodeVariableReferenceExpression("create"), $"Catch", new CodeSnippetExpression("e => Assert.Fail(e.Message)")));
+            testMethod.Statements.Add(new CodeMethodInvokeExpression(new CodeVariableReferenceExpression("create"),
+                $"Catch", new CodeSnippetExpression("e => Assert.Fail(e.Message)")));
 
             testMethod.Attributes = MemberAttributes.Public;
 
-            var appInitMethod = new CodeMemberMethod();
+            CodeMemberMethod appInitMethod = new CodeMemberMethod();
 
             appInitMethod.Statements.Add(new CodeSnippetExpression("Assert.IsTrue(true)"));
 
@@ -203,7 +214,7 @@ namespace SwiftFramework.EditorUtils
             return file;
         }
 
-        public static CodeCompileUnit GenerateGameClass(string prefix, string classNamespace, params Type[] modules)
+        private static CodeCompileUnit GenerateGameClass(string prefix, string classNamespace, params Type[] modules)
         {
             CodeCompileUnit file = new CodeCompileUnit();
 
@@ -219,29 +230,26 @@ namespace SwiftFramework.EditorUtils
 
             gameClass.BaseTypes.Add(new CodeTypeReference($"App<{className}>"));
 
-            foreach (var property in modules)
+            foreach (Type property in modules)
             {
                 string moduleName = property.Name;
-                var moduleField = new CodeMemberField()
+                CodeMemberField moduleField = new CodeMemberField()
                 {
                     Name = moduleName[0].ToString().ToLower() + moduleName.Substring(1, moduleName.Length - 1),
                     Type = new CodeTypeReference(property),
-
                 };
 
-                var moduleProp = new CodeMemberProperty()
+                CodeMemberProperty moduleProp = new CodeMemberProperty
                 {
-                    Name = moduleName[0].ToString() + moduleName.Substring(1, moduleName.Length - 1),
+                    Name = moduleName[0] + moduleName.Substring(1, moduleName.Length - 1),
                     Type = new CodeTypeReference(property),
-                    
+                    Attributes = MemberAttributes.Public,
                 };
-
-                moduleProp.Attributes = MemberAttributes.Public;
-
-                var param = new CodeArgumentReferenceExpression("ref " + moduleField.Name);
                 
-
-                moduleProp.GetStatements.Add(new CodeMethodReturnStatement(new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "GetCachedModule", param)));
+                CodeArgumentReferenceExpression param = new CodeArgumentReferenceExpression("ref " + moduleField.Name);
+                
+                moduleProp.GetStatements.Add(new CodeMethodReturnStatement(
+                    new CodeMethodInvokeExpression(new CodeThisReferenceExpression(), "GetCachedModule", param)));
 
                 gameClass.Members.Add(moduleField);
                 gameClass.Members.Add(moduleProp);
@@ -254,7 +262,8 @@ namespace SwiftFramework.EditorUtils
             return file;
         }
 
-        public static CodeCompileUnit GenerateCustomManifestClass(string prefix, string classNamespace, params Type[] modules)
+        private static CodeCompileUnit GenerateCustomManifestClass(string prefix, string classNamespace,
+            params Type[] modules)
         {
             CodeCompileUnit manifestFile = new CodeCompileUnit();
 
@@ -269,61 +278,58 @@ namespace SwiftFramework.EditorUtils
 
             manifestClass.BaseTypes.Add(new CodeTypeReference("BaseModuleManifest"));
 
-            foreach (var property in modules)
+            foreach (Type property in modules)
             {
                 string moduleName = property.Name;
-                var moduleFiled = new CodeMemberField()
+                CodeMemberField moduleFiled = new CodeMemberField()
                 {
                     Name = moduleName[0].ToString().ToLower() + moduleName.Substring(1, moduleName.Length - 1),
                     Type = new CodeTypeReference(typeof(ModuleLink)),
-
                 };
                 moduleFiled.CustomAttributes.Add(new CodeAttributeDeclaration("SerializeField"));
 
-                var filterAttr = new CodeAttributeDeclaration(new CodeTypeReference("LinkFilter"));
+                CodeAttributeDeclaration filterAttr = new CodeAttributeDeclaration(new CodeTypeReference("LinkFilter"));
 
 
                 filterAttr.Arguments.Add(new CodeAttributeArgument(new CodeTypeOfExpression(property)));
 
                 moduleFiled.CustomAttributes.Add(filterAttr);
-
-
-                manifestClass.Members.Add(moduleFiled);
                 
+                manifestClass.Members.Add(moduleFiled);
             }
 
-            foreach (var property in typeof(App).GetProperties(BindingFlags.Instance | BindingFlags.Public))
+            foreach (PropertyInfo property in typeof(App).GetProperties(BindingFlags.Instance | BindingFlags.Public))
             {
                 if (typeof(IModule).IsAssignableFrom(property.PropertyType))
                 {
                     string moduleName = property.Name;
-                    var moduleFiled = new CodeMemberField()
+                    CodeMemberField moduleFiled = new CodeMemberField()
                     {
                         Name = moduleName[0].ToString().ToLower() + moduleName.Substring(1, moduleName.Length - 1),
                         Type = new CodeTypeReference(typeof(ModuleLink)),
-
                     };
                     moduleFiled.CustomAttributes.Add(new CodeAttributeDeclaration("SerializeField"));
 
-                    var filterAttr = new CodeAttributeDeclaration(new CodeTypeReference("LinkFilter"));
+                    CodeAttributeDeclaration filterAttr = new CodeAttributeDeclaration(new CodeTypeReference("LinkFilter"));
 
-
-                    filterAttr.Arguments.Add(new CodeAttributeArgument(new CodeTypeOfExpression(property.PropertyType)));
+                    filterAttr.Arguments.Add(
+                        new CodeAttributeArgument(new CodeTypeOfExpression(property.PropertyType)));
 
                     moduleFiled.CustomAttributes.Add(filterAttr);
-
-
+                    
                     manifestClass.Members.Add(moduleFiled);
                 }
             }
 
-            var createAssetAttr = new CodeAttributeDeclaration(new CodeTypeReference("CreateAssetMenu"));
+            CodeAttributeDeclaration createAssetAttr = new CodeAttributeDeclaration(new CodeTypeReference("CreateAssetMenu"));
 
             string projectName = classNamespace;
 
-            createAssetAttr.Arguments.Add(new CodeAttributeArgument("menuName", new CodePrimitiveExpression($"{projectName.Replace('.','/')}/ModuleManifest")));
+            createAssetAttr.Arguments.Add(new CodeAttributeArgument("menuName",
+                new CodePrimitiveExpression($"{projectName.Replace('.', '/')}/ModuleManifest")));
 
-            createAssetAttr.Arguments.Add(new CodeAttributeArgument("fileName", new CodePrimitiveExpression(prefix + "ModuleManifest")));
+            createAssetAttr.Arguments.Add(new CodeAttributeArgument("fileName",
+                new CodePrimitiveExpression(prefix + "ModuleManifest")));
 
             manifestClass.CustomAttributes.Add(createAssetAttr);
 

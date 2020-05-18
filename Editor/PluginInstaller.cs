@@ -6,16 +6,13 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core.Editor
 {
     [InitializeOnLoad]
     public class PluginInstaller : EditorWindow
     {
-        public static string PackageRoot => new DirectoryInfo(Util.GetScriptFolder(typeof(PluginInstaller))).Parent.FullName;
-
-        public static string ResourcesPackagePath => $"{PackageRoot}/InternalResources/";
-
         private static readonly List<PluginInfo> plugins = new List<PluginInfo>();
         private static readonly Dictionary<PluginInfo, PluginData> pluginsData = new Dictionary<PluginInfo, PluginData>();
 
@@ -76,14 +73,15 @@ namespace SwiftFramework.Core.Editor
 
             foreach (var item in pluginsData)
             {
-                var plugin = item.Key;
-                var data = item.Value;
+                PluginInfo plugin = item.Key;
+                PluginData data = item.Value;
                 var lineHeight = EditorGUIUtility.singleLineHeight;
 
-                var rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
-                GUI.Label(new Rect(rect.x, rect.y, rect.width - INSTALL_BTN_WIDTH, lineHeight), $"{plugin.description} : {plugin.displayVersion}");
+                Rect rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+                string desc = $"{plugin.description} : {plugin.displayVersion}";
+                GUI.Label(new Rect(rect.x, rect.y, rect.width - INSTALL_BTN_WIDTH, lineHeight), desc);
 
-                var color = GUI.color;
+                Color color = GUI.color;
 
                 if (data.installed)
                 {
@@ -95,7 +93,10 @@ namespace SwiftFramework.Core.Editor
 
                     GUI.enabled = canUpdate;
 
-                    if (GUI.Button(new Rect(rect.x + (rect.width - INSTALL_BTN_WIDTH - DELETE_BTN_WIDTH), rect.y, INSTALL_BTN_WIDTH, lineHeight), label))
+                    Rect buttonRect = new Rect(rect.x + (rect.width - INSTALL_BTN_WIDTH - DELETE_BTN_WIDTH), rect.y,
+                        INSTALL_BTN_WIDTH, lineHeight);
+                    
+                    if (GUI.Button(buttonRect, label))
                     {
                         UpdatePlugin(plugin, data);
                     }
@@ -104,7 +105,9 @@ namespace SwiftFramework.Core.Editor
 
                     GUI.enabled = plugin.CanRemove() && data.copiedFiles.Count > 0;
 
-                    if (GUI.Button(new Rect(rect.x + rect.width - DELETE_BTN_WIDTH, rect.y, DELETE_BTN_WIDTH, lineHeight), "X"))
+                    buttonRect = new Rect(rect.x + rect.width - DELETE_BTN_WIDTH, rect.y, DELETE_BTN_WIDTH, lineHeight);
+
+                    if (GUI.Button(buttonRect, "X"))
                     {
                         if (EditorUtility.DisplayDialog("Warning", $"Remove {plugin.description}?", "Yes", "Cancel"))
                         {
@@ -118,7 +121,10 @@ namespace SwiftFramework.Core.Editor
                 {
                     GUI.color = color;
 
-                    if (GUI.Button(new Rect(rect.x + rect.width - INSTALL_BTN_WIDTH - DELETE_BTN_WIDTH, rect.y, INSTALL_BTN_WIDTH + DELETE_BTN_WIDTH, lineHeight), "Install"))
+                    Rect buttonRect = new Rect(rect.x + rect.width - INSTALL_BTN_WIDTH - DELETE_BTN_WIDTH, rect.y,
+                        INSTALL_BTN_WIDTH + DELETE_BTN_WIDTH, lineHeight);
+
+                    if (GUI.Button(buttonRect, "Install"))
                     {
                         Install(plugin);
                     }
@@ -204,109 +210,91 @@ namespace SwiftFramework.Core.Editor
         {
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-            var manifestGuid = AssetDatabase.FindAssets("t:BaseModuleManifest", new string[] { ResourcesAssetHelper.RootFolder }).FirstOrDefaultFast();
+            var manifestGuid = AssetDatabase.FindAssets("t:BaseModuleManifest", new[] { ResourcesAssetHelper.RootFolder }).FirstOrDefaultFast();
 
             if (string.IsNullOrEmpty(manifestGuid))
             {
                 return;
             }
 
-            var manifest = AssetDatabase.LoadAssetAtPath<BaseModuleManifest>(AssetDatabase.GUIDToAssetPath(manifestGuid));
+            BaseModuleManifest manifest = AssetDatabase.LoadAssetAtPath<BaseModuleManifest>(AssetDatabase.GUIDToAssetPath(manifestGuid));
 
             if (manifest == null)
             {
                 return;
             }
 
-            //PluginInfo pluginInfo = PluginsManifest.Instance.CurrentPlugin;
-            PluginInfo pluginInfo = Util.GetAsset<PluginInfo>();
-
+            PluginInfo pluginInfo = PluginsManifest.Instance.CurrentPlugin;
+        
             PluginData data = PluginsManifest.Instance.FindData(pluginInfo);
 
             DirectoryInfo pluginRootDir = pluginInfo.RootDirectory;
 
             List<ModuleInstaller> moduleInstallers = new List<ModuleInstaller>();
 
-            foreach (var subDir in pluginRootDir.GetDirectories())
+            foreach (var guid in AssetDatabase.FindAssets("t:ModuleInstaller"))
             {
-                string targetFolder = subDir.Name;
-                if (targetFolder == "ModuleInstallers")
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.Contains($"/{pluginRootDir.Name}/"))
                 {
-                    foreach (var moduleDir in subDir.GetDirectories())
-                    {
-                        foreach (var guid in AssetDatabase.FindAssets("t:ModuleInstaller"))
-                        {
-                            var path = AssetDatabase.GUIDToAssetPath(guid);
-                            if (path.Contains($"/{pluginRootDir.Name}/"))
-                            {
-                                moduleInstallers.Add(AssetDatabase.LoadAssetAtPath<ModuleInstaller>(path));
-                            }
-                        }
-                    }
-
-                    continue;
+                    moduleInstallers.Add(AssetDatabase.LoadAssetAtPath<ModuleInstaller>(path));
                 }
             }
 
-
-            foreach (var moduleInstaller in moduleInstallers)
+            foreach (ModuleInstaller moduleInstaller in moduleInstallers)
             {
-                var installerDir = AssetDatabase.GetAssetPath(moduleInstaller);
+                string installerDir = AssetDatabase.GetAssetPath(moduleInstaller);
 
                 CopyFolders(new FileInfo(installerDir).Directory, data);
 
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-                var installerName = moduleInstaller.name + ".asset";
+                string installerName = moduleInstaller.name + ".asset";
 
-                var root = installerDir.Substring(0, installerDir.Length - installerName.Length - 1);
+                string root = installerDir.Substring(0, installerDir.Length - installerName.Length - 1);
 
-                var resourcesFolder = "/_Resources/";
+                const string resourcesFolder = "/_Resources/";
 
-                foreach (var link in manifest.GetAllModuleLinks())
+                foreach ((FieldInfo field, ModuleLink link) in manifest.GetAllModuleLinks())
                 {
-                    try
+                    Type interfaceType = field.CustomAttributes.Where(a => a.AttributeType == typeof(LinkFilterAttribute))
+                        .FirstOrDefaultFast()?.ConstructorArguments.FirstOrDefaultFast().Value as Type;
+
+                    if (interfaceType == moduleInstaller.module.GetInterfaceType())
                     {
-                        var interfaceType = link.field.CustomAttributes.Where(a => a.AttributeType == typeof(LinkFilterAttribute)).FirstOrDefaultFast()?.ConstructorArguments.FirstOrDefaultFast().Value as Type;
+                        link.ImplementationType = moduleInstaller.module.GetImplementationType();
 
-                        if (interfaceType == moduleInstaller.module.GetInterfaceType())
+                        foreach (var guid in AssetDatabase.FindAssets("t:Object", new[] { root }))
                         {
-                            link.link.ImplementationType = moduleInstaller.module.GetImplementationType();
+                            var path = AssetDatabase.GUIDToAssetPath(guid);
 
-                            foreach (var guid in AssetDatabase.FindAssets("t:Object", new string[] { root }))
+                            if (string.IsNullOrEmpty(path))
                             {
-                                var path = AssetDatabase.GUIDToAssetPath(guid);
+                                continue;
+                            }
 
-                                if (string.IsNullOrEmpty(path))
-                                {
-                                    continue;
-                                }
+                            Object prefab = AssetDatabase.LoadAssetAtPath(path, link.ImplementationType);
 
-                                var prefab = AssetDatabase.LoadAssetAtPath(path, link.link.ImplementationType);
-
-                                if (prefab)
+                            if (prefab)
+                            {
+                                string linkPath = path.Substring(root.Length + resourcesFolder.Length, 
+                                    path.Length - root.Length - resourcesFolder.Length - Path.GetExtension(path).Length);
+                                link.SetBehaviourPath(linkPath);
+                            }
+                            ConfigurableAttribute configAttr = link.ImplementationType.GetCustomAttribute<ConfigurableAttribute>();
+                            
+                            if (configAttr != null)
+                            {
+                                Object config = AssetDatabase.LoadAssetAtPath(path, configAttr.configType);
+                                if (config)
                                 {
-                                    var linkPath = path.Substring(root.Length + resourcesFolder.Length, path.Length - root.Length - resourcesFolder.Length - Path.GetExtension(path).Length);
-                                    link.link.SetBehaviourPath(linkPath);
-                                }
-                                var configAttr = link.link.ImplementationType.GetCustomAttribute<ConfigurableAttribute>();
-                                if (configAttr != null)
-                                {
-                                    var config = AssetDatabase.LoadAssetAtPath(path, configAttr.configType);
-                                    if (config)
-                                    {
-                                        var linkPath = path.Substring(root.Length + resourcesFolder.Length, path.Length - root.Length - resourcesFolder.Length - Path.GetExtension(path).Length);
-                                        link.link.SetConfigPath(linkPath);
-                                    }
+                                    string linkPath = path.Substring(root.Length + resourcesFolder.Length, 
+                                        path.Length - root.Length - resourcesFolder.Length - Path.GetExtension(path).Length);
+                                    link.SetConfigPath(linkPath);
                                 }
                             }
                         }
                     }
-                    catch (Exception e)
-                    {
-                        Debug.Log($"{link} {e.Message}"); 
-                    }
-               
                 }
             }
 
@@ -316,7 +304,7 @@ namespace SwiftFramework.Core.Editor
 
         }
 
-        public static void FinishUninstalling(bool compiled)
+        private static void FinishUninstalling(bool compiled)
         {
             IsProcessing = false;
             PluginsManifest.Instance.FinishProcess();
@@ -324,7 +312,7 @@ namespace SwiftFramework.Core.Editor
 
         private static void CopyFolders(DirectoryInfo pluginRootDir, PluginData data)
         {
-            foreach (var subDir in pluginRootDir.GetDirectories())
+            foreach (DirectoryInfo subDir in pluginRootDir.GetDirectories())
             {
                 string targetFolder = subDir.Name;
 
@@ -358,7 +346,7 @@ namespace SwiftFramework.Core.Editor
 
             Repaint();
 
-            var data = pluginsData[plugin];
+            PluginData data = pluginsData[plugin];
 
             data.copiedFiles.Clear();
 
@@ -377,24 +365,28 @@ namespace SwiftFramework.Core.Editor
 
             DirectoryInfo pluginRootDir = new FileInfo(AssetDatabase.GetAssetPath(plugin)).Directory;
 
-            foreach (var item in pluginRootDir.GetFiles())
+            if (pluginRootDir != null)
             {
-                if (item.Extension == ".unitypackage")
+                foreach (FileInfo item in pluginRootDir.GetFiles())
                 {
-                    unityPackage = item.FullName;
+                    if (item.Extension == ".unitypackage")
+                    {
+                        unityPackage = item.FullName;
+                    }
                 }
-            }
 
-            if (unityPackage != null)
-            {
-                AssetDatabase.ImportPackage(Util.ToRelativePath(unityPackage), false);
-            }
-            foreach (var dep in plugin.packageDependencies)
-            {
-                Util.AddDependencyToPackageManifest(dep.packageName, dep.version);
-            }
+                if (unityPackage != null)
+                {
+                    AssetDatabase.ImportPackage(Util.ToRelativePath(unityPackage), false);
+                }
 
-            CopyFolders(pluginRootDir, data);
+                foreach (PluginInfo.PackageDependency dep in plugin.packageDependencies)
+                {
+                    Util.AddDependencyToPackageManifest(dep.packageName, dep.version);
+                }
+
+                CopyFolders(pluginRootDir, data);
+            }
 
 
             data.installed = true;
@@ -411,7 +403,6 @@ namespace SwiftFramework.Core.Editor
         public static void ResetAll()
         {
             PluginsManifest.Instance.ResetAll();
-
         }
 
         [MenuItem("SwiftFramework/Plugin Installer/Install")]
@@ -419,7 +410,7 @@ namespace SwiftFramework.Core.Editor
         {
             pluginsData.Clear();
 
-            var win = GetWindow<PluginInstaller>(true, "Plugin Installer", true);
+            PluginInstaller win = GetWindow<PluginInstaller>(true, "Plugin Installer", true);
 
             win.MoveToCenter();
         }

@@ -10,10 +10,7 @@ namespace SwiftFramework.Core.Windows
 
         public bool IsShown
         {
-            get
-            {
-                return shown;
-            }
+            get => shown;
             set
             {
                 shown = value;

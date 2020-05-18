@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core
 {
@@ -33,16 +34,23 @@ namespace SwiftFramework.Core
 
     public enum PromiseState
     {
-        Pending, Resolved, Rejected
+        Pending,
+        Resolved,
+        Rejected
+    }
+
+    internal static class PromiseLock
+    {
+        public  static  readonly  object Locker = new object();
     }
 
     public class Promise<T> : IPromise<T>, IDisposable
     {
         public PromiseState CurrentState => state;
         public int Id { get; private set; }
-        private List<Action<T>> doneActions = new List<Action<T>>(ACTIONS_CAPACITY);
-        private List<Action<float>> progressActions = new List<Action<float>>(ACTIONS_CAPACITY);
-        private List<Action<Exception>> failActions = new List<Action<Exception>>(ACTIONS_CAPACITY);
+        private readonly List<Action<T>> doneActions = new List<Action<T>>(ACTIONS_CAPACITY);
+        private readonly List<Action<float>> progressActions = new List<Action<float>>(ACTIONS_CAPACITY);
+        private readonly List<Action<Exception>> failActions = new List<Action<Exception>>(ACTIONS_CAPACITY);
 
         private PromiseState state = PromiseState.Pending;
 
@@ -53,8 +61,6 @@ namespace SwiftFramework.Core
         private T result;
         private float progress;
 
-        private static object locker = new object();
-
         private Promise()
         {
             Id = Promise.autoId++;
@@ -62,7 +68,7 @@ namespace SwiftFramework.Core
 
         ~Promise()
         {
-            lock (locker)
+            lock (PromiseLock.Locker)
             {
                 Dispose();
                 Id = Promise.autoId++;
@@ -72,12 +78,13 @@ namespace SwiftFramework.Core
 
         public static Promise<T> Create()
         {
-            lock (locker)
+            lock (PromiseLock.Locker)
             {
                 if (pool.Count > 0)
                 {
                     return pool.Pop();
                 }
+
                 return new Promise<T>();
             }
         }
@@ -98,7 +105,7 @@ namespace SwiftFramework.Core
 
         public static IPromise<T> Race(params IPromise<T>[] promises)
         {
-            return Race((IEnumerable<IPromise<T>>)promises);
+            return Race((IEnumerable<IPromise<T>>) promises);
         }
 
         public static IPromise<T> Race(IEnumerable<IPromise<T>> promises)
@@ -108,19 +115,19 @@ namespace SwiftFramework.Core
             foreach (IPromise<T> p in promises)
             {
                 p.Then(r =>
-                {
-                    if (promise.CurrentState == PromiseState.Pending)
                     {
-                        promise.Resolve(r);
-                    }
-                })
-                .Catch(e =>
-                {
-                    if (promise.CurrentState == PromiseState.Pending)
+                        if (promise.CurrentState == PromiseState.Pending)
+                        {
+                            promise.Resolve(r);
+                        }
+                    })
+                    .Catch(e =>
                     {
-                        promise.Reject(e);
-                    }
-                });
+                        if (promise.CurrentState == PromiseState.Pending)
+                        {
+                            promise.Reject(e);
+                        }
+                    });
             }
 
             return promise;
@@ -176,7 +183,7 @@ namespace SwiftFramework.Core
 
             if (state != PromiseState.Pending)
             {
-                Debug.LogError($"Trying to relolve promise with state: {state}");
+                Debug.LogError($"Trying to resolve promise with state: {state}");
                 return;
             }
 
@@ -194,10 +201,7 @@ namespace SwiftFramework.Core
         {
             Promise promise = Promise.Create();
 
-            Progress(p =>
-            {
-                promise.ReportProgress(p);
-            });
+            Progress(p => { promise.ReportProgress(p); });
 
             Done(r =>
             {
@@ -250,6 +254,10 @@ namespace SwiftFramework.Core
                 case PromiseState.Resolved:
                     action(result);
                     break;
+                case PromiseState.Rejected:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -264,6 +272,10 @@ namespace SwiftFramework.Core
                 case PromiseState.Rejected:
                     action(exception);
                     break;
+                case PromiseState.Resolved:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -279,25 +291,18 @@ namespace SwiftFramework.Core
                 case PromiseState.Resolved:
                     action(result);
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
         public IPromise<T> Channel(Promise<T> otherPromise)
         {
-            Progress(p =>
-            {
-                otherPromise.ReportProgress(p);
-            });
+            Progress(otherPromise.ReportProgress);
 
-            Done(r =>
-            {
-                otherPromise.Resolve(r);
-            });
+            Done(r => { otherPromise.Resolve(r); });
 
-            Catch(e =>
-            {
-                otherPromise.Reject(e);
-            });
+            Catch(e => { otherPromise.Reject(e); });
 
             return this;
         }
@@ -308,9 +313,9 @@ namespace SwiftFramework.Core
     {
         public PromiseState CurrentState => state;
         public int Id { get; private set; }
-        private List<Action> doneActions = new List<Action>(ACTIONS_CAPACITY);
-        private List<Action<float>> progressActions = new List<Action<float>>(ACTIONS_CAPACITY);
-        private List<Action<Exception>> failActions = new List<Action<Exception>>(ACTIONS_CAPACITY);
+        private readonly List<Action> doneActions = new List<Action>(ACTIONS_CAPACITY);
+        private readonly List<Action<float>> progressActions = new List<Action<float>>(ACTIONS_CAPACITY);
+        private readonly List<Action<Exception>> failActions = new List<Action<Exception>>(ACTIONS_CAPACITY);
         private PromiseState state = PromiseState.Pending;
 
         private static readonly Stack<Promise> pool = new Stack<Promise>();
@@ -319,9 +324,9 @@ namespace SwiftFramework.Core
         private Exception exception;
         private float progress;
         internal static int autoId;
-        private static object locker = new object();
+        private static readonly object locker = new object();
 
-        private static readonly Promise ResolvedPromise = Create();
+        private static readonly Promise resolvedPromise = Create();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Init()
@@ -353,11 +358,7 @@ namespace SwiftFramework.Core
             {
                 try
                 {
-                    if (pool.Count > 0)
-                    {
-                        return pool.Pop();
-                    }
-                    return new Promise();
+                    return pool.Count > 0 ? pool.Pop() : new Promise();
                 }
                 catch
                 {
@@ -368,11 +369,12 @@ namespace SwiftFramework.Core
 
         public static IPromise Resolved()
         {
-            if (ResolvedPromise.state != PromiseState.Resolved)
+            if (resolvedPromise.state != PromiseState.Resolved)
             {
-                ResolvedPromise.Resolve();
+                resolvedPromise.Resolve();
             }
-            return ResolvedPromise;
+
+            return resolvedPromise;
         }
 
         public static IPromise Rejected(Exception exception)
@@ -396,10 +398,7 @@ namespace SwiftFramework.Core
         {
             Promise promise = Create();
 
-            Progress(p =>
-            {
-                promise.ReportProgress(p);
-            });
+            Progress(p => { promise.ReportProgress(p); });
 
             Done(() =>
             {
@@ -423,6 +422,7 @@ namespace SwiftFramework.Core
                 Debug.LogError($"Trying to report progress on promise with state: {state}");
                 return;
             }
+
             for (int i = 0; i < progressActions.Count; i++)
             {
                 progressActions[i]?.Invoke(progress);
@@ -451,7 +451,7 @@ namespace SwiftFramework.Core
         {
             if (state != PromiseState.Pending)
             {
-                Debug.LogError($"Trying to relolve promise with state: {state}");
+                Debug.LogError($"Trying to resolve promise with state: {state}");
                 return;
             }
 
@@ -465,7 +465,7 @@ namespace SwiftFramework.Core
 
         public static IPromise Race<T>(params IPromise<T>[] promises)
         {
-            return Race((IEnumerable<IPromise<T>>)promises);
+            return Race((IEnumerable<IPromise<T>>) promises);
         }
 
         public static IPromise Race<T>(IEnumerable<IPromise<T>> promises)
@@ -475,19 +475,19 @@ namespace SwiftFramework.Core
             foreach (IPromise<T> p in promises)
             {
                 p.Then(r =>
-                {
-                    if (promise.CurrentState == PromiseState.Pending)
                     {
-                        promise.Resolve();
-                    }
-                })
-                .Catch(e =>
-                {
-                    if (promise.CurrentState == PromiseState.Pending)
+                        if (promise.CurrentState == PromiseState.Pending)
+                        {
+                            promise.Resolve();
+                        }
+                    })
+                    .Catch(e =>
                     {
-                        promise.Reject(e);
-                    }
-                });
+                        if (promise.CurrentState == PromiseState.Pending)
+                        {
+                            promise.Reject(e);
+                        }
+                    });
             }
 
             return promise;
@@ -495,7 +495,7 @@ namespace SwiftFramework.Core
 
         public static IPromise Race(params IPromise[] promises)
         {
-            return Race((IEnumerable<IPromise>)promises);
+            return Race((IEnumerable<IPromise>) promises);
         }
 
         public static IPromise Race(IEnumerable<IPromise> promises)
@@ -505,19 +505,19 @@ namespace SwiftFramework.Core
             foreach (IPromise p in promises)
             {
                 p.Then(() =>
-                {
-                    if (promise.CurrentState == PromiseState.Pending)
                     {
-                        promise.Resolve();
-                    }
-                })
-                .Catch(e =>
-                {
-                    if (promise.CurrentState == PromiseState.Pending)
+                        if (promise.CurrentState == PromiseState.Pending)
+                        {
+                            promise.Resolve();
+                        }
+                    })
+                    .Catch(e =>
                     {
-                        promise.Reject(e);
-                    }
-                });
+                        if (promise.CurrentState == PromiseState.Pending)
+                        {
+                            promise.Reject(e);
+                        }
+                    });
             }
 
             return promise;
@@ -525,17 +525,22 @@ namespace SwiftFramework.Core
 
         public static IPromise All(params IPromise[] promises)
         {
-            return All((IEnumerable<IPromise>)promises);
+            return All((IEnumerable<IPromise>) promises);
         }
 
         public static IPromise All<T>(params IPromise<T>[] promises)
         {
-            return All((IEnumerable<IPromise<T>>)promises);
+            return All((IEnumerable<IPromise<T>>) promises);
         }
 
+        private static readonly List<IPromise> buffer = new List<IPromise>();
+        
         public static IPromise All(IEnumerable<IPromise> promises, Action<float> progress = null)
         {
-            int total = promises.CountFast();
+            buffer.Clear();
+            buffer.AddRange(promises);
+            
+            int total = buffer.Count();
 
             if (total == 0)
             {
@@ -546,28 +551,27 @@ namespace SwiftFramework.Core
 
             Promise promise = Create();
 
-            foreach (IPromise p in promises)
+            foreach (IPromise p in buffer)
             {
                 p.Then(() =>
-                {
-                    current++;
-                    progress?.Invoke(current / (float)total);
-                    if (current >= total)
+                    {
+                        current++;
+                        progress?.Invoke(current / (float) total);
+                        if (current >= total)
+                        {
+                            if (promise.state == PromiseState.Pending)
+                            {
+                                promise.Resolve();
+                            }
+                        }
+                    })
+                    .Catch(e =>
                     {
                         if (promise.state == PromiseState.Pending)
                         {
-                            promise.Resolve();
+                            promise.Reject(e);
                         }
-                    }
-                })
-                .Catch(e =>
-                {
-                    if (promise.state == PromiseState.Pending)
-                    {
-                        promise.Reject(e);
-                    }
-
-                });
+                    });
             }
 
             return promise;
@@ -575,7 +579,8 @@ namespace SwiftFramework.Core
 
         public static IPromise All<T>(IEnumerable<IPromise<T>> promises, Action<float> progress = null)
         {
-            int total = promises.CountFast();
+            IPromise<T>[] array = promises.ToArray();
+            int total = array.Length;
 
             if (total == 0)
             {
@@ -586,29 +591,28 @@ namespace SwiftFramework.Core
 
             Promise promise = Create();
 
-            foreach (IPromise<T> p in promises)
+            foreach (IPromise<T> p in array)
             {
                 p.Then(r =>
-                {
-                    current++;
-                    progress?.Invoke(current / (float)total);
+                    {
+                        current++;
+                        progress?.Invoke(current / (float) total);
 
-                    if (current == total)
+                        if (current == total)
+                        {
+                            if (promise.state == PromiseState.Pending)
+                            {
+                                promise.Resolve();
+                            }
+                        }
+                    })
+                    .Catch(e =>
                     {
                         if (promise.state == PromiseState.Pending)
                         {
-                            promise.Resolve();
+                            promise.Reject(e);
                         }
-                    }
-                })
-                .Catch(e =>
-                {
-                    if (promise.state == PromiseState.Pending)
-                    {
-                        promise.Reject(e);
-                    }
-
-                });
+                    });
             }
 
             return promise;
@@ -661,6 +665,10 @@ namespace SwiftFramework.Core
                 case PromiseState.Rejected:
                     action(exception);
                     break;
+                case PromiseState.Resolved:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -676,28 +684,20 @@ namespace SwiftFramework.Core
                 case PromiseState.Resolved:
                     action();
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
         public IPromise Channel(Promise otherPromise)
         {
-            Progress(p =>
-            {
-                otherPromise.ReportProgress(p);
-            });
+            Progress(otherPromise.ReportProgress);
 
-            Done(() =>
-            {
-                otherPromise.Resolve();
-            });
+            Done(otherPromise.Resolve);
 
-            Catch(e =>
-            {
-                otherPromise.Reject(e);
-            });
+            Catch(e => { otherPromise.Reject(e); });
 
             return this;
-
         }
     }
 }

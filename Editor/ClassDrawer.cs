@@ -1,5 +1,7 @@
-﻿using SwiftFramework.EditorUtils;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using SwiftFramework.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,7 +11,7 @@ namespace SwiftFramework.Core.Editor
     {
         public event Action OnSelectionChanged = () => { };
 
-        public Type SelectedType => type;
+        public Type SelectedType { get; private set; }
 
         private string[] modules;
         private string[] modulesNames;
@@ -18,9 +20,9 @@ namespace SwiftFramework.Core.Editor
         private readonly Func<string> currentHandler;
         private readonly Func<Type, bool> filter;
         private readonly string label;
-        private Type type;
 
-        public ClassDrawer(string label, Func<Type, bool> filter, Action<string> selectHandler, Func<string> currentHandler)
+        protected ClassDrawer(string label, Func<Type, bool> filter, Action<string> selectHandler,
+            Func<string> currentHandler)
         {
             this.label = label;
             this.selectHandler = selectHandler;
@@ -31,19 +33,20 @@ namespace SwiftFramework.Core.Editor
 
         public void Rebuild()
         {
-            var moduleTypes = Util.GetAllTypes(filter);
-            modules = new string[moduleTypes.CountFast() + 1];
+            IEnumerable<Type> moduleTypes = Util.GetAllTypes(filter).ToArray();
+            modules = new string[moduleTypes.Count() + 1];
             modulesNames = new string[modules.Length];
             modules[0] = null;
             modulesNames[0] = "None";
             int i = 1;
-            foreach (var type in moduleTypes)
+            foreach (Type type in moduleTypes)
             {
                 modules[i] = type.AssemblyQualifiedName;
                 modulesNames[i] = type.Name;
                 i++;
             }
-            type = Type.GetType(currentHandler());
+
+            SelectedType = Type.GetType(currentHandler());
         }
 
         public void Draw(Rect position)
@@ -57,12 +60,12 @@ namespace SwiftFramework.Core.Editor
                 currentIndex = 0;
             }
 
-            var newIndex = EditorGUI.Popup(position, label, currentIndex,  modulesNames);
+            var newIndex = EditorGUI.Popup(position, label, currentIndex, modulesNames);
 
             if (newIndex != currentIndex)
             {
                 selectHandler(modules[newIndex]);
-                type = Type.GetType(currentHandler());
+                SelectedType = Type.GetType(currentHandler());
                 OnSelectionChanged();
             }
         }

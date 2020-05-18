@@ -335,7 +335,7 @@ namespace SwiftFramework.Core.Editor
             if (notFound)
             {
                 Color color = GUI.color;
-                GUI.color = EditorGUIEx.warningRedColor;
+                GUI.color = EditorGUIEx.WarningRedColor;
                 popupRect.width -= buttonWidth;
                 if (label != null)
                 {

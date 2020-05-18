@@ -1,18 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Numerics;
 using UnityEditor;
-using System.Numerics;
-using SwiftFramework.Core;
+using UnityEngine;
 
 namespace SwiftFramework.Core.Editor
 {
     [CustomPropertyDrawer(typeof(BigNumber))]
-    public class BigNumberCustomInstepctor : PropertyDrawer
+    public class BigNumberCustomInspector : PropertyDrawer
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            var prop = property.FindPropertyRelative("stringValue");
+            SerializedProperty prop = property.FindPropertyRelative("stringValue");
             if (prop != null)
             {
                 EditorGUI.PropertyField(position, prop, label);
@@ -23,5 +20,4 @@ namespace SwiftFramework.Core.Editor
             }
         }
     }
-
 }

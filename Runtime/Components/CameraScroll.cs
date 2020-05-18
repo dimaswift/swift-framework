@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace SwiftFramework.Core
 {
@@ -33,9 +34,12 @@ namespace SwiftFramework.Core
         {
             AdjustAspect();
             limitHandler = GetComponent<ICameraLimitHandler>();
-            Vector3 targetPos = defaultPos.Value;
-            targetPos.y = GetClampedPositionY(targetPos.y);
-            transform.position = targetPos;
+            if (defaultPos != null)
+            {
+                Vector3 targetPos = defaultPos.Value;
+                targetPos.y = GetClampedPositionY(targetPos.y);
+                transform.position = targetPos;
+            }
         }
 
         private void AdjustAspect()
@@ -52,12 +56,13 @@ namespace SwiftFramework.Core
             {
                 cam.orthographicSize = referenceHeight;
             }
+
             prevAspect = cam.aspect;
         }
 
         private void Update()
         {
-            if (cam.aspect != prevAspect)
+            if (Math.Abs(cam.aspect - prevAspect) > float.Epsilon)
             {
                 AdjustAspect();
             }
@@ -91,7 +96,7 @@ namespace SwiftFramework.Core
                 if (Mathf.Abs(worldPointer - tapPosition) >= scrollStartThresholdDistance)
                 {
                     dragVelocity = Mathf.Lerp(dragVelocity, prevScrollPos - worldPointer, Time.deltaTime * scrollSpeed);
-                    
+
                     tapPosition = float.MaxValue / 2;
                 }
 
@@ -109,16 +114,17 @@ namespace SwiftFramework.Core
                     dragVelocity = Mathf.Lerp(dragVelocity, 0, damping * Time.deltaTime);
                 }
             }
-            Move(dragVelocity);
 
+            Move(dragVelocity);
         }
 
         private void Move(float delta)
         {
-            if (delta == 0)
+            if (Math.Abs(delta) < float.Epsilon)
             {
                 return;
             }
+
             Vector3 targetPos = transform.position;
             targetPos.y += delta;
             targetPos.y = GetClampedPositionY(targetPos.y);
@@ -127,8 +133,9 @@ namespace SwiftFramework.Core
 
         private float GetClampedPositionY(float y)
         {
-            float limit = limitHandler != null ? limitHandler.GetBottomPoint() : 0;
-            return Mathf.Clamp(y, limit + bottomPadding + cam.orthographicSize, topPadding - cam.orthographicSize);
+            float limit = limitHandler?.GetBottomPoint() ?? 0;
+            float orthographicSize = cam.orthographicSize;
+            return Mathf.Clamp(y, limit + bottomPadding + orthographicSize, topPadding - orthographicSize);
         }
     }
 }

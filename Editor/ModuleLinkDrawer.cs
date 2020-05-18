@@ -1,8 +1,7 @@
-﻿using SwiftFramework.EditorUtils;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using SwiftFramework.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,15 +14,15 @@ namespace SwiftFramework.Core.Editor
 
         private const string NULL = "null";
 
-        private float sideButtonWidth = 120;
-        private float labelWidth = 100;
-        private float margin = 5;
-        private float buttonWidth = 100;
+        private const float SIDE_BUTTON_WIDTH = 120;
+        private const float LABEL_WIDTH = 100;
+        private const float MARGIN = 5;
+        private const float BUTTON_WIDTH = 100;
 
         private static readonly GUIContent configLabel = new GUIContent("Config");
         private static readonly GUIContent behaviourLabel = new GUIContent("Behaviour");
 
-        private bool checkedForimplementation;
+        private bool checkedForImplementation;
 
         private readonly Dictionary<string, Data> dataCache = new Dictionary<string, Data>();
 
@@ -36,7 +35,7 @@ namespace SwiftFramework.Core.Editor
                 dataCache.Add(key, data);
             }
 
-            if (data.property == null || data.property.serializedObject == null)
+            if (data.property?.serializedObject == null)
             {
                 dataCache.Remove(key);
                 return GetData(property);
@@ -55,11 +54,11 @@ namespace SwiftFramework.Core.Editor
             public ConfigurableAttribute configurable;
             public bool? hasValidConstructor;
             public bool dependenciesChecked;
-            public List<string> unresolvedDependencies = new List<string>();
-            public List<string> unresolvedUsedModules = new List<string>();
+            public readonly List<string> unresolvedDependencies = new List<string>();
+            public readonly List<string> unresolvedUsedModules = new List<string>();
             public SerializedProperty typeProperty;
-            public SerializedProperty property;
-            public List<Type> implementationTypes = new List<Type>();
+            public readonly SerializedProperty property;
+            public readonly List<Type> implementationTypes = new List<Type>();
             public List<BehaviourModule> filteredBehaviourModules = null;
             public string[] names = new string[0];
             public LinkFilterAttribute interfaceAttribute;
@@ -84,7 +83,7 @@ namespace SwiftFramework.Core.Editor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             float h = base.GetPropertyHeight(property, label);
-            var data = GetData(property);
+            Data data = GetData(property);
             data.baseHeight = h + 5;
             h += h;
             h += 15;
@@ -92,19 +91,20 @@ namespace SwiftFramework.Core.Editor
             {
                 h += data.baseHeight;
             }
+
             if (IsBehaviourModule(data))
             {
                 h += data.baseHeight;
             }
 
-            h += (data.baseHeight + margin) * data.unresolvedDependencies.Count;
-            h += (data.baseHeight + margin) * data.unresolvedUsedModules.Count;
+            h += (data.baseHeight + MARGIN) * data.unresolvedDependencies.Count;
+            h += (data.baseHeight + MARGIN) * data.unresolvedUsedModules.Count;
 
             return h;
         }
 
 
-        private bool IsDependencyResolved(Type type, Data data)
+        private static bool IsDependencyResolved(Type type, Data data)
         {
             if (data.property.serializedObject.targetObject is BaseModuleManifest == false)
             {
@@ -145,16 +145,17 @@ namespace SwiftFramework.Core.Editor
             return false;
         }
 
-        private bool IsConfigurable(Data data)
+        private static bool IsConfigurable(Data data)
         {
             return data.selectedType != null && data.selectedType.GetCustomAttribute<ConfigurableAttribute>() != null;
         }
 
-        private bool IsBehaviourModule(Data data)
+        private static bool IsBehaviourModule(Data data)
         {
             var isBehaviourModule = data.selectedType != null
-                && Util.IsDerrivedFrom(data.selectedType, typeof(BehaviourModule))
-                && data.selectedType.GetCustomAttribute<DisallowCustomModuleBehavioursAttribute>() == null;
+                                    && Util.IsDerivedFrom(data.selectedType, typeof(BehaviourModule))
+                                    && data.selectedType
+                                        .GetCustomAttribute<DisallowCustomModuleBehavioursAttribute>() == null;
 
             return isBehaviourModule;
         }
@@ -166,9 +167,10 @@ namespace SwiftFramework.Core.Editor
                 data.interfaceAttribute = fieldInfo.GetCustomAttribute<LinkFilterAttribute>();
             }
 
-            if (data.interfaceAttribute != null && data.implementationTypes.Count == 0 && checkedForimplementation == false)
+            if (data.interfaceAttribute != null && data.implementationTypes.Count == 0 &&
+                checkedForImplementation == false)
             {
-                checkedForimplementation = true;
+                checkedForImplementation = true;
                 foreach (Type type in Util.GetAllTypes())
                 {
                     if (data.interfaceAttribute.interfaceType != null
@@ -191,20 +193,20 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
-        private void DrawTypeNotFound(ref Rect position, Rect viewport, float baseHeight, Data data)
+        private static void DrawTypeNotFound(ref Rect position, Rect viewport, float baseHeight, Data data)
         {
-            position.width -= buttonWidth;
+            position.width -= BUTTON_WIDTH;
             string typeName = data.typeProperty.stringValue.Split(',')[0];
 
-            position.width = buttonWidth * 2;
+            position.width = BUTTON_WIDTH * 2;
             position.height = 16;
             EditorGUI.HelpBox(position, $"Type not found!", MessageType.Error);
-            position.x += buttonWidth * 2;
-            position.width = viewport.width - buttonWidth * 2;
+            position.x += BUTTON_WIDTH * 2;
+            position.width = viewport.width - BUTTON_WIDTH * 2;
             EditorGUI.LabelField(position, typeName);
 
-            position.x = viewport.x + (viewport.width - buttonWidth);
-            position.width = buttonWidth;
+            position.x = viewport.x + (viewport.width - BUTTON_WIDTH);
+            position.width = BUTTON_WIDTH;
             if (GUI.Button(position, "Reset"))
             {
                 data.typeProperty.stringValue = NULL;
@@ -212,7 +214,7 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
-        private void DrawImplementationPopUp(ref Rect position, Rect viewPort, float baseHeight, Data data)
+        private static void DrawImplementationPopUp(ref Rect position, Rect viewPort, float baseHeight, Data data)
         {
             string type = data.typeProperty.stringValue;
 
@@ -224,7 +226,8 @@ namespace SwiftFramework.Core.Editor
                 return;
             }
 
-            int newIndex = EditorGUI.Popup(new Rect(position.x, position.y, position.width, baseHeight), "Implementation", selectedTypeIndex + 1, data.names);
+            int newIndex = EditorGUI.Popup(new Rect(position.x, position.y, position.width, baseHeight),
+                "Implementation", selectedTypeIndex + 1, data.names);
 
             bool moduleSelected = false;
 
@@ -239,6 +242,7 @@ namespace SwiftFramework.Core.Editor
                     data.typeProperty.stringValue = data.implementationTypes[newIndex - 1].AssemblyQualifiedName;
                     data.typeProperty.serializedObject.ApplyModifiedProperties();
                 }
+
                 moduleSelected = true;
             }
 
@@ -253,6 +257,7 @@ namespace SwiftFramework.Core.Editor
                         data.unresolvedDependencies.Add(depType.Name);
                     }
                 }
+
                 foreach (Type depType in Module.GetOtherUsedModules(data.selectedType))
                 {
                     if (IsDependencyResolved(depType, data) == false)
@@ -260,6 +265,7 @@ namespace SwiftFramework.Core.Editor
                         data.unresolvedUsedModules.Add(depType.Name);
                     }
                 }
+
                 data.dependenciesChecked = true;
             }
 
@@ -268,7 +274,7 @@ namespace SwiftFramework.Core.Editor
                 position.y += baseHeight;
                 Rect warningRect = new Rect(position.x, position.y, position.width, baseHeight);
                 EditorGUI.HelpBox(warningRect, $"Depends on {dep}. Implementation not found!", MessageType.Error);
-                position.y += margin;
+                position.y += MARGIN;
             }
 
             foreach (string dep in data.unresolvedUsedModules)
@@ -276,7 +282,7 @@ namespace SwiftFramework.Core.Editor
                 position.y += baseHeight;
                 Rect warningRect = new Rect(position.x, position.y, position.width, baseHeight);
                 EditorGUI.HelpBox(warningRect, $"Uses {dep} module. Implementation not found!", MessageType.Warning);
-                position.y += margin;
+                position.y += MARGIN;
             }
 
             if (moduleSelected)
@@ -303,6 +309,7 @@ namespace SwiftFramework.Core.Editor
             {
                 data.behaviourModuleDrawer = new AssetLinkDrawer(data.selectedType, null, true);
             }
+
             position.y += baseHeight;
 
             Color defaultColor = GUI.color;
@@ -321,14 +328,15 @@ namespace SwiftFramework.Core.Editor
             var width = position.width;
             if (behaviourModuleLink.HasValue == false)
             {
-                width -= sideButtonWidth;
-                if (GUI.Button(new Rect(position.x + width, position.y, sideButtonWidth, 18), "Create Prefab"))
+                width -= SIDE_BUTTON_WIDTH;
+                if (GUI.Button(new Rect(position.x + width, position.y, SIDE_BUTTON_WIDTH, 18), "Create Prefab"))
                 {
                     Util.CreateModuleBehaviour(data.selectedType, behaviourLinkProperty);
                 }
             }
 
-            data.behaviourModuleDrawer.Draw(new Rect(position.x, position.y, width, baseHeight), behaviourLinkProperty, behaviourLabel, true);
+            data.behaviourModuleDrawer.Draw(new Rect(position.x, position.y, width, baseHeight), behaviourLinkProperty,
+                behaviourLabel, true);
         }
 
         private void DrawConfigPopUp(ref Rect position, float baseHeight, Data data)
@@ -363,18 +371,19 @@ namespace SwiftFramework.Core.Editor
                                 break;
                             }
                         }
+
                         if (amount > 1)
                         {
                             data.hasValidConstructor = false;
                         }
-
                     }
                 }
             }
 
-            if (IsBehaviourModule(data) == false && data.hasValidConstructor.Value == false)
+            if (data.hasValidConstructor != null && (IsBehaviourModule(data) == false && data.hasValidConstructor.Value == false))
             {
-                EditorGUI.HelpBox(new Rect(position.x, position.y, position.width, baseHeight - 2), $"Add public constuctor with ModuleConfigLink!", MessageType.Error);
+                EditorGUI.HelpBox(new Rect(position.x, position.y, position.width, baseHeight - 2),
+                    $"Add public constructor with ModuleConfigLink!", MessageType.Error);
                 return;
             }
 
@@ -391,27 +400,28 @@ namespace SwiftFramework.Core.Editor
 
             if (configProperty.HasLinkValue<ModuleConfigLink>() == false)
             {
-                position.width -= sideButtonWidth;
-                if (GUI.Button(new Rect(position.x + position.width, position.y, sideButtonWidth, 18), "Create Config"))
+                position.width -= SIDE_BUTTON_WIDTH;
+                if (GUI.Button(new Rect(position.x + position.width, position.y, SIDE_BUTTON_WIDTH, 18), "Create Config"))
                 {
                     Util.CreateModuleConfig(data.configurable.configType, configProperty);
 #if USE_ADDRESSABLES
-                    AddrHelper.Reload();   
+                    AddrHelper.Reload();
 #endif
                 }
             }
 
-            data.configDrawer.Draw(new Rect(position.x, position.y, position.width, baseHeight), configProperty, configLabel, true);
+            data.configDrawer.Draw(new Rect(position.x, position.y, position.width, baseHeight), configProperty,
+                configLabel, true);
         }
 
-        private Color GetRedErrorColor()
+        private static Color GetRedErrorColor()
         {
-            return EditorGUIEx.warningRedColor;
+            return EditorGUIEx.WarningRedColor;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            var data = GetData(property);
+            Data data = GetData(property);
 
             data.typeProperty = property.FindPropertyRelative("implementationType");
 
@@ -425,24 +435,27 @@ namespace SwiftFramework.Core.Editor
             if (data.interfaceAttribute != null && data.interfaceAttribute.interfaceType != null)
             {
                 interfaceTypeName = data.interfaceAttribute.interfaceType.Name;
-                property.FindPropertyRelative("interfaceType").stringValue = data.interfaceAttribute.interfaceType.AssemblyQualifiedName;
+                property.FindPropertyRelative("interfaceType").stringValue =
+                    data.interfaceAttribute.interfaceType.AssemblyQualifiedName;
             }
 
             Rect titleRect = new Rect(position.x, position.y, position.width, data.baseHeight);
-            GUI.Label(new Rect(position.x, position.y + data.baseHeight, position.width, position.height - data.baseHeight), "", EditorStyles.helpBox);
+            GUI.Label(
+                new Rect(position.x, position.y + data.baseHeight, position.width, position.height - data.baseHeight),
+                "", EditorStyles.helpBox);
 
             Color color = GUI.color;
 
             GUI.Label(titleRect, $"{label.text} ({interfaceTypeName})", EditorGUIEx.GroupScope.GetStyleHeader());
             GUI.color = color;
-            position.x += margin;
-            position.y += margin;
-            position.height -= margin * 2;
-            position.width -= margin * 2;
+            position.x += MARGIN;
+            position.y += MARGIN;
+            position.height -= MARGIN * 2;
+            position.width -= MARGIN * 2;
 
             position.y += data.baseHeight;
 
-            Rect labelRect = new Rect(position.x, position.y, labelWidth, data.baseHeight);
+            Rect labelRect = new Rect(position.x, position.y, LABEL_WIDTH, data.baseHeight);
 
             Rect viewPort = position;
 
@@ -465,14 +478,11 @@ namespace SwiftFramework.Core.Editor
 
                 DrawConfigPopUp(ref position, data.baseHeight, data);
             }
-
         }
 
         public static void NotifyAboutModuleImplementationChange()
         {
             OnModuleImplementationChanged();
         }
-
-
     }
 }

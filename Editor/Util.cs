@@ -1,22 +1,25 @@
+using System;
+using System.CodeDom;
+using System.CodeDom.Compiler;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEditor;
-using UnityEditorInternal;
-using UnityEngine;
 using System.Reflection;
+using System.Security.Cryptography;
+using JetBrains.Annotations;
+using Newtonsoft.Json.Linq;
 using SwiftFramework.Core;
 using SwiftFramework.Core.Editor;
-using System.CodeDom.Compiler;
-using System.CodeDom;
-using System;
-using System.Security.Cryptography;
+using UnityEditor;
 using UnityEditor.Callbacks;
-using Newtonsoft.Json.Linq;
+using UnityEditorInternal;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.EditorUtils
 {
-    public static class EditorUtilExtentions
+    public static class EditorUtilExtensions
     {
         public static void MoveToCenter(this EditorWindow window)
         {
@@ -37,24 +40,26 @@ namespace SwiftFramework.EditorUtils
             {
                 return "";
             }
-            var file = new FileInfo(path);
-            string result = file.Directory.Name;
+
+            FileInfo file = new FileInfo(path);
+            string result = file.Directory?.Name;
 
             if (result == "Resources")
             {
                 return "";
             }
 
-            DirectoryInfo current = file.Directory.Parent;
+            DirectoryInfo current = file.Directory?.Parent;
             while (current != null && current.Name != "Resources")
             {
                 result = $"{current.Name}/{result}";
                 current = current.Parent;
             }
+
             return result;
         }
 
-        public static T Value<T>(this LinkTo<T> link) where T : UnityEngine.Object
+        public static T Value<T>(this LinkTo<T> link) where T : Object
         {
 #if USE_ADDRESSABLES
             return AddrHelper.GetAsset<T>(link);
@@ -67,7 +72,7 @@ namespace SwiftFramework.EditorUtils
 
     public class Util : ScriptableSingleton<Util>
     {
-        public const string AddressableVersion = "1.8.3";
+        public const string ADDRESSABLE_VERSION = "1.8.3";
 
         public static event Action<Type, ModuleConfig> OnModuleConfigApplied = (type, moduleConfig) => { };
 
@@ -77,7 +82,8 @@ namespace SwiftFramework.EditorUtils
         private static readonly MD5CryptoServiceProvider hashSumProvider = new MD5CryptoServiceProvider();
 
 
-        [SerializeField] internal List<DeferredInstantiation> deferredScriptableCreations = new List<DeferredInstantiation>();
+        [SerializeField]
+        internal List<DeferredInstantiation> deferredScriptableCreations = new List<DeferredInstantiation>();
 
 
         [Serializable]
@@ -89,8 +95,8 @@ namespace SwiftFramework.EditorUtils
 
         public static void DeleteEmptyFolders()
         {
-            var directoryInfo = new DirectoryInfo(Application.dataPath);
-            foreach (var subDirectory in directoryInfo.GetDirectories("*.*", SearchOption.AllDirectories))
+            DirectoryInfo directoryInfo = new DirectoryInfo(Application.dataPath);
+            foreach (DirectoryInfo subDirectory in directoryInfo.GetDirectories("*.*", SearchOption.AllDirectories))
             {
                 if (subDirectory.Exists)
                 {
@@ -103,8 +109,7 @@ namespace SwiftFramework.EditorUtils
         {
             var filesInSubDirectory = subDirectory.GetFiles("*.*", SearchOption.AllDirectories);
 
-            if (filesInSubDirectory.Length == 0 ||
-                !filesInSubDirectory.Any(t => t.FullName.EndsWith(".meta") == false))
+            if (filesInSubDirectory.Length == 0 || filesInSubDirectory.All(t => t.FullName.EndsWith(".meta")))
             {
                 subDirectory.Delete(true);
                 if (File.Exists(subDirectory.FullName + ".meta"))
@@ -118,8 +123,8 @@ namespace SwiftFramework.EditorUtils
         {
             get
             {
-                var dir = new DirectoryInfo(Application.dataPath);
-                return $"{dir.Parent.FullName}/Packages/manifest.json";
+                DirectoryInfo dir = new DirectoryInfo(Application.dataPath);
+                return $"{dir.Parent?.FullName}/Packages/manifest.json";
             }
         }
 
@@ -142,6 +147,7 @@ namespace SwiftFramework.EditorUtils
             {
                 return;
             }
+
             var manifestLines = new List<string>(File.ReadAllLines(ManifestPackagePath));
             var startIndex = manifestLines.FindIndex(l => l.Contains($"dependencies\": {{")) + 1;
             manifestLines.Insert(startIndex, $"   {dep},");
@@ -153,7 +159,7 @@ namespace SwiftFramework.EditorUtils
             get
             {
                 string path = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(instance));
-                return new FileInfo(path).Directory.Parent.Parent.FullName;
+                return new FileInfo(path).Directory?.Parent?.Parent?.FullName;
             }
         }
 
@@ -162,7 +168,7 @@ namespace SwiftFramework.EditorUtils
             get
             {
                 string path = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(instance));
-                return ToRelativePath(new FileInfo(path).Directory.Parent.Parent.FullName);
+                return ToRelativePath(new FileInfo(path).Directory?.Parent?.Parent?.FullName);
             }
         }
 
@@ -176,7 +182,8 @@ namespace SwiftFramework.EditorUtils
             EditorUtility.SetDirty(instance);
         }
 
-        public static IEnumerable<string> CopyDirectory(string source, string destination, string exceptFilesWithExtentions = null)
+        public static IEnumerable<string> CopyDirectory([NotNull] string source, [NotNull] string destination,
+            string exceptFilesWithExtensions = null)
         {
             foreach (string dirPath in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
             {
@@ -187,19 +194,19 @@ namespace SwiftFramework.EditorUtils
 
             foreach (string newPath in Directory.GetFiles(source, "*.*", SearchOption.AllDirectories))
             {
-                if (exceptFilesWithExtentions != null && Path.GetExtension(newPath) == exceptFilesWithExtentions)
+                if (exceptFilesWithExtensions != null && Path.GetExtension(newPath) == exceptFilesWithExtensions)
                 {
                     continue;
                 }
 
-                var dir = new FileInfo(newPath.Replace(source, destination)).Directory.FullName;
+                string dir = new FileInfo(newPath?.Replace(source, destination)).Directory?.FullName;
 
                 if (!Directory.Exists(dir))
                 {
                     Directory.CreateDirectory(dir);
                 }
 
-                var newFile = newPath.Replace(source, destination);
+                string newFile = newPath?.Replace(source, destination);
 
                 if (File.Exists(newFile) == false)
                 {
@@ -228,13 +235,15 @@ namespace SwiftFramework.EditorUtils
                 {
                     return;
                 }
-                if (EditorUtility.DisplayDialog("Warning", $"{sourceFolder} folder detected. Do you want to move assets to {destFolder} folder?", "Yes", "No"))
+
+                if (EditorUtility.DisplayDialog("Warning",
+                    $"{sourceFolder} folder detected. Do you want to move assets to {destFolder} folder?", "Yes", "No"))
                 {
                     AssetDatabase.CreateFolder("Assets", destFolder);
 
                     AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-                    foreach (var item in AssetDatabase.FindAssets("t: Object", new string[] { "Assets/" + sourceFolder }))
+                    foreach (var item in AssetDatabase.FindAssets("t: Object", new string[] {"Assets/" + sourceFolder}))
                     {
                         var path = AssetDatabase.GUIDToAssetPath(item);
                         AssetDatabase.MoveAsset(path, path.Replace($"/{sourceFolder}/", $"/{destFolder}/"));
@@ -249,25 +258,28 @@ namespace SwiftFramework.EditorUtils
 
         public static void OpenPrefab<T>()
         {
-            var id = FindPrefabPath(typeof(T))?.GetInstanceID();
+            int? id = FindPrefabPath(typeof(T))?.GetInstanceID();
             if (id.HasValue)
                 AssetDatabase.OpenAsset(id.Value);
         }
 
-        public static GameObject FindPrefabPath(Type type)
+        private static GameObject FindPrefabPath(Type type)
         {
-            foreach (var guid in AssetDatabase.FindAssets($"t:{ "GameObject" }"))
+            foreach (var guid in AssetDatabase.FindAssets("t:GameObject"))
             {
-                GameObject go = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid)) as GameObject;
+                GameObject go =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
                 if (go == null)
                 {
                     continue;
                 }
+
                 if (go.GetComponent(type))
                 {
                     return go;
                 }
             }
+
             return null;
         }
 
@@ -277,104 +289,74 @@ namespace SwiftFramework.EditorUtils
             {
                 return "";
             }
+
             if (Path.GetFullPath(absolutePath).StartsWith(Path.GetFullPath(Application.dataPath)))
             {
                 return "Assets" + absolutePath.Substring(Application.dataPath.Length);
             }
+
             return absolutePath;
         }
 
-        public const string PackageRelativeRootFolder = "Packages/com.dimaswift.swiftframework/";
-
-        public static string ToAbsolutePath(string relativePath)
+        private static string ToAbsolutePath(string relativePath)
         {
             return Application.dataPath + relativePath.Remove(0, 6);
         }
-
-        public static byte[] CalculateAssetHashSum(UnityEngine.Object asset)
-        {
-            if (asset == null)
-            {
-                return new byte[0];
-            }
-
-            string assetPath = AssetDatabase.GetAssetPath(asset);
-
-            if (string.IsNullOrEmpty(assetPath))
-            {
-                return new byte[0];
-            }
-
-            List<byte> result = new List<byte>();
-
-            foreach (string depAssetPath in AssetDatabase.GetDependencies(assetPath, true))
-            {
-                result.AddRange(CalculateHashSum(ToAbsolutePath(depAssetPath)));
-                result.AddRange(CalculateHashSum(ToAbsolutePath(AssetDatabase.GetTextMetaFilePathFromAssetPath(depAssetPath))));
-            }
-
-            return result.ToArray();
-        }
-
-
-        public static IEnumerable<UnityEngine.Object> GetAllAssets()
+        
+        public static IEnumerable<Object> GetAllAssets()
         {
             foreach (string guid in AssetDatabase.FindAssets(""))
             {
-                yield return AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(AssetDatabase.GUIDToAssetPath(guid));
+                yield return AssetDatabase.LoadAssetAtPath<Object>(AssetDatabase.GUIDToAssetPath(guid));
             }
         }
 
-        public static IEnumerable<T> GetAssets<T>(string name = "", params string[] folders) where T : UnityEngine.Object
+        public static IEnumerable<T> GetAssets<T>(string name = "", params string[] folders)
+            where T : Object
         {
-            return AssetDatabase.FindAssets(string.Format("t:{0} {1}", typeof(T).Name, name), folders)
+            return AssetDatabase.FindAssets($"t:{typeof(T).Name} {name}", folders)
                 .Select(x => AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(x), typeof(T)) as T);
         }
 
-        public static IEnumerable<UnityEngine.Object> GetAssets(Type type, string name = "", params string[] folders)
+        public static IEnumerable<Object> GetAssets(Type type, string name = "", params string[] folders)
         {
-            return AssetDatabase.FindAssets(string.Format("t:{0} {1}", type.Name, name), folders)
+            return AssetDatabase.FindAssets($"t:{type.Name} {name}", folders)
                 .Select(x => AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(x), type));
         }
 
-        public static T GetAsset<T>() where T : UnityEngine.Object
+        private static Object GetAsset(Type type)
         {
-            foreach (var guid in AssetDatabase.FindAssets($"t:{ typeof(T).Name }"))
-            {
-                return AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid));
-            }
-            return null;
-        }
-
-        public static UnityEngine.Object GetAsset(Type type)
-        {
-            foreach (var guid in AssetDatabase.FindAssets($"t:{ type.Name }"))
+            foreach (var guid in AssetDatabase.FindAssets($"t:{type.Name}"))
             {
                 return AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(guid), type);
             }
+
             return null;
         }
 
         public static GameObject FindPrefabWithInterface(Type interfaceType)
         {
-            foreach (var guid in AssetDatabase.FindAssets($"t:{ "GameObject" }"))
+            foreach (var guid in AssetDatabase.FindAssets("t:GameObject"))
             {
-                GameObject go = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid)) as GameObject;
+                GameObject go =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid)) as GameObject;
                 if (go == null)
                 {
                     continue;
                 }
+
                 if (go.GetComponent(interfaceType))
                 {
                     return go;
                 }
             }
+
             return null;
         }
 
         public static IEnumerable<T> FindModules<T>() where T : IModule
         {
-            foreach (var asset in GetAssets<GameObject>())
+            foreach (GameObject asset in GetAssets<GameObject>())
             {
                 if (asset.GetComponent<T>() != null)
                 {
@@ -388,13 +370,14 @@ namespace SwiftFramework.EditorUtils
             return PromptCreateScriptable(typeof(T), typeof(T).Name) as T;
         }
 
-        public static int GetConfigCount(Type type)
+        private static int GetConfigCount(Type type)
         {
             int result = 0;
-            foreach (var asset in GetAssets(type))
+            foreach (Object asset in GetAssets(type))
             {
                 result++;
             }
+
             return result;
         }
 
@@ -403,39 +386,33 @@ namespace SwiftFramework.EditorUtils
             return PromptChooseScriptable(typeof(T), folder) as T;
         }
 
-        public static UnityEngine.Object PromptCreateScriptable(Type type, string folder)
+        private static Object PromptCreateScriptable(Type type, string folder)
         {
             return PromptCreateScriptable(type, type.Name, folder);
         }
 
-        public static UnityEngine.Object PromptChooseScriptable(Type type, string folder = "Assets")
+        private static Object PromptChooseScriptable(Type type, string folder = "Assets")
         {
             int count = GetConfigCount(type);
-            if (count == 0)
+            switch (count)
             {
-                Debug.LogError($"Scriptable object of type {type.Name} not found");
-                return null;
-            }
-            if (count == 1)
-            {
-                return GetAsset(type);
+                case 0:
+                    Debug.LogError($"Scriptable object of type {type.Name} not found");
+                    return null;
+                case 1:
+                    return GetAsset(type);
             }
 
             string configPath = EditorUtility.OpenFilePanel("Choose config", folder, "asset");
 
-            if (string.IsNullOrEmpty(configPath))
-            {
-                return null;
-            }
-
-
-            return AssetDatabase.LoadAssetAtPath(ToRelativePath(configPath), type);
+            return string.IsNullOrEmpty(configPath) ? null : AssetDatabase.LoadAssetAtPath(ToRelativePath(configPath), type);
         }
 
 
-        public static UnityEngine.Object PromptCreateScriptable(Type type, string name, string folder)
+        private static Object PromptCreateScriptable(Type type, string name, string folder)
         {
-            string configPath = EditorUtility.SaveFilePanelInProject("Choose config path", name, "asset", "Save", Application.dataPath + "/Resources/" + folder);
+            string configPath = EditorUtility.SaveFilePanelInProject("Choose config path", name, "asset", "Save",
+                Application.dataPath + "/Resources/" + folder);
 
             if (string.IsNullOrEmpty(configPath))
             {
@@ -451,28 +428,6 @@ namespace SwiftFramework.EditorUtils
             return AssetDatabase.LoadAssetAtPath(configPath, type);
         }
 
-        public static byte[] CalculateHashSum(string filePath)
-        {
-            if (File.Exists(filePath) == false)
-            {
-                return new byte[0];
-            }
-            byte[] fileBytes = File.ReadAllBytes(filePath);
-            return hashSumProvider.ComputeHash(fileBytes);
-        }
-
-        public static bool HashesAreEqual(byte[] h1, byte[] h2)
-        {
-            if (h1 == null || h2 == null || h1.Length != h2.Length) { return false; }
-
-            for (int i = 0, maxi = h1.Length - 1; i <= maxi; i++)
-            {
-                if (h1[i] != h2[i]) { return false; }
-            }
-
-            return true;
-        }
-
         public static ScriptableObject CreateScriptable(Type type, string name, string folder)
         {
             string configPath = Path.Combine(folder, name + ".asset");
@@ -483,31 +438,26 @@ namespace SwiftFramework.EditorUtils
             return AssetDatabase.LoadAssetAtPath<ScriptableObject>(configPath);
         }
 
-        public static GameObject CreateModuleBehaviour(Type type, SerializedProperty link = null)
+        public static void CreateModuleBehaviour(Type type, SerializedProperty link = null)
         {
             GameObject newBehaviour = new GameObject(type.Name);
             newBehaviour.AddComponent(type);
             string moduleFolder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}";
 
-            Util.EnsureProjectFolderExists(moduleFolder);
+            EnsureProjectFolderExists(moduleFolder);
             string prefabName = newBehaviour.name;
-            Func<string> prefabPath = () => $"{moduleFolder}/{prefabName}.prefab";
+            string PrefabPath() => $"{moduleFolder}/{prefabName}.prefab";
 
-            while (AssetDatabase.LoadAssetAtPath(prefabPath(), type) != null)
+            while (AssetDatabase.LoadAssetAtPath(PrefabPath(), type) != null)
             {
                 prefabName += " (NEW)";
             }
 
-            if (link != null)
-            {
-                link.SaveLink($"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}/{prefabName}");
-            }
+            link?.SaveLink($"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}/{prefabName}");
 
-            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(newBehaviour, prefabPath(), out bool created);
-
+            PrefabUtility.SaveAsPrefabAsset(newBehaviour, PrefabPath(), out bool created);
+            
             DestroyImmediate(newBehaviour);
-
-            return prefab;
         }
 
         public static ModuleConfig CreateModuleConfig(Type type, SerializedProperty link = null)
@@ -520,18 +470,18 @@ namespace SwiftFramework.EditorUtils
 
             string configName = config.name;
 
-            Func<string> configPath = () => $"{configsFolder}/{configName}.asset";
+            string ConfigPath() => $"{configsFolder}/{configName}.asset";
 
-            while (AssetDatabase.LoadAssetAtPath(configPath(), type) != null)
+            while (AssetDatabase.LoadAssetAtPath(ConfigPath(), type) != null)
             {
                 configName += " (NEW)";
             }
-            AssetDatabase.CreateAsset(config, configPath());
-            if (link != null)
-            {
-                link.SaveLink($"{Folders.Configs}/{configName}");
-            }
-            return AssetDatabase.LoadAssetAtPath(configPath(), type) as ModuleConfig;
+
+            AssetDatabase.CreateAsset(config, ConfigPath());
+            
+            link?.SaveLink($"{Folders.Configs}/{configName}");
+
+            return AssetDatabase.LoadAssetAtPath(ConfigPath(), type) as ModuleConfig;
         }
 
         public static void EnsureProjectFolderExists(string folder)
@@ -540,6 +490,7 @@ namespace SwiftFramework.EditorUtils
             {
                 return;
             }
+
             Directory.CreateDirectory(folder);
             AssetDatabase.Refresh();
         }
@@ -549,13 +500,13 @@ namespace SwiftFramework.EditorUtils
             return CreateScriptable(typeof(T), name, folder) as T;
         }
 
-        public static IEnumerable<Core.BehaviourModule> GetAllModules()
+        public static IEnumerable<BehaviourModule> GetAllModules()
         {
-            foreach (var asset in GetAssets<GameObject>())
+            foreach (GameObject asset in GetAssets<GameObject>())
             {
-                if (asset.GetComponent<Core.BehaviourModule>() != null)
+                if (asset.GetComponent<BehaviourModule>() != null)
                 {
-                    foreach (var subModule in asset.GetComponentsInChildren<Core.BehaviourModule>())
+                    foreach (BehaviourModule subModule in asset.GetComponentsInChildren<BehaviourModule>())
                     {
                         yield return subModule;
                     }
@@ -565,37 +516,40 @@ namespace SwiftFramework.EditorUtils
 
         public static T FindModule<T>() where T : IModule
         {
-            foreach (var asset in GetAssets<GameObject>())
+            foreach (GameObject asset in GetAssets<GameObject>())
             {
                 if (asset.GetComponent<T>() != null)
                 {
                     return asset.GetComponent<T>();
                 }
             }
+
             return default;
         }
 
         public static T FindScriptableObject<T>() where T : ScriptableObject
         {
-            foreach (var asset in GetAssets<ScriptableObject>())
+            foreach (ScriptableObject asset in GetAssets<ScriptableObject>())
             {
-                if (asset is T)
+                if (asset is T scriptableObject)
                 {
-                    return asset as T;
+                    return scriptableObject;
                 }
             }
+
             return default;
         }
 
         public static T FindScriptableObject<T>(Func<T, bool> filter) where T : ScriptableObject
         {
-            foreach (var asset in GetAssets<ScriptableObject>())
+            foreach (ScriptableObject asset in GetAssets<ScriptableObject>())
             {
-                if (asset is T && filter(asset as T))
+                if (asset is T scriptableObject && filter(scriptableObject))
                 {
-                    return asset as T;
+                    return scriptableObject;
                 }
             }
+
             return default;
         }
 
@@ -603,18 +557,19 @@ namespace SwiftFramework.EditorUtils
         {
             if (cachedTypes.Count == 0)
             {
-                foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    foreach (var type in a.DefinedTypes)
+                    foreach (TypeInfo type in a.DefinedTypes)
                     {
                         cachedTypes.Add(type);
                     }
                 }
             }
+
             return cachedTypes;
         }
 
-        public static Dictionary<string, string> GetAssembyDefinitionLocations()
+        private static Dictionary<string, string> GetAssemblyDefinitionLocations()
         {
             Dictionary<string, string> dict = new Dictionary<string, string>();
             foreach (AssemblyDefinitionAsset a in GetAssets<AssemblyDefinitionAsset>())
@@ -627,8 +582,9 @@ namespace SwiftFramework.EditorUtils
                 }
                 catch
                 {
-
+                    // ignored
                 }
+
                 if (result.Item1 != null)
                 {
                     if (dict.ContainsKey(result.Item1) == false)
@@ -637,21 +593,22 @@ namespace SwiftFramework.EditorUtils
                     }
                 }
             }
+
             return dict;
         }
 
         public static IEnumerable<(string assemblyLocation, Type type)> GetAllTypesWithAssemblyPath()
         {
-            var assemblyLocations = GetAssembyDefinitionLocations();
+            var assemblyLocations = GetAssemblyDefinitionLocations();
 
-            foreach (var a in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (assemblyLocations.TryGetValue(a.GetName().Name, out string path) == false)
                 {
                     path = "Assets/Scripts/commond.amdsf";
                 }
 
-                foreach (var type in a.DefinedTypes)
+                foreach (TypeInfo type in a.DefinedTypes)
                 {
                     if (type.IsVisible == false)
                     {
@@ -665,7 +622,7 @@ namespace SwiftFramework.EditorUtils
 
         public static IEnumerable<Type> GetAllTypes(Func<Type, bool> predicate)
         {
-            foreach (var type in GetAllTypes())
+            foreach (Type type in GetAllTypes())
             {
                 if (predicate(type))
                 {
@@ -674,7 +631,7 @@ namespace SwiftFramework.EditorUtils
             }
         }
 
-        public static bool IsDerrivedFrom(Type childType, Type baseType)
+        public static bool IsDerivedFrom(Type childType, Type baseType)
         {
             while (childType.BaseType != null)
             {
@@ -682,8 +639,10 @@ namespace SwiftFramework.EditorUtils
                 {
                     return true;
                 }
+
                 childType = childType.BaseType;
             }
+
             return false;
         }
 
@@ -696,15 +655,16 @@ namespace SwiftFramework.EditorUtils
                 if (ms.GetClass() == type)
                 {
                     FileInfo fi = new FileInfo(path);
-                    return fi.Directory.ToString();
+                    return fi.Directory?.ToString();
                 }
             }
+
             return null;
         }
 
         public static Type FindChildClass(Type baseClass)
         {
-            foreach (var type in GetAllTypes())
+            foreach (Type type in GetAllTypes())
             {
                 if (baseClass.IsAssignableFrom(type))
                 {
@@ -714,38 +674,21 @@ namespace SwiftFramework.EditorUtils
                     }
                 }
             }
+
             return null;
         }
 
         public static ScriptableObject FindScriptableObject(Type type)
         {
-            foreach (var asset in GetAssets<ScriptableObject>())
+            foreach (ScriptableObject asset in GetAssets<ScriptableObject>())
             {
                 if (asset.GetType() == type)
                 {
                     return asset;
                 }
             }
+
             return default;
-        }
-
-        public static T ToLink<T>(UnityEngine.Object asset) where T : Link, new()
-        {
-            var path = new List<string>(AssetDatabase.GetAssetPath(asset).Split('/'));
-
-            while (true)
-            {
-                path.RemoveAt(0);
-                if (path[0] == "Resources")
-                {
-                    path.RemoveAt(0);
-                    break;
-                }
-            }
-
-            path[path.Count - 1] = Path.GetFileNameWithoutExtension(path[path.Count - 1]);
-
-            return Link.Create<T>(string.Join("/", path.ToArray()));
         }
 
         public static object GetTargetObjectOfProperty(SerializedProperty prop)
@@ -759,8 +702,9 @@ namespace SwiftFramework.EditorUtils
             {
                 if (element.Contains("["))
                 {
-                    var elementName = element.Substring(0, element.IndexOf("["));
-                    var index = System.Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
+                    var elementName = element.Substring(0, element.IndexOf("[", StringComparison.Ordinal));
+                    var index = Convert.ToInt32(element.Substring(element.IndexOf("[", StringComparison.Ordinal)).Replace("[", "")
+                        .Replace("]", ""));
                     obj = GetValue_Imp(obj, elementName, index);
                 }
                 else
@@ -768,6 +712,7 @@ namespace SwiftFramework.EditorUtils
                     obj = GetValue_Imp(obj, element);
                 }
             }
+
             return obj;
         }
 
@@ -775,48 +720,46 @@ namespace SwiftFramework.EditorUtils
         {
             if (source == null)
                 return null;
-            var type = source.GetType();
+            Type type = source.GetType();
 
             while (type != null)
             {
-                var f = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                FieldInfo f = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
                 if (f != null)
                     return f.GetValue(source);
 
-                var p = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                PropertyInfo p = type.GetProperty(name,
+                    BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
                 if (p != null)
                     return p.GetValue(source, null);
 
                 type = type.BaseType;
             }
+
             return null;
         }
 
         private static object GetValue_Imp(object source, string name, int index)
         {
-            var enumerable = GetValue_Imp(source, name) as System.Collections.IEnumerable;
-            if (enumerable == null) return null;
-            var enm = enumerable.GetEnumerator();
+            if (!(GetValue_Imp(source, name) is IEnumerable enumerable)) return null;
+            IEnumerator enm = enumerable.GetEnumerator();
 
             for (int i = 0; i <= index; i++)
             {
                 if (!enm.MoveNext()) return null;
             }
+
             return enm.Current;
         }
 
 
         public static List<PropertyAttribute> GetFieldAttributes(FieldInfo field)
         {
-
             if (field == null)
                 return null;
 
             object[] attrs = field.GetCustomAttributes(typeof(PropertyAttribute), true);
-            if (attrs != null && attrs.Length > 0)
-                return new List<PropertyAttribute>(attrs.Select(e => e as PropertyAttribute).OrderBy(e => -e.order));
-
-            return null;
+            return attrs.Length > 0 ? new List<PropertyAttribute>(attrs.Select(e => e as PropertyAttribute).OrderBy(e => -e.order)) : null;
         }
 
         [DidReloadScripts(1)]
@@ -828,10 +771,9 @@ namespace SwiftFramework.EditorUtils
             {
                 AssetDatabase.CreateAsset(CreateInstance(item.type), item.path);
             }
+
             instance.deferredScriptableCreations.Clear();
         }
-
-
     }
 
     public static class ScriptBuilder
@@ -845,44 +787,46 @@ namespace SwiftFramework.EditorUtils
             manifestNamespace.Imports.Add(new CodeNamespaceImport("SwiftFramework.Core"));
             manifestNamespace.Imports.Add(new CodeNamespaceImport("UnityEngine"));
 
-            string className = "ModuleManifest";
+            const string className = "ModuleManifest";
 
             CodeTypeDeclaration manifestClass = new CodeTypeDeclaration(className);
 
             manifestClass.BaseTypes.Add(new CodeTypeReference("BaseModuleManifest"));
 
-            foreach (var property in gameClass.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+            foreach (PropertyInfo property in gameClass.GetProperties(
+                BindingFlags.Instance | BindingFlags.Public))
             {
-                if (typeof(IModule).IsAssignableFrom(property.PropertyType) && property.PropertyType.GetCustomAttribute<BuiltInModuleAttribute>() == null)
+                if (typeof(IModule).IsAssignableFrom(property.PropertyType) &&
+                    property.PropertyType.GetCustomAttribute<BuiltInModuleAttribute>() == null)
                 {
                     string moduleName = property.Name;
-                    var moduleFiled = new CodeMemberField()
+                    CodeMemberField moduleFiled = new CodeMemberField()
                     {
                         Name = moduleName[0].ToString().ToLower() + moduleName.Substring(1, moduleName.Length - 1),
                         Type = new CodeTypeReference(typeof(ModuleLink)),
-
                     };
                     moduleFiled.CustomAttributes.Add(new CodeAttributeDeclaration("SerializeField"));
 
-                    var filterAttr = new CodeAttributeDeclaration(new CodeTypeReference("LinkFilter"));
-
-
-                    filterAttr.Arguments.Add(new CodeAttributeArgument(new CodeTypeOfExpression(property.PropertyType)));
+                    CodeAttributeDeclaration filterAttr = new CodeAttributeDeclaration(new CodeTypeReference("LinkFilter"));
+                    
+                    filterAttr.Arguments.Add(
+                        new CodeAttributeArgument(new CodeTypeOfExpression(property.PropertyType)));
 
                     moduleFiled.CustomAttributes.Add(filterAttr);
-
-
+                    
                     manifestClass.Members.Add(moduleFiled);
                 }
             }
 
-            var createAssetAttr = new CodeAttributeDeclaration(new CodeTypeReference("CreateAssetMenu"));
+            CodeAttributeDeclaration createAssetAttr = new CodeAttributeDeclaration(new CodeTypeReference("CreateAssetMenu"));
 
             string projectName = string.IsNullOrEmpty(gameClass.Namespace) ? "Game" : gameClass.Namespace.Split('.')[0];
 
-            createAssetAttr.Arguments.Add(new CodeAttributeArgument("menuName", new CodePrimitiveExpression($"{projectName}/{Folders.Configs}ModuleManifest")));
+            createAssetAttr.Arguments.Add(new CodeAttributeArgument("menuName",
+                new CodePrimitiveExpression($"{projectName}/{Folders.Configs}ModuleManifest")));
 
-            createAssetAttr.Arguments.Add(new CodeAttributeArgument("fileName", new CodePrimitiveExpression("ModuleManifest")));
+            createAssetAttr.Arguments.Add(new CodeAttributeArgument("fileName",
+                new CodePrimitiveExpression("ModuleManifest")));
 
             manifestClass.CustomAttributes.Add(createAssetAttr);
 
@@ -938,11 +882,11 @@ namespace SwiftFramework.EditorUtils
         }
 
 
-        public static void SaveClassToDisc(CodeCompileUnit code, string path, bool force, Action<List<string>> postProcessor = null)
+        public static void SaveClassToDisc(CodeCompileUnit code, string path, bool force,
+            Action<List<string>> postProcessor = null)
         {
             CodeDomProvider provider = CodeDomProvider.CreateProvider("CSharp");
-            CodeGeneratorOptions options = new CodeGeneratorOptions();
-            options.BracingStyle = "C";
+            CodeGeneratorOptions options = new CodeGeneratorOptions { BracingStyle = "C" };
 
             string tmpLinksScript = Path.GetTempFileName();
 
@@ -980,9 +924,7 @@ namespace SwiftFramework.EditorUtils
                 File.WriteAllText(path, File.ReadAllText(tmpLinksScript));
                 updated = true;
             }
-
-
-
+            
             if (updated)
             {
                 AssetDatabase.Refresh();
@@ -996,8 +938,8 @@ namespace SwiftFramework.EditorUtils
             {
                 return string.IsNullOrEmpty(gameClass.Namespace) ? "" : gameClass.Namespace.Split('.')[0];
             }
+
             return "";
         }
-
     }
 }

@@ -1,5 +1,6 @@
-﻿using SwiftFramework.EditorUtils;
+﻿using System.IO;
 using System.Linq;
+using SwiftFramework.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
@@ -22,10 +23,11 @@ namespace SwiftFramework.Core.Editor
                     if (instance == null)
                     {
                         string folder = Util.EditorFolder;
-                        if (System.IO.Directory.Exists(folder) == false)
+                        if (Directory.Exists(folder) == false)
                         {
-                            System.IO.Directory.CreateDirectory(folder);
+                            Directory.CreateDirectory(folder);
                         }
+
                         string path = $"{folder}/{typeof(T).Name}.asset";
                         instance = CreateInstance<T>();
                         instance.hideFlags = HideFlags.NotEditable;
@@ -34,9 +36,9 @@ namespace SwiftFramework.Core.Editor
                         AssetDatabase.Refresh();
                     }
                 }
+
                 return instance;
             }
         }
     }
-
 }

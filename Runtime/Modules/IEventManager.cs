@@ -77,10 +77,7 @@ namespace SwiftFramework.Core
 
         public string Text
         {
-            get
-            {
-                return Value?.Text;
-            }
+            get => Value?.Text;
             set
             {
                 if (HasValue)

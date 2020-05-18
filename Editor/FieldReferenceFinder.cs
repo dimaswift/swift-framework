@@ -1,12 +1,14 @@
-﻿using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine;
-using System.Reflection;
-using UnityEngine.SceneManagement;
-using UnityEditor.SceneManagement;
+﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using SwiftFramework.Core;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.EditorUtils
 {
@@ -21,15 +23,15 @@ namespace SwiftFramework.EditorUtils
 
     internal static class FieldReferenceFinder
     {
-        public const int MaxRecursionDepth = 25;
+        private const int MAX_RECURSION_DEPTH = 25;
 
-        private static readonly List<System.Type> attributeFilters = new List<System.Type>();
+        private static readonly List<Type> attributeFilters = new List<Type>();
 
-        public static List<FieldData<T>> FindAllFields<T>(params System.Type[] attributes) where T : class
+        public static List<FieldData<T>> FindAllFields<T>(params Type[] attributes) where T : class
         {
             List<FieldData<T>> list = new List<FieldData<T>>();
 
-            IEnumerable<Object> allAssets = Util.GetAllAssets();
+            Object[] allAssets = Util.GetAllAssets().ToArray();
 
             attributeFilters.Clear();
 
@@ -37,7 +39,7 @@ namespace SwiftFramework.EditorUtils
 
             int total = allAssets.Count();
 
-            if(total == 0)
+            if (total == 0)
             {
                 return list;
             }
@@ -48,25 +50,25 @@ namespace SwiftFramework.EditorUtils
             {
                 try
                 {
-                    if (asset is ScriptableObject)
+                    switch (asset)
                     {
-                        CheckScriptableObject(asset, list);
-                    }
-                    else if (asset is GameObject)
-                    {
-                        CheckPrefab(asset, list);
-                    }
-                    else if (asset is SceneAsset)
-                    {
-                        CheckScene(asset, list);
+                        case ScriptableObject _:
+                            CheckScriptableObject(asset, list);
+                            break;
+                        case GameObject _:
+                            CheckPrefab(asset, list);
+                            break;
+                        case SceneAsset _:
+                            CheckScene(asset, list);
+                            break;
                     }
 
                     current++;
 
-                    EditorUtility.DisplayProgressBar($"Collecting serialized {typeof(T).Name}...", $"Asset checked: {current}/{total}", (float)current / total);
-
+                    EditorUtility.DisplayProgressBar($"Collecting serialized {typeof(T).Name}...",
+                        $"Asset checked: {current}/{total}", (float) current / total);
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     Debug.LogException(e);
                     EditorUtility.ClearProgressBar();
@@ -91,7 +93,8 @@ namespace SwiftFramework.EditorUtils
                     CheckPrefab(child.gameObject, list);
                 }
             }
-            if(EditorSceneManager.GetActiveScene() != scene)
+
+            if (SceneManager.GetActiveScene() != scene)
             {
                 EditorSceneManager.CloseScene(scene, true);
             }
@@ -106,23 +109,24 @@ namespace SwiftFramework.EditorUtils
                 return;
             }
 
-            foreach (var component in prefab.GetComponents<Component>())
+            foreach (Component component in prefab.GetComponents<Component>())
             {
                 if (component == null)
                 {
                     continue;
                 }
 
-                System.Type type = component.GetType();
+                Type type = component.GetType();
 
                 IEnumerable<FieldInfo> fields = type.GetRuntimeFields();
 
                 foreach (FieldInfo runTimeField in fields)
                 {
-                    var field = FieldInfo.GetFieldFromHandle(runTimeField.FieldHandle);
+                    FieldInfo field = FieldInfo.GetFieldFromHandle(runTimeField.FieldHandle);
                     if (field.GetCustomAttribute(typeof(SerializeField)) != null || field.IsPublic)
                     {
-                        CheckFieldRecursively(asset, field, runTimeField.GetChildValueType(), field.GetValue(component), list, 0);
+                        CheckFieldRecursively(asset, field, runTimeField.GetChildValueType(), field.GetValue(component),
+                            list, 0);
                     }
                 }
             }
@@ -130,7 +134,7 @@ namespace SwiftFramework.EditorUtils
 
         private static void CheckScriptableObject<T>(Object asset, List<FieldData<T>> list) where T : class
         {
-            System.Type type = asset.GetType();
+            Type type = asset.GetType();
 
             FieldInfo[] fields = type.GetFields();
 
@@ -140,7 +144,9 @@ namespace SwiftFramework.EditorUtils
             }
         }
 
-        private static void TryAddFieldValue<T>(Object asset, SerializedProperty property, SerializedObject serializedObject, FieldInfo fieldInfo, object value, List<FieldData<T>> list) where T : class
+        private static void TryAddFieldValue<T>(Object asset, SerializedProperty property,
+            SerializedObject serializedObject, FieldInfo fieldInfo, object value, List<FieldData<T>> list)
+            where T : class
         {
             if (value == null)
             {
@@ -152,7 +158,7 @@ namespace SwiftFramework.EditorUtils
                 return;
             }
 
-            T target = value as T;
+            T target = (T) value;
 
             list.Add(new FieldData<T>()
             {
@@ -162,14 +168,13 @@ namespace SwiftFramework.EditorUtils
                 value = target,
                 property = property
             });
-
         }
 
         private static bool HasAllAttributes(FieldInfo field)
         {
             bool hasAllAttributes = true;
 
-            foreach (System.Type attr in attributeFilters)
+            foreach (Type attr in attributeFilters)
             {
                 if (field.GetCustomAttribute(attr) == null)
                 {
@@ -181,7 +186,7 @@ namespace SwiftFramework.EditorUtils
             return hasAllAttributes;
         }
 
-        private static bool IsValid (System.Type type)
+        private static bool IsValid(Type type)
         {
             if (type.IsValueType || type.IsPrimitive || type.IsEnum || type == typeof(string))
             {
@@ -196,27 +201,30 @@ namespace SwiftFramework.EditorUtils
             return true;
         }
 
-        private static void CheckFieldRecursively<T>(Object targetAsset, FieldInfo fieldToCheck, System.Type type, object value, List<FieldData<T>> list, int depth) where T : class
+        private static void CheckFieldRecursively<T>(Object targetAsset, FieldInfo fieldToCheck, Type type,
+            object value, List<FieldData<T>> list, int depth) where T : class
         {
             if (IsValid(type) == false)
             {
                 return;
             }
-            if (depth > MaxRecursionDepth)
+
+            if (depth > MAX_RECURSION_DEPTH)
             {
-                //Debug.LogWarning($"Max recursion depth reached on asset: {targetAsset.name} while checking type {type.Name}");
                 return;
             }
+
             if (value == null)
             {
                 return;
             }
+
             SerializedObject serializedObject = new SerializedObject(targetAsset);
-          
+
             IEnumerable<FieldInfo> runTimeFields = type.GetRuntimeFields();
 
             IEnumerable<FieldInfo> fields = type.GetFields();
-            foreach (var field in fields)
+            foreach (FieldInfo field in fields)
             {
                 if (type == field.FieldType)
                 {
@@ -234,18 +242,21 @@ namespace SwiftFramework.EditorUtils
                     {
                         continue;
                     }
-                    TryAddFieldValue(targetAsset, serializedObject.FindProperty(field.Name), serializedObject, field, fieldValue, list);
+
+                    TryAddFieldValue(targetAsset, serializedObject.FindProperty(field.Name), serializedObject, field,
+                        fieldValue, list);
                     CheckFieldRecursively(targetAsset, field, field.FieldType, fieldValue, list, ++depth);
                 }
             }
-            foreach (var runTimeField in runTimeFields)
+
+            foreach (FieldInfo runTimeField in runTimeFields)
             {
                 if (type == runTimeField.FieldType)
                 {
                     continue;
                 }
 
-                var field = FieldInfo.GetFieldFromHandle(runTimeField.FieldHandle);
+                FieldInfo field = FieldInfo.GetFieldFromHandle(runTimeField.FieldHandle);
 
                 if (HasAllAttributes(field))
                 {
@@ -258,18 +269,18 @@ namespace SwiftFramework.EditorUtils
                     {
                         continue;
                     }
-                    TryAddFieldValue(targetAsset, serializedObject.FindProperty(field.Name), serializedObject, field, fieldValue, list);
+
+                    TryAddFieldValue(targetAsset, serializedObject.FindProperty(field.Name), serializedObject, field,
+                        fieldValue, list);
                     CheckFieldRecursively(targetAsset, field, runTimeField.FieldType, fieldValue, list, ++depth);
                 }
             }
-            
 
 
-            IEnumerable array = value as IEnumerable;
-        
-            if (array == null)
+            if (!(value is IEnumerable array))
             {
-                TryAddFieldValue(targetAsset, serializedObject.FindProperty(fieldToCheck.Name), serializedObject, fieldToCheck, value, list);
+                TryAddFieldValue(targetAsset, serializedObject.FindProperty(fieldToCheck.Name), serializedObject,
+                    fieldToCheck, value, list);
             }
             else
             {
@@ -280,22 +291,23 @@ namespace SwiftFramework.EditorUtils
                     {
                         continue;
                     }
-                    if(element != null && (element is string || element.GetType().IsPrimitive))
+
+                    if ((element is string || element.GetType().IsPrimitive))
                     {
                         break;
                     }
 
                     SerializedProperty prop = serializedObject.FindProperty(fieldToCheck.Name);
 
-                    if(prop != null)
+                    if (prop != null)
                     {
-                        TryAddFieldValue(targetAsset, prop.GetArrayElementAtIndex(i++), serializedObject, fieldToCheck, element, list);
+                        TryAddFieldValue(targetAsset, prop.GetArrayElementAtIndex(i++), serializedObject, fieldToCheck,
+                            element, list);
                     }
 
                     CheckFieldRecursively(targetAsset, fieldToCheck, element.GetType(), element, list, ++depth);
                 }
             }
         }
-
     }
 }

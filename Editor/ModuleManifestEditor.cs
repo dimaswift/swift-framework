@@ -1,26 +1,26 @@
-﻿using System.Collections.Generic;
-using UnityEditor;
-using SwiftFramework.Core;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
-using SwiftFramework.Core.Pooling;
-using UnityEngine;
-using SwiftFramework.EditorUtils;
+using SwiftFramework.Core;
 using SwiftFramework.Core.Editor;
-using UnityEditor.Callbacks;
+using SwiftFramework.Core.Pooling;
+using SwiftFramework.EditorUtils;
+using UnityEditor;
+using UnityEngine;
 
 namespace SwiftFramework.Editor
 {
     [CustomEditor(typeof(BaseModuleManifest), true)]
     internal class ModuleManifestEditor : UnityEditor.Editor
     {
-        private Dictionary<string, ModuleGroupContainer> moduleGroups = new Dictionary<string, ModuleGroupContainer>();
+        private readonly Dictionary<string, ModuleGroupContainer> moduleGroups = new Dictionary<string, ModuleGroupContainer>();
 
-        private SimplePool<ModuleGroupContainer> groupsPool = new SimplePool<ModuleGroupContainer>(() => new ModuleGroupContainer());
+        private readonly SimplePool<ModuleGroupContainer> groupsPool =
+            new SimplePool<ModuleGroupContainer>(() => new ModuleGroupContainer());
 
         public override void OnInspectorGUI()
         {
-            if(moduleGroups.Count == 0)
+            if (moduleGroups.Count == 0)
             {
                 Util.OnScriptsReloaded -= Util_OnScriptsReloaded;
                 Util.OnScriptsReloaded += Util_OnScriptsReloaded;
@@ -29,10 +29,16 @@ namespace SwiftFramework.Editor
 
                 iterator.NextVisible(true);
 
-                 
+
                 while (iterator.NextVisible(false))
                 {
                     string interfaceTypeStr = iterator.FindPropertyRelative("interfaceType")?.stringValue;
+
+                    if (interfaceTypeStr == null)
+                    {
+                        break;
+                    }
+                    
                     Type type = Type.GetType(interfaceTypeStr);
                     if (type != null)
                     {
@@ -55,6 +61,7 @@ namespace SwiftFramework.Editor
 
                 iterator.Reset();
             }
+
             EditorGUILayout.Space();
             foreach (var groupContainer in moduleGroups)
             {
@@ -95,7 +102,7 @@ namespace SwiftFramework.Editor
                 EditorGUILayout.EndFoldoutHeaderGroup();
                 EditorGUILayout.Space();
             }
-            
+
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -111,24 +118,24 @@ namespace SwiftFramework.Editor
                 foreach (string moduleProp in coreModules.moduleProperties)
                 {
                     SerializedProperty prop = serializedObject.FindProperty(moduleProp);
-                    if (prop != null)
+                    SerializedProperty interfaceProp = prop?.FindPropertyRelative("interfaceType");
+                    if (interfaceProp != null && string.IsNullOrEmpty(interfaceProp.stringValue) == false)
                     {
-                        SerializedProperty interfaceProp = prop.FindPropertyRelative("interfaceType");
-                        if (interfaceProp != null && string.IsNullOrEmpty(interfaceProp.stringValue) == false)
+                        Type interfaceType = Type.GetType(interfaceProp.stringValue);
+                        if (interfaceType != null)
                         {
-                            Type interfaceType = Type.GetType(interfaceProp.stringValue);
-                            if (interfaceType != null)
+                            Type implementationType =
+                                RuntimeModuleFactory.FindDefaultModuleImplementation(interfaceType);
+                            if (implementationType != null)
                             {
-                                Type implementationType = RuntimeModuleFactory.FindDefaultModuleImplementation(interfaceType);
-                                if (implementationType != null)
-                                {
-                                    prop.FindPropertyRelative("implementationType").stringValue = implementationType.AssemblyQualifiedName;
-                                    ModuleLinkDrawer.NotifyAboutModuleImplementationChange();
-                                }
+                                prop.FindPropertyRelative("implementationType").stringValue =
+                                    implementationType.AssemblyQualifiedName;
+                                ModuleLinkDrawer.NotifyAboutModuleImplementationChange();
                             }
                         }
                     }
                 }
+
                 serializedObject.ApplyModifiedProperties();
             }
         }
@@ -139,7 +146,7 @@ namespace SwiftFramework.Editor
             {
                 groupContainer.moduleProperties.Add(modulePropPath);
             }
-            else 
+            else
             {
                 groupContainer = groupsPool.Take();
                 groupContainer.id = groupId;
@@ -154,11 +161,11 @@ namespace SwiftFramework.Editor
             {
                 set
                 {
-                    if (value != shown.Value)
+                    if (shown != null && value != shown.Value)
                     {
-                        EditorPrefs.SetBool(ShownPrefsId, value); 
+                        EditorPrefs.SetBool(ShownPrefsId, value);
                     }
-                    
+
                     shown = value;
                 }
                 get
@@ -167,27 +174,28 @@ namespace SwiftFramework.Editor
                     {
                         shown = EditorPrefs.GetBool(ShownPrefsId, false);
                     }
-                    return shown.Value; 
+
+                    return shown.Value;
                 }
             }
 
             private string ShownPrefsId => $"show_module_group_{id}";
 
             public string id;
-            public List<string> moduleProperties = new List<string>();
+            public readonly List<string> moduleProperties = new List<string>();
             private bool? shown;
+
             public override void Dispose()
             {
-                moduleProperties.Clear();   
+                moduleProperties.Clear();
             }
 
             protected override void OnTakenFromPool()
             {
                 base.OnTakenFromPool();
-            
+
                 moduleProperties.Clear();
             }
         }
-    } 
+    }
 }
- 

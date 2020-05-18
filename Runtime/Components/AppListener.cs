@@ -12,4 +12,3 @@ namespace SwiftFramework.Core
         protected abstract void OnAppInitialized();
     }
 }
-

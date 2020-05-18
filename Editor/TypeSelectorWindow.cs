@@ -1,7 +1,6 @@
-﻿using SwiftFramework.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using SwiftFramework.Core;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,7 +15,7 @@ namespace SwiftFramework.EditorUtils
 
         public static IPromise<Type> Open(IEnumerable<Type> types, string title)
         {
-            var win = GetWindow<TypeSelectorWindow>(true, title, true);
+            TypeSelectorWindow win = GetWindow<TypeSelectorWindow>(true, title, true);
 
             win.MoveToCenter();
 
@@ -29,7 +28,7 @@ namespace SwiftFramework.EditorUtils
 
         public void OnGUI()
         {
-            if(promise == null)
+            if (promise == null)
             {
                 Close();
                 return;

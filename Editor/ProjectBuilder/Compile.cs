@@ -17,7 +17,7 @@ namespace SwiftFramework.EditorUtils
         {
             add
             {
-                string path = string.Format("{0}.{1}", value.Method.DeclaringType.FullName, value.Method.Name);
+                string path = $"{value.Method.DeclaringType?.FullName}.{value.Method.Name}";
                 if (instance.onFinishedCompile.Contains(path))
                     Debug.LogError(path + " already be registered.");
                 else if (!value.Method.IsStatic)
@@ -27,14 +27,11 @@ namespace SwiftFramework.EditorUtils
                 else
                     instance.onFinishedCompile.Add(path);
             }
-            remove
-            {
-                instance.onFinishedCompile.Remove(string.Format("{0}.{1}", value.Method.DeclaringType.FullName, value.Method.Name));
-            }
+            remove => instance.onFinishedCompile.Remove($"{value.Method.DeclaringType?.FullName}.{value.Method.Name}");
         }
 
         [InitializeOnLoadMethod]
-        static void OnFinishedCompileSuccessfully()
+        private static void OnFinishedCompileSuccessfully()
         {
             EditorApplication.delayCall += () =>
             {
@@ -60,14 +57,17 @@ namespace SwiftFramework.EditorUtils
                 try
                 {
                     string className = Path.GetFileNameWithoutExtension(methodPath);
-                    string methodName = Path.GetExtension(methodPath).TrimStart('.');
-                    MethodInfo ret = Type.GetType(className).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
-                    ret.Invoke(null, new object[] { successfully });
+                    string methodName = Path.GetExtension(methodPath)?.TrimStart('.');
+                    MethodInfo ret = Type.GetType(className)
+                        ?.GetMethod(methodName,
+                        BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static);
+                    ret?.Invoke(null, new object[] {successfully});
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError(methodPath + " cannnot call. " + e.Message);
+                    Debug.LogError(methodPath + " cannot call. " + e.Message);
                 }
+
                 onFinishedCompile.Remove(methodPath);
             }
         }

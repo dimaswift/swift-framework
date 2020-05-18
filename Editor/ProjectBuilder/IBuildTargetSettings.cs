@@ -3,16 +3,12 @@ using UnityEngine;
 
 namespace SwiftFramework.EditorUtils
 {
-	internal interface IBuildTargetSettings
-	{
-		BuildTarget buildTarget { get;}
+    internal interface IBuildTargetSettings
+    {
+        BuildTarget BuildTarget { get; }
 
-		Texture icon { get;}
+        Texture Icon { get; }
 
-		void Reset();
-
-		void ApplySettings(Builder builder);
-
-		void DrawSetting(SerializedObject serializedObject);
-	}
+        void DrawSetting(SerializedObject serializedObject);
+    }
 }

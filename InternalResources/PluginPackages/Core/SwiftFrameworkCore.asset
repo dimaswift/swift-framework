@@ -23,6 +23,18 @@ MonoBehaviour:
   nameSpace: MyGame
   appName: Root
   useAddressables: 0
-  modules: []
+  modules:
+  - SwiftFramework.Core.ISoundManager, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
+  - SwiftFramework.Core.ISecurePrefs, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
+  - SwiftFramework.Core.IContentUpdater, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
+  - SwiftFramework.Core.ICloudStorage, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
+  - SwiftFramework.Core.ICloudScriptManager, SwiftFramework.Core, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
+  - SwiftFramework.Core.ICameraController, SwiftFramework.Core, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null
   selectedModule: 0
   show: 1

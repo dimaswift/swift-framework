@@ -169,6 +169,26 @@ namespace SwiftFramework.Core.Editor
             data.installed = false;
             data.version = 0;
             data.copiedFiles.Clear();
+            
+            List<ModuleInstaller> moduleInstallers = GetModuleInstallers(plugin);
+
+            BaseModuleManifest manifest = GetModuleManifest();
+            
+            foreach (ModuleInstaller moduleInstaller in moduleInstallers)
+            {
+                foreach ((FieldInfo field, ModuleLink link) in manifest.GetAllModuleLinks())
+                {
+                    Type interfaceType = field.CustomAttributes.Where(a => a.AttributeType == typeof(LinkFilterAttribute))
+                        .FirstOrDefaultFast()?.ConstructorArguments.FirstOrDefaultFast().Value as Type;
+
+                    if (interfaceType == moduleInstaller.module.GetInterfaceType())
+                    {
+                        link.ImplementationType = null;
+                    }
+                }
+            }
+            
+            EditorUtility.SetDirty(manifest);
 
             EditorUtility.SetDirty(PluginsManifest.Instance);
 
@@ -181,12 +201,7 @@ namespace SwiftFramework.Core.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
             plugin.OnRemoved();
-
-            if (!finishOnRecompile)
-            {
-                FinishInstalling();
-            }
-
+            
             Repaint();
         }
 
@@ -205,19 +220,43 @@ namespace SwiftFramework.Core.Editor
 
         }
 
+        private static List<ModuleInstaller> GetModuleInstallers(PluginInfo pluginInfo)
+        {
+            DirectoryInfo pluginRootDir = pluginInfo.RootDirectory;
+
+            List<ModuleInstaller> moduleInstallers = new List<ModuleInstaller>();
+
+            foreach (string guid in AssetDatabase.FindAssets("t:ModuleInstaller"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.Contains($"/{pluginRootDir.Name}/"))
+                {
+                    moduleInstallers.Add(AssetDatabase.LoadAssetAtPath<ModuleInstaller>(path));
+                }
+            }
+
+            return moduleInstallers;
+        }
+
+
+        private static BaseModuleManifest GetModuleManifest()
+        {
+            string manifestGuid = AssetDatabase.FindAssets("t:BaseModuleManifest", new[] { ResourcesAssetHelper.RootFolder }).FirstOrDefaultFast();
+
+            if (string.IsNullOrEmpty(manifestGuid))
+            {
+                return null;
+            }
+
+            return AssetDatabase.LoadAssetAtPath<BaseModuleManifest>(AssetDatabase.GUIDToAssetPath(manifestGuid));
+        }
+        
         [MenuItem("SwiftFramework/Plugin Installer/Patch")]
         private static void PatchModuleManifest()
         {
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-            var manifestGuid = AssetDatabase.FindAssets("t:BaseModuleManifest", new[] { ResourcesAssetHelper.RootFolder }).FirstOrDefaultFast();
-
-            if (string.IsNullOrEmpty(manifestGuid))
-            {
-                return;
-            }
-
-            BaseModuleManifest manifest = AssetDatabase.LoadAssetAtPath<BaseModuleManifest>(AssetDatabase.GUIDToAssetPath(manifestGuid));
+            BaseModuleManifest manifest = GetModuleManifest();
 
             if (manifest == null)
             {
@@ -228,18 +267,7 @@ namespace SwiftFramework.Core.Editor
         
             PluginData data = PluginsManifest.Instance.FindData(pluginInfo);
 
-            DirectoryInfo pluginRootDir = pluginInfo.RootDirectory;
-
-            List<ModuleInstaller> moduleInstallers = new List<ModuleInstaller>();
-
-            foreach (var guid in AssetDatabase.FindAssets("t:ModuleInstaller"))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (path.Contains($"/{pluginRootDir.Name}/"))
-                {
-                    moduleInstallers.Add(AssetDatabase.LoadAssetAtPath<ModuleInstaller>(path));
-                }
-            }
+            List<ModuleInstaller> moduleInstallers = GetModuleInstallers(pluginInfo);
 
             foreach (ModuleInstaller moduleInstaller in moduleInstallers)
             {

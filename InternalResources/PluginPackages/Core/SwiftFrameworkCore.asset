@@ -24,9 +24,9 @@ MonoBehaviour:
   appName: Root
   useAddressables: 0
   modules:
-  - SwiftFramework.Core.ISoundManager, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
-    PublicKeyToken=null
   - SwiftFramework.Core.ISecurePrefs, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
+    PublicKeyToken=null
+  - SwiftFramework.Core.ISoundManager, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null
   - SwiftFramework.Core.IContentUpdater, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
     PublicKeyToken=null

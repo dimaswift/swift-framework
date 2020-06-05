@@ -903,7 +903,7 @@ namespace SwiftFramework.Core.Windows
 
                 if (singletonWindowInstances.ContainsKey(type) == false)
                 {
-                    AssetCache.LoadSignletonPrefab<T>().Then(prefab =>
+                    AssetCache.LoadSingletonPrefab<T>().Then(prefab =>
                     {
                         InstantiateWindow(prefab as Window);
                         GetWindow<T>().Channel(promise);

@@ -18,7 +18,7 @@ namespace SwiftFramework.Core
             {
                 try
                 {
-                    var t = Type.GetType(interfaceType);
+                    Type t = Type.GetType(interfaceType);
                     if (t != null)
                     {
                         return t;
@@ -46,7 +46,7 @@ namespace SwiftFramework.Core
                     return null;
                 }
             }
-            set => implementationType = value.AssemblyQualifiedName;
+            set => implementationType = value?.AssemblyQualifiedName;
         }
 
         public ModuleLink()

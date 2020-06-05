@@ -1,43 +1,50 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace SwiftFramework.Core
 {
-    public abstract class CompositeModule : BehaviourModule
+    public abstract class CompositeModule<T> : BehaviourModule where T : class, IModule
     {
-        private readonly List<IModule> subModules = new List<IModule>();
+        [SerializeField] private Location location = Location.Children;
+        
+        private enum Location
+        {
+            Children = 0, 
+            Resources = 1
+        }
+        
+        private readonly List<T> subModules = new List<T>();
 
         protected override void OnSetUp(IApp app)
         {
             base.OnSetUp(app);
-            GetComponentsInChildren(subModules);
-            subModules.RemoveAll(m => m == GetComponent<IModule>());
-            foreach (var subModule in subModules)
+
+            switch (location)
+            {
+                case Location.Children:
+                    GetComponentsInChildren(subModules);
+                    break;
+                case Location.Resources:
+                {
+                    foreach (T module in AssetCache.GetPrefabs<T>())
+                    {
+                        subModules.Add(module);
+                    }
+
+                    break;
+                }
+            }
+
+            subModules.RemoveAll(m => m == GetComponent<T>());
+            foreach (T subModule in subModules)
             {
                 subModule.SetUp(app);
             }
         }
 
-        protected IEnumerable<T> GetSubmodules<T>() where T : class, IModule
+        protected IEnumerable<T> GetSubmodules()
         {
-            foreach (var subModule in subModules)
-            {
-                if (subModule is T)
-                {
-                    yield return subModule as T;
-                }
-            }
-        }
-
-        protected T GetSubmodule<T>() where T : class, IModule
-        {
-            foreach (var subModule in subModules)
-            {
-                if (subModule is T)
-                {
-                    return subModule as T;
-                }
-            }
-            return default;
+            return subModules;
         }
 
         protected override IPromise GetInitPromise()

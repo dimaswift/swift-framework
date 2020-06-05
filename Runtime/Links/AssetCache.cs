@@ -76,8 +76,8 @@ namespace SwiftFramework.Core
             }
             return default;
         }
-
-        public static IPromise<T> LoadSignletonPrefab<T>()
+        
+        public static IPromise<T> LoadSingletonPrefab<T>()
         {
             if (TryGetSingletonAddress(typeof(T), out string address) == false)
             {

@@ -7,8 +7,10 @@ using UnityEngine;
 namespace SwiftFramework.Core
 {
     [DefaultModule]
-    internal class SaveStorageManager : Module, ISaveStorage
+    public class SaveStorageManager : Module, ISaveStorage
     {
+        public long SaveTimestamp => container.timestamp;
+        
         private const string NOT_LINKED = "not_linked";
 
         private const string DEFAULT_SAVE_ID = "default_save";
@@ -23,8 +25,22 @@ namespace SwiftFramework.Core
 
         private SaveItemsContainer container = new SaveItemsContainer();
 
+        public long GetSaveTimestamp(string rawSave)
+        {
+            try
+            {
+                SaveItemsContainer c = Json.Deserialize<SaveItemsContainer>(Json.Decompress(rawSave));
+                return c.timestamp;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         public event Action OnBeforeSave = () => { };
         public event Action OnAfterLoad = () => { };
+        public event Action OnRawSaveLoaded = () => { };
 
         protected override IPromise GetInitPromise()
         {
@@ -47,16 +63,32 @@ namespace SwiftFramework.Core
                 Debug.Log($"Original save file size: <b>{Encoding.ASCII.GetByteCount(json).ToFileSize() }</b>, compressed file size: <color=green><b>{Encoding.ASCII.GetByteCount(Json.Compress(json)).ToFileSize()}</b></color>");
             }
 #endif
+
+            if (Application.isEditor == false)
+            {
+                try
+                {
+                    json = Json.Decompress(json);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
+            
             if (string.IsNullOrEmpty(json) == false)
             {
                 Parse(json);
             }
-
-            if (linkedItems.ContainsKey(NOT_LINKED) == false)
+            else
             {
-                linkedItems.Add(NOT_LINKED, new Dictionary<string, object>());
+                if (linkedItems.ContainsKey(NOT_LINKED) == false)
+                {
+                    linkedItems.Add(NOT_LINKED, new Dictionary<string, object>());
+                }
+            
+                notLinkedItems = linkedItems[NOT_LINKED];
             }
-            notLinkedItems = linkedItems[NOT_LINKED];
         }
 
         private void Parse(string json)
@@ -83,6 +115,13 @@ namespace SwiftFramework.Core
                 }
             }
             
+            if (linkedItems.ContainsKey(NOT_LINKED) == false)
+            {
+                linkedItems.Add(NOT_LINKED, new Dictionary<string, object>());
+            }
+            
+            notLinkedItems = linkedItems[NOT_LINKED];
+            
             OnAfterLoad();
         }
 
@@ -108,8 +147,8 @@ namespace SwiftFramework.Core
                 }
             }
 
-            string json = Json.Serialize(container, Newtonsoft.Json.Formatting.None);
-            PlayerPrefs.SetString(saveId, json);
+            string save = GetRawCompressedSave();
+            PlayerPrefs.SetString(saveId, save);
             PlayerPrefs.Save();
 
 #if UNITY_EDITOR
@@ -117,19 +156,21 @@ namespace SwiftFramework.Core
 #endif
         }
 
-        public string GetSaveJson()
+        public string GetRawCompressedSave()
         {
-            return PlayerPrefs.GetString(saveId);
+            container.timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            return Json.Compress(Json.Serialize(container));
         }
-
+        
         public T Load<T>()
         {
             return Load<T>(notLinkedItems);
         }
 
-        public void OverrideSaveJson(string saveJson)
+        public void LoadRawSave(string rawCompressedSave)
         {
-            Parse(saveJson);
+            Parse(Json.Decompress(rawCompressedSave));
+            OnRawSaveLoaded();
         }
 
         public void Save<T>(T data)
@@ -290,6 +331,14 @@ namespace SwiftFramework.Core
             Delete(typeof(T), link);
         }
 
+        public void DeleteAll(ILink link)
+        {
+            if (linkedItems.TryGetValue(link.GetPath(), out Dictionary<string, object> dict))
+            {
+                linkedItems.Remove(link.GetPath());
+            }
+        }
+
         public void Delete(Type type, ILink link)
         {
             if (linkedItems.TryGetValue(link.GetPath(), out Dictionary<string, object> dict))
@@ -314,11 +363,17 @@ namespace SwiftFramework.Core
 
         public void DeleteAll()
         {
+#if UNITY_EDITOR
+            File.Delete(editorSavePath);
+#endif
             container = new SaveItemsContainer();
             notLinkedItems.Clear();
             linkedItems.Clear();
+            OnBeforeSave = () => { };
+            OnAfterLoad = () => { };
             WriteSave();
         }
+
 
         [Serializable]
         private class SaveItemsContainer
@@ -336,5 +391,4 @@ namespace SwiftFramework.Core
             public object item;
         }
     }
-
 }

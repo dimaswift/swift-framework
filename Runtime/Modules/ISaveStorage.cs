@@ -7,8 +7,10 @@ namespace SwiftFramework.Core
     [BuiltInModule]
     public interface ISaveStorage : IModule
     {
+        long GetSaveTimestamp(string rawSave);
         event Action OnBeforeSave;
         event Action OnAfterLoad;
+        event Action OnRawSaveLoaded;
         void SetSaveId(string id);
         void Save<T>(T data);
         void Save<T>(T data, ILink link);
@@ -26,11 +28,13 @@ namespace SwiftFramework.Core
         void Delete<T>();
         void Delete(Type type);
         void Delete<T>(ILink link);
+        void DeleteAll(ILink link);
         void Delete(Type type, ILink link);
-        string GetSaveJson();
-        void OverrideSaveJson(string saveJson);
+        string GetRawCompressedSave();
+        void LoadRawSave(string rawCompressedSave);
         void RegisterState<T>(Func<T> state);
         void RegisterState<T>(Func<T> state, ILink link);
         void DeleteAll();
+        long SaveTimestamp { get; }
     }
 }

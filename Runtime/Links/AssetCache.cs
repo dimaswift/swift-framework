@@ -12,6 +12,8 @@ using UnityEngine;
 using System.Collections;
 using System.Linq;
 using System.IO;
+using UnityEngine.Rendering;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core
 {
@@ -273,7 +275,7 @@ namespace SwiftFramework.Core
             }
 
 #if USE_ADDRESSABLES
-            Addressables.ClearResourceLocators();
+            
 #else
             Resources.UnloadUnusedAssets();
 #endif
@@ -461,9 +463,7 @@ namespace SwiftFramework.Core
 
         public static IPromise<IEnumerable<UnityEngine.Object>> PreloadAll(string label)
         {
-            (Promise<IEnumerable<UnityEngine.Object>> promise, List<string> assets) alreadyLoadingResult;
-
-            if (loadedLabels.TryGetValue(label, out alreadyLoadingResult))
+            if (loadedLabels.TryGetValue(label, out (Promise<IEnumerable<Object>> promise, List<string> assets) alreadyLoadingResult))
             {
                 return alreadyLoadingResult.promise;
             }
@@ -518,7 +518,26 @@ namespace SwiftFramework.Core
                     promise.Reject(e);
                 }
 #else
-                promise.Resolve(new List<UnityEngine.Object>());
+
+                List<Object> result = new List<Object>();
+                
+                foreach (Object o in Resources.LoadAll(""))
+                {
+                    AddrLabelAttribute attr = o.GetType().GetCustomAttribute<AddrLabelAttribute>();
+                    if (attr != null)
+                    {
+                        foreach (string l in attr.labels)
+                        {
+                            if (l == label)
+                            {
+                                result.Add(o);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                promise.Resolve(result);
 
 #endif
             });

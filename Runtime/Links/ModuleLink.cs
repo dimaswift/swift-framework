@@ -61,8 +61,7 @@ namespace SwiftFramework.Core
             this.behaviourLink = behaviourLink;
             this.configLink = configLink;
         }
-
-   
+        
         [SerializeField] private string implementationType;
         [SerializeField] private string interfaceType;
         [SerializeField] private BehaviourModuleLink behaviourLink;
@@ -106,7 +105,7 @@ namespace SwiftFramework.Core
             this.interfaceType = interfaceType.AssemblyQualifiedName;
         }
 
-        public T GetModule<T>() where T : IModule
+        public T GetModule<T>() where T : class, IModule
         {
             if (module != null)
             {

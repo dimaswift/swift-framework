@@ -23,18 +23,26 @@ namespace SwiftFramework.Core.Editor
                 interfaceDrawer.OnSelectionChanged += implementationDrawer.Rebuild;
             }
 
-            position.height = EditorGUIUtility.singleLineHeight;
+            position.height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
             interfaceDrawer.Draw(position);
 
-            position.y += EditorGUIUtility.singleLineHeight;
+            position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
             implementationDrawer.Draw(position);
+            
+            position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+
+            EditorGUI.PropertyField(position, property.FindPropertyRelative("config"));
+            
+            position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+            
+            EditorGUI.PropertyField(position, property.FindPropertyRelative("behaviour"));
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return EditorGUIUtility.singleLineHeight * 2;
+            return (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing) * 4;
         }
 
         private bool IsImplementation(Type type)

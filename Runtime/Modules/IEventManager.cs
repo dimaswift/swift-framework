@@ -27,12 +27,7 @@ namespace SwiftFramework.Core
         bool Interactable { get; set; }
         void AddListener(UnityAction action);
     }
-
-    public interface IAffordableHandler
-    {
-        void SetAfforfable(bool affordable);
-    }
-
+    
     public interface IImage
     {
         void SetSprite(SpriteLink sprite);
@@ -78,9 +73,7 @@ namespace SwiftFramework.Core
 
     [Serializable]
     public class GenericText : InterfaceComponentField<IText> 
-    { 
-
-
+    {
         public string Text
         {
             get => Value?.Text;
@@ -93,8 +86,4 @@ namespace SwiftFramework.Core
             }
         }
     }
-
-    [Serializable]
-    public class AffordableHandler : InterfaceComponentField<IAffordableHandler> { }
-
 }

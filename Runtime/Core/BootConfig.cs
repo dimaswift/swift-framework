@@ -7,6 +7,5 @@ namespace SwiftFramework.Core
     public class BootConfig : ScriptableObject
     {
         public int buildNumber;
-        public ModuleManifestLink modulesManifest = Link.Create<ModuleManifestLink>($"Configs/ModuleManifest");
     }
 }

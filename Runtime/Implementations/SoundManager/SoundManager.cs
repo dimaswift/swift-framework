@@ -9,15 +9,15 @@ namespace SwiftFramework.Sound
     [Configurable(typeof(SoundManagerConfig))]
     internal class SoundManager : StatefulBehaviourModule<SoundManagerState>, ISoundManager
     {
-        public SoundManagerConfig Config => GetModuleConfig<SoundManagerConfig>();
+        private SoundManagerConfig Config => GetModuleConfig<SoundManagerConfig>();
 
-        private List<AudioClip> clipsPlayedCurrentFrame = new List<AudioClip>(10);
+        private readonly List<AudioClip> clipsPlayedCurrentFrame = new List<AudioClip>(10);
 
         private bool clipHistoryChanged;
 
-        private Dictionary<int, SoundChannel> channels = new Dictionary<int, SoundChannel>();
+        private readonly Dictionary<int, SoundChannel> channels = new Dictionary<int, SoundChannel>();
 
-        public class SoundChannel
+        private class SoundChannel
         {
             private readonly List<AudioSource> players = new List<AudioSource>();
 
@@ -25,13 +25,13 @@ namespace SwiftFramework.Sound
 
             private readonly AudioSource oneShotPlayer;
 
-            public readonly SoundType type;
+            private readonly SoundType type;
 
             private readonly GameObject gameObject;
 
             private readonly int maxActivePlayerCount;
 
-            public bool isMuted;
+            private bool isMuted;
 
             public SoundChannel(GameObject gameObject, SoundType type, int startPlayersAmount, int maxActivePlayerCount)
             {
@@ -42,6 +42,7 @@ namespace SwiftFramework.Sound
                 {
                     players.Add(gameObject.AddComponent<AudioSource>());
                 }
+
                 oneShotPlayer = gameObject.AddComponent<AudioSource>();
                 oneShotPlayer.loop = false;
                 oneShotPlayer.spatialize = false;
@@ -52,7 +53,6 @@ namespace SwiftFramework.Sound
             {
                 clipLink.Load(clip =>
                 {
-
                     if (IsValid(clip) == false)
                     {
                         return;
@@ -66,9 +66,7 @@ namespace SwiftFramework.Sound
                     activeLoops[clip].Stop();
 
                     activeLoops.Remove(clip);
-
                 });
-
             }
 
             private bool IsValid(AudioClip clip)
@@ -78,23 +76,26 @@ namespace SwiftFramework.Sound
                     Debug.LogError($"Trying to play null audio clip!");
                     return false;
                 }
+
                 return true;
             }
 
             private AudioSource GetFreePlayer()
             {
-                foreach (var player in players)
+                foreach (AudioSource player in players)
                 {
                     if (player.isPlaying == false)
                     {
                         return player;
                     }
                 }
+
                 if (players.Count >= maxActivePlayerCount)
                 {
                     Debug.LogWarning($"Can't get free audio player! Players count: {players.Count}!");
                     return null;
                 }
+
                 AudioSource newPlayer = gameObject.AddComponent<AudioSource>();
                 newPlayer.mute = IsMuted();
                 players.Add(newPlayer);
@@ -115,12 +116,14 @@ namespace SwiftFramework.Sound
                         Debug.LogWarning($"Clip {clip} already playing!");
                         return;
                     }
+
                     AudioSource freePlayer = GetFreePlayer();
                     if (freePlayer == null)
                     {
                         Debug.LogWarning($"Can't get free audio player! Players count: {players.Count}!");
                         return;
                     }
+
                     freePlayer.clip = clip;
                     freePlayer.volume = volumeScale;
                     freePlayer.loop = true;
@@ -136,6 +139,7 @@ namespace SwiftFramework.Sound
                 {
                     player.mute = isMuted;
                 }
+
                 oneShotPlayer.mute = isMuted;
             }
 
@@ -149,9 +153,11 @@ namespace SwiftFramework.Sound
         {
             foreach (object type in Enum.GetValues(typeof(SoundType)))
             {
-                if (channels.ContainsKey((int)type))
+                if (channels.ContainsKey((int) type))
                     continue;
-                channels.Add((int)type, new SoundChannel(gameObject, (SoundType)type, Config.startPlayersAmount, Config.maxActivePlayerCount));
+                channels.Add((int) type,
+                    new SoundChannel(gameObject, (SoundType) type, Config.startPlayersAmount,
+                        Config.maxActivePlayerCount));
             }
 
             foreach (SoundManagerState.SoundTypeState state in State.statesByType)
@@ -168,8 +174,8 @@ namespace SwiftFramework.Sound
             {
                 statesByType = new List<SoundManagerState.SoundTypeState>()
                 {
-                    new SoundManagerState.SoundTypeState() { muted = false, type = SoundType.Music },
-                    new SoundManagerState.SoundTypeState() { muted = false, type = SoundType.SFX }
+                    new SoundManagerState.SoundTypeState() {muted = false, type = SoundType.Music},
+                    new SoundManagerState.SoundTypeState() {muted = false, type = SoundType.SFX}
                 }
             };
         }
@@ -187,10 +193,12 @@ namespace SwiftFramework.Sound
                 {
                     return;
                 }
+
                 if (WasPlayedThisFrame(clip))
                 {
                     return;
                 }
+
                 GetChannel(type).PlayOneShot(clip, volumeScale);
                 AddToHistory(clip);
             });
@@ -205,6 +213,7 @@ namespace SwiftFramework.Sound
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -219,6 +228,7 @@ namespace SwiftFramework.Sound
                     return;
                 }
             }
+
             clipsPlayedCurrentFrame.Add(clip);
         }
 
@@ -230,6 +240,7 @@ namespace SwiftFramework.Sound
                 {
                     clipsPlayedCurrentFrame[i] = null;
                 }
+
                 clipHistoryChanged = false;
             }
         }
@@ -242,13 +253,13 @@ namespace SwiftFramework.Sound
 
         private SoundChannel GetChannel(SoundType type)
         {
-            return channels[(int)type];
+            return channels[(int) type];
         }
 
         public void SetMuted(bool muted, SoundType type)
         {
             GetChannel(type).SetMuted(muted);
-            foreach (var state in State.statesByType)
+            foreach (SoundManagerState.SoundTypeState state in State.statesByType)
             {
                 if (state.type == type)
                 {

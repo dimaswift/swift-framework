@@ -11,8 +11,6 @@ namespace SwiftFramework.EditorUtils
 {
     internal sealed class Builder : ScriptableObject
     {
-        public ModuleManifestLink manifest = null;
-
         public const string K_LOG_TYPE = "#### [Builder] ";
 
         public BuildTarget buildTarget = BuildTarget.Android;
@@ -172,21 +170,10 @@ namespace SwiftFramework.EditorUtils
             EditorBuildSettingsScene[] buildSettingsScenes = EditorBuildSettings.scenes;
 
             BootConfig bootConfig = Util.FindScriptableObject<BootConfig>();
-
-            bootConfig.modulesManifest = manifest;
+            
             bootConfig.buildNumber = versionCode;
 
             EditorUtility.SetDirty(bootConfig);
-
-            BaseModuleManifest manifestAsset = manifest.Value();
-
-            foreach ((ModuleLink m, FieldInfo f) in manifestAsset.GetModuleFields())
-            {
-                if (m.ConfigLink.HasValue)
-                {
-                    Util.ApplyModuleConfig(m.ImplementationType, m.ConfigLink.Value());
-                }
-            }
 
             for (int i = 0; i < buildSettingsScenes.Length; i++)
             {

@@ -26,6 +26,7 @@ namespace SwiftFramework.EditorUtils
                     Debug.LogError(path + " is anonymous method.");
                 else
                     instance.onFinishedCompile.Add(path);
+                Debug.Log(path);
             }
             remove => instance.onFinishedCompile.Remove($"{value.Method.DeclaringType?.FullName}.{value.Method.Name}");
         }

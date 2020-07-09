@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Utils.UI
 {
+    [AddrSingleton]
     public class PopUpMessage : WindowWithArgs<string>
     {
         [SerializeField] private float showDuration = 1f;

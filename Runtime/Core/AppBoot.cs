@@ -4,22 +4,19 @@ using UnityEngine;
 
 namespace SwiftFramework.Core
 {
-    public abstract class AppBoot : MonoBehaviour
+    public class AppBoot : MonoBehaviour, IBoot
     {
-        public static IPromise BootUp<T>() where T : AppBoot, IBoot
+        private Promise bootPromise = Promise.Create();
+        
+        public static IPromise BootUp()
         {
-            Promise bootPromise = Promise.Create();
+            AppBoot boot = new GameObject(nameof(AppBoot)).AddComponent<AppBoot>();
 
-            T boot = new GameObject(typeof(T).Name).AddComponent<T>();
-
-            boot.OnInitialized += () => { bootPromise.Resolve(); };
-
-            return bootPromise;
+            boot.debugMode = true;
+            
+            return boot.bootPromise;
         }
-    }
-
-    public abstract class AppBoot<A> : AppBoot, IBoot where A : App<A>, new()
-    {
+        
         public BootConfig Config { get; private set; }
 
         public GlobalEvent AppInitialized => onAppInitialized.Value;
@@ -34,48 +31,34 @@ namespace SwiftFramework.Core
         public event Action OnInitialized = () => { };
 
         private bool ignoreNextPauseEvent;
+        private bool isRestarting;
 
         private void Start()
         {
             AssetCache.LoadSingletonAsset<BootConfig>().Then(bootConfig =>
-                {
-                    Config = bootConfig;
-
-                    transform.SetParent(null);
-
-                    DontDestroyOnLoad(gameObject);
-
-                    OnAppWillBoot();
-
-                    App.InitPromise.Progress(p => { OnLoadingProgressChanged(p); });
-
-                    bootConfig.modulesManifest.Load().Then(manifest =>
-                        {
-                            App<A>.Create(this, GetLogger(), manifest, debugMode).Then(() =>
-                                {
-                                    OnInitialized();
-                                    OnAppInitialized();
-                                    if (onAppInitialized.HasValue)
-                                    {
-                                        onAppInitialized.Value.Invoke();
-                                    }
-                                })
-                                .LogException();
-                        })
-                        .LogException();
-                })
-                .Catch(e => Debug.LogException(e));
-        }
-
-        protected virtual bool IsSetUpValid()
-        {
-            if (Config.modulesManifest.HasValue == false)
             {
-                Debug.LogError($"ModuleManifest not found: {Config.modulesManifest.ToString()}");
-                return false;
-            }
+                Config = bootConfig;
 
-            return true;
+                transform.SetParent(null);
+
+                DontDestroyOnLoad(gameObject);
+
+                OnAppWillBoot();
+
+                App.InitPromise.Progress(OnLoadingProgressChanged);
+
+                App.Create(this, GetLogger(), new ModuleFactory(), debugMode).Then(() =>
+                {
+                    OnInitialized();
+                    OnAppInitialized();
+                    bootPromise.Resolve();
+                    if (onAppInitialized.HasValue)
+                    {
+                        onAppInitialized.Value.Invoke();
+                    }
+                })
+                .LogException();
+            }).LogException();
         }
 
         protected virtual ILogger GetLogger()
@@ -120,15 +103,21 @@ namespace SwiftFramework.Core
 
         public IPromise Restart()
         {
-            Promise result = Promise.Create();
+            if (isRestarting)
+            {
+                return bootPromise;
+            }
 
-            StartCoroutine(RestartRoutine(result));
+            isRestarting = true;
 
-            return result;
+            StartCoroutine(RestartRoutine());
+            
+            return bootPromise;
         }
 
-        protected IEnumerator RestartRoutine(Promise result)
+        private IEnumerator RestartRoutine()
         {
+            bootPromise = Promise.Create();
             OnAppWillBeRestarted();
             App.Core.Unload();
             while (IsReadyToRestart() == false)
@@ -138,13 +127,18 @@ namespace SwiftFramework.Core
 
             Resources.UnloadUnusedAssets();
             GC.Collect();
-            App<A>.Create(this, GetLogger(), Config.modulesManifest.Value, debugMode).Then(() =>
+            App.Create(this, GetLogger(), new ModuleFactory(), debugMode).Then(() =>
+            {
+                OnInitialized();
+                OnAppInitialized();
+                if (onAppInitialized.HasValue)
                 {
-                    OnAppInitialized();
-                    OnInitialized();
-                    result.Resolve();
-                })
-                .Catch(e => { Debug.LogException(e); });
+                    onAppInitialized.Value.Invoke();
+                }
+                bootPromise.Resolve();
+                isRestarting = false;
+            })
+            .LogException();
         }
 
         protected virtual bool IsReadyToRestart() => true;

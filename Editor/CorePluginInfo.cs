@@ -13,8 +13,7 @@ namespace SwiftFramework.Core.Editor
     public class CorePluginInfo : PluginInfo
     {
         [NonSerialized] private SerializedObject serializedObject = null;
-        [SerializeField] private string nameSpace = "MyGame";
-        [SerializeField] private string appName = "Root";
+
         [SerializeField] private bool useAddressables = true;
 
         [SerializeField] private List<string> modules = new List<string>();
@@ -34,15 +33,6 @@ namespace SwiftFramework.Core.Editor
 
         public override void DrawCustomGUI(Action repaintHandler, PluginData data)
         {
-            if (!data.installed && PluginInstaller.IsProcessing == false)
-            {
-                if (Util.FindChildClass(typeof(App)) != null)
-                {
-                    data.installed = true;
-                    return;
-                }
-            }
-
             show = EditorGUILayout.BeginFoldoutHeaderGroup(show, "Options");
 
             EditorGUI.indentLevel++;
@@ -57,11 +47,7 @@ namespace SwiftFramework.Core.Editor
                 allModulesAdded = false;
                 serializedObject = new SerializedObject(this);
             }
-
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(nameSpace)));
-
-            EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(appName)));
-
+            
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(useAddressables)));
 
             EditorGUILayout.LabelField("Modules", EditorGUIEx.BoldCenteredLabel);
@@ -163,14 +149,10 @@ namespace SwiftFramework.Core.Editor
 
             EditorGUI.indentLevel--;
         }
-
-
-        private static string GetScriptPath(string scriptName) => $"Assets/Scripts/{scriptName}.cs";
-
+        
         public override bool CanInstall()
         {
-            Type appClass = Util.FindChildClass(typeof(App));
-            return appClass == null;
+            return Util.GetAssets<BootConfig>().CountFast() == 0;
         }
 
         public override bool CanRemove()
@@ -178,27 +160,22 @@ namespace SwiftFramework.Core.Editor
             return true;
         }
 
-        public override void OnInstall()
+        public override void OnWillInstall()
         {
-            EditorUtility.DisplayProgressBar("Installing", "Generating app script...", .1f);
-
-            Type appClass = Util.FindChildClass(typeof(App));
-
             SymbolCatalog.Add("SWIFT_FRAMEWORK_INSTALLED", "SwiftFramework was installed");
-
-            CodeCompileUnit c = ScriptBuilder.GenerateAppClass(appName, nameSpace);
-            ScriptBuilder.SaveClassToDisc(c, GetScriptPath(appName), true, ProcessAppClass);
-            RegisterFile(GetScriptPath(appName));
-            Compile.OnFinishedCompile += GenerateAppBoot;
-
+            
             if (useAddressables)
             {
                 if (Util.HasPackageDependency("com.unity.addressables") == false)
                 {
-                    EditorUtility.DisplayProgressBar("Installing", "Importing addressables package...", .2f);
+                    Debug.LogError("wtf");
                     Util.AddDependencyToPackageManifest($"com.unity.addressables", Util.ADDRESSABLE_VERSION);
 
                     Compile.OnFinishedCompile += EnableAddressables;
+                }
+                else
+                {
+                    GenerateConfigs(true);
                 }
             }
             else
@@ -209,55 +186,12 @@ namespace SwiftFramework.Core.Editor
 
         private static void EnableAddressables(bool compiled)
         {
-            EditorUtility.DisplayProgressBar("Installing", "Enabling addressables...", .3f);
             SymbolCatalog.Add("USE_ADDRESSABLES", "Enables Unity Addressables");
-        }
-
-        private static void GenerateAppBoot(bool compiled)
-        {
-            EditorUtility.DisplayProgressBar("Installing", "Generating boot...", .5f);
-
-            Type appClass = Util.FindChildClass(typeof(App));
-            CodeCompileUnit bootClass = ScriptBuilder.GenerateAppBootClass(appClass);
-            string bootPath = $"Assets/Scripts/AppBoot.cs";
-            ScriptBuilder.SaveClassToDisc(bootClass, bootPath, true);
-
-            PluginData data = PluginsManifest.Instance.CurrentPluginData;
-
-            data.copiedFiles.Add(bootPath);
-
-            CodeCompileUnit manifest = ScriptBuilder.GenerateManifestClass(appClass.Namespace, appClass);
-            var manifestPath = GetScriptPath($"ModuleManifest");
-            ScriptBuilder.SaveClassToDisc(manifest, manifestPath, true);
-
-            RegisterFile(manifestPath);
-
             Compile.OnFinishedCompile += GenerateConfigs;
-        }
-
-
-        private static void RegisterFile(string localPath)
-        {
-            var data = PluginsManifest.Instance.CurrentPluginData;
-            if (data == null)
-            {
-                return;
-            }
-
-            data.copiedFiles.Add(localPath);
-            EditorUtility.SetDirty(PluginsManifest.Instance);
         }
 
         private static void GenerateConfigs(bool compiled)
         {
-            EditorUtility.DisplayProgressBar("Installing", "Generating configs...", .7f);
-
-            if (!compiled)
-            {
-                EditorUtility.ClearProgressBar();
-                return;
-            }
-
             var configsFolder = ResourcesAssetHelper.RootFolder + "/" + Folders.Configs;
 
             if (Directory.Exists(configsFolder) == false)
@@ -267,50 +201,9 @@ namespace SwiftFramework.Core.Editor
 
             BootConfig bootConfig = Util.CreateScriptable<BootConfig>("BootConfig", configsFolder);
 
-            RegisterFile(AssetDatabase.GetAssetPath(bootConfig));
-
-            Type manifestType = Util.FindChildClass(typeof(BaseModuleManifest));
-
-            BaseModuleManifest manifest =
-                Util.CreateScriptable(manifestType, "ModuleManifest", configsFolder) as BaseModuleManifest;
-
-            RegisterFile(AssetDatabase.GetAssetPath(manifest));
-
-            EditorUtility.ClearProgressBar();
-
-            PluginInstaller.FinishInstalling();
+            PluginInstaller.RegisterFile(AssetDatabase.GetAssetPath(bootConfig));
         }
-
-        private void ProcessAppClass(List<string> scriptLines)
-        {
-            var firstLine = scriptLines.FindIndex(l => l.Contains("public class")) + 2;
-
-            int i = 0;
-
-            foreach (var module in modules)
-            {
-                if (i > 0)
-                {
-                    scriptLines.Insert(firstLine, $"");
-                }
-
-                Type moduleType = Type.GetType(module);
-                string moduleName = moduleType?.Name;
-                string fieldName = moduleName?.Remove(0, 1);
-
-                if (fieldName != null)
-                {
-                    fieldName = fieldName.ToLower()[0] + fieldName.Substring(1, fieldName.Length - 1);
-
-                    scriptLines.Insert(firstLine,
-                        $"        public {moduleName} {moduleName.Remove(0, 1)} => GetCachedModule(ref {fieldName});");
-                    scriptLines.Insert(firstLine, $"        private {moduleName} {fieldName};");
-                }
-
-                i++;
-            }
-        }
-
+        
         private bool IsModuleEligible(Type type)
         {
             if (type.IsInterface == false || type.IsVisible == false || type == typeof(IModule))

@@ -331,14 +331,14 @@ namespace SwiftFramework.Core
 
         public static IPromise LogException(this IPromise promise)
         {
-            promise.Catch(e => Debug.LogException(e));
+            promise.Catch(Debug.LogException);
             return promise;
         }
 
 
         public static IPromise<T> LogException<T>(this IPromise<T> promise)
         {
-            promise.Catch(e => Debug.LogException(e));
+            promise.Catch(Debug.LogException);
             return promise;
         }
 

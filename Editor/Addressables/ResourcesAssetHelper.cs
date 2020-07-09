@@ -35,7 +35,7 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
-        public static Action OnReload = () => { };
+        public static event Action OnReload = () => { };
 
         internal static IEnumerable<ResourcesAssetEntry> GetScenes()
         {
@@ -108,7 +108,7 @@ namespace SwiftFramework.Core.Editor
             Reload();
         }
 
-        private static void Reload()
+        public static void Reload()
         {
             if (reloading)
             {
@@ -167,20 +167,21 @@ namespace SwiftFramework.Core.Editor
 
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {
-            foreach (var path in importedAssets)
+            foreach (string path in importedAssets)
             {
                 Process(path);
             }
 
-            foreach (var path in movedAssets)
+            foreach (string path in movedAssets)
             {
                 Process(path);
             }
 
-            foreach (var path in movedFromAssetPaths)
+            foreach (string path in movedFromAssetPaths)
             {
                 Process(path);
             }
+
         }
 #endif
 

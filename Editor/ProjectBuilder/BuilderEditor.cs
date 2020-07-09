@@ -283,8 +283,6 @@ namespace SwiftFramework.EditorUtils
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("companyName"));
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("productName"));
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("applicationIdentifier"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("unityProjectCloudId"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("facebookAppId"));
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("icon"));
                 EditorGUILayout.HelpBox(
                     "Default will always be overwritten on the disk by the icon selected above. It should always be assigned as a Default Icon in Player Settings",
@@ -338,7 +336,6 @@ namespace SwiftFramework.EditorUtils
             using (new EditorGUIEx.GroupScope("Boot Config"))
             {
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("manifest"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("globalConfig"));
             }
         }
 

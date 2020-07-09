@@ -10,9 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63d791dd0cd43a848a5a2fc0b7a21c2d, type: 3}
-  m_Name: Localization
+  m_Name: LocalizationInstaller
   m_EditorClassIdentifier: 
   module:
+    config: {fileID: 11400000, guid: e180e15d5e13f354387ba42b2a8cb6b9, type: 2}
+    behaviour: {fileID: 0}
     interfaceType: SwiftFramework.Core.ILocalizationManager, SwiftFramework.Core,
       Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     implementationType: SwiftFramework.Core.LocalizationManager, SwiftFramework.Core,

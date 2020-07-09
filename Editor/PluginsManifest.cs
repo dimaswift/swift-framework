@@ -31,6 +31,7 @@ namespace SwiftFramework.Core.Editor
 
         public void FinishProcess()
         {
+            currentPlugin.FinishInstall();
             currentPlugin = null;
             EditorUtility.SetDirty(this);
         }

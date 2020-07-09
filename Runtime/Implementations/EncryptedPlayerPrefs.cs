@@ -7,6 +7,7 @@ using System.Text;
 
 namespace SwiftFramework.EncryptedPlayerPrefs
 {
+    [DependsOnModules(typeof(ISoundManager))]
     internal class EncryptedPlayerPrefs : Module, ISecurePrefs
     {
         private const int keyLength = 128;

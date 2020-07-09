@@ -36,5 +36,6 @@ namespace SwiftFramework.Core
         void RegisterState<T>(Func<T> state, ILink link);
         void DeleteAll();
         long SaveTimestamp { get; }
+        void WriteSaveToDisk();
     }
 }

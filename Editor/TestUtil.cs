@@ -78,7 +78,7 @@ namespace SwiftFramework.EditorUtils
         [DidReloadScripts(1000)]
         private static void OnScriptsReload()
         {
-            if (instance.pendingTests.Count == 0)
+            /*if (instance.pendingTests.Count == 0)
             {
                 return;
             }
@@ -146,7 +146,7 @@ namespace SwiftFramework.EditorUtils
 
             ModuleLinkDrawer.NotifyAboutModuleImplementationChange();
 
-            instance.pendingTests.Clear();
+            instance.pendingTests.Clear();*/
         }
 
         private static CodeCompileUnit GenerateTestClass(string prefix, string classNamespace)

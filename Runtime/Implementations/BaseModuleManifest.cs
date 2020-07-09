@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Core
 {
-    [PrewarmAsset]
+  /*  [PrewarmAsset]
     public abstract class BaseModuleManifest : ScriptableObject, IModuleFactory
     {
         private readonly RuntimeModuleFactory runtimeModuleFactory = new RuntimeModuleFactory();
@@ -99,5 +99,5 @@ namespace SwiftFramework.Core
                 yield return item.moduleLink;
             }
         }
-    }
+    }*/
 }

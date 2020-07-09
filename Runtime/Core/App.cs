@@ -15,8 +15,18 @@ namespace SwiftFramework.Core
         ModulesInitialized = 4
     }
 
-    public abstract class App : IApp
+    public sealed class App : IApp
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDomain()
+        {
+            unloadPending = true;
+        }
+        
+        public static bool Initialized => initPromise.CurrentState == PromiseState.Resolved;
+
+        public static IPromise InitPromise => initPromise;
+
         public static long Now => Core.Clock.Now.Value;
 
         public static event ValueHanlder<long> OnClockTick
@@ -24,61 +34,6 @@ namespace SwiftFramework.Core
             add => Core.Clock.Now.OnValueChanged += value;
             remove => Core.Clock.Now.OnValueChanged -= value;
         }
-
-        protected static bool unloadPending;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetDomain()
-        {
-            if (Core is App app)
-            {
-                unloadPending = true;
-            }
-        }
-
-        private static AppState State { get; set; }
-
-        public static IPromise InitPromise => initPromise;
-
-        public static bool Initialized => initPromise.CurrentState == PromiseState.Resolved;
-
-        protected static Promise initPromise = Promise.Create();
-
-        public virtual IPromise Ready => initPromise;
-
-        public static IApp Core { get; protected set; }
-
-        public abstract IBoot Boot { get; }
-
-        public abstract ILocalizationManager Local { get; }
-
-        public abstract IClock Clock { get; }
-
-        public abstract INetworkManager Net { get; }
-
-        public abstract ICoroutineManager Coroutine { get; }
-
-        public abstract IViewFactory Views { get; }
-
-        public abstract ISaveStorage Storage { get; }
-
-        public abstract ITimer Timer { get; }
-
-        public abstract IWindowsManager Windows { get; }
-
-        public abstract IPromise<IModule> CreateModule(ModuleLink moduleLink);
-
-        public abstract T GetModule<T>(ModuleLink moduleLink) where T : IModule;
-
-        public abstract T GetModule<T>() where T : IModule;
-
-        public abstract ModuleLink GetModuleLink<T>() where T : IModule;
-
-        public abstract T GetCachedModule<T>(ref T cachedModule) where T : IModule;
-
-        public abstract void Unload();
-
-        protected abstract void Destroy();
 
         public static void WaitForState(AppState state, Action action)
         {
@@ -96,9 +51,134 @@ namespace SwiftFramework.Core
             awaitingActions[state].Add(action);
         }
 
-        protected static Dictionary<AppState, List<Action>> awaitingActions = new Dictionary<AppState, List<Action>>();
+        private static readonly Dictionary<AppState, List<Action>> awaitingActions =
+            new Dictionary<AppState, List<Action>>();
 
-        protected static void SetState(AppState state)
+        private static AppState State { get; set; }
+
+        private static Promise initPromise = Promise.Create();
+
+        private static bool unloadPending;
+
+        public static App Core { get; private set; }
+
+        private App()
+        {
+            Core = this;
+        }
+
+        public void Unload()
+        {
+            foreach (KeyValuePair<ModuleLink, IModule> m in readyModules)
+            {
+                try
+                {
+                    m.Value.Unload();
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+
+            Destroy();
+        }
+
+        public static IPromise Create(IBoot boot, ILogger logger, IModuleFactory moduleFactory, bool debugMode)
+        {
+            if (unloadPending && Core != null)
+            {
+                Core.Unload();
+                unloadPending = false;
+            }
+
+            if (Core == null)
+            {
+                Core = new App();
+                return Core.Init(boot, logger, moduleFactory, debugMode);
+            }
+
+            return initPromise;
+        }
+
+        public ILocalizationManager Local => GetCachedModule(ref localizationManager);
+        public IClock Clock => GetCachedModule(ref clock);
+        public INetworkManager Net => GetCachedModule(ref networkManager);
+        public ICoroutineManager Coroutine => GetCachedModule(ref coroutine);
+        public ISaveStorage Storage => GetCachedModule(ref storage);
+        public IViewFactory Views => GetCachedModule(ref views);
+        public IWindowsManager Windows => GetCachedModule(ref windowsManager);
+
+        public IBoot Boot => boot;
+        public ITimer Timer => GetCachedModule(ref timer);
+
+        private ILocalizationManager localizationManager;
+        private IClock clock;
+        private INetworkManager networkManager;
+        private ICoroutineManager coroutine;
+        private ITimer timer;
+        private ISaveStorage storage;
+        private IViewFactory views;
+
+        private IModuleFactory moduleFactory;
+        private IBoot boot;
+        private ILogger logger;
+        private IWindowsManager windowsManager;
+
+        private readonly Dictionary<ModuleLink, IPromise<IModule>> createdModules =
+            new Dictionary<ModuleLink, IPromise<IModule>>();
+
+        private readonly Dictionary<ModuleLink, IModule> readyModules = new Dictionary<ModuleLink, IModule>();
+        private readonly Dictionary<Type, IModule> readyModulesDict = new Dictionary<Type, IModule>();
+        private bool initializingStarted = false;
+        private bool debugMode;
+
+        private IPromise Init(IBoot boot, ILogger logger, IModuleFactory moduleFactory, bool debugMode)
+        {
+            Application.SetStackTraceLogType(LogType.Exception, StackTraceLogType.ScriptOnly);
+
+            if (initializingStarted)
+            {
+                return initPromise;
+            }
+
+            this.logger = logger;
+            this.debugMode = debugMode;
+            this.boot = boot;
+            this.moduleFactory = moduleFactory;
+
+            if (moduleFactory == null)
+            {
+                return Promise.Rejected(new NullReferenceException("IModuleFactory is null. Cannot create App!"));
+            }
+
+            initializingStarted = true;
+            SetState(AppState.Loading);
+
+            moduleFactory.Init().Then(() =>
+                {
+                    AssetCache.PreloadAll(AddrLabels.Prewarm).Done(assets =>
+                    {
+                        SetState(AppState.AssetsPreloaded);
+
+                        List<IPromise<IModule>> coreModules =
+                            new List<IPromise<IModule>>(GetBuiltInModulesInitPromises());
+
+                        Promise.All(coreModules).Always(() =>
+                        {
+                            SetState(AppState.CoreModulesInitialized);
+                            InitModules().Then(() => { SetState(AppState.ModulesInitialized); })
+                                .Catch(logger.LogException);
+                        });
+                    });
+                })
+                .Catch(logger.LogException);
+
+
+            return initPromise;
+        }
+
+        private static void SetState(AppState state)
         {
             State = state;
             if (awaitingActions.TryGetValue(state, out List<Action> list))
@@ -118,145 +198,6 @@ namespace SwiftFramework.Core
             }
 
             State = state;
-        }
-
-        public abstract ModuleLink GetModuleLink(Type type);
-
-        public abstract IPromise MakeTransition(IPromise waitForPromise, Action action);
-
-        protected App()
-        {
-            Core = this;
-            State = AppState.Loading;
-        }
-    }
-
-    public class App<M> : App where M : App<M>, new()
-    {
-        private static M main = null;
-
-        public static M Main
-        {
-            get
-            {
-                if (main == null)
-                {
-                    throw new InvalidOperationException(
-                        $"{typeof(M).Name} is not created. Call {typeof(M).Name}.Create() first!");
-                }
-
-                return main;
-            }
-        }
-
-
-        public override void Unload()
-        {
-            if (main == null)
-            {
-                return;
-            }
-
-            foreach (var m in main.readyModules)
-            {
-                m.Value.Unload();
-            }
-
-            Destroy();
-        }
-
-        public static IPromise Create(IBoot boot, ILogger logger, IModuleFactory moduleFactory, bool debugMode)
-        {
-            if (unloadPending)
-            {
-                main.Destroy();
-                unloadPending = false;
-            }
-
-            if (main == null)
-            {
-                main = new M();
-                Core = main;
-                return main.Init(boot, logger, moduleFactory, debugMode);
-            }
-
-            return InitPromise;
-        }
-
-        public override ILocalizationManager Local => GetCachedModule(ref localizationManager);
-        public override IClock Clock => GetCachedModule(ref clock);
-        public override INetworkManager Net => GetCachedModule(ref networkManager);
-        public override ICoroutineManager Coroutine => GetCachedModule(ref coroutine);
-        public override ISaveStorage Storage => GetCachedModule(ref storage);
-        public override IViewFactory Views => GetCachedModule(ref views);
-        public override IWindowsManager Windows => GetCachedModule(ref windowsManager);
-
-        public override IBoot Boot => boot;
-        public override ITimer Timer => GetCachedModule(ref timer);
-
-        private ILocalizationManager localizationManager;
-        private IClock clock;
-        private INetworkManager networkManager;
-        private ICoroutineManager coroutine;
-        private ITimer timer;
-        private ISaveStorage storage;
-        private IViewFactory views;
-
-        private IModuleFactory moduleFactory;
-        private IBoot boot;
-        private ILogger logger;
-        private IWindowsManager windowsManager;
-
-
-        private readonly Dictionary<ModuleLink, IPromise<IModule>> createdModules =
-            new Dictionary<ModuleLink, IPromise<IModule>>();
-
-        private readonly Dictionary<ModuleLink, IModule> readyModules = new Dictionary<ModuleLink, IModule>();
-
-        private bool initialilizingStarted = false;
-        private bool debugMode;
-
-        public IPromise Init(IBoot boot, ILogger logger, IModuleFactory moduleFactory, bool debugMode)
-        {
-            Application.SetStackTraceLogType(LogType.Exception, StackTraceLogType.ScriptOnly);
-
-            if (initialilizingStarted)
-            {
-                return initPromise;
-            }
-
-            this.logger = logger;
-            this.debugMode = debugMode;
-            this.boot = boot;
-            this.moduleFactory = moduleFactory;
-
-            if (moduleFactory == null)
-            {
-                return Promise.Rejected(new NullReferenceException("IModuleFactory is null. Cannot create App!"));
-            }
-
-            initialilizingStarted = true;
-            SetState(AppState.Loading);
-
-            AssetCache.PreloadAll(AddrLabels.Prewarm).Done(assets =>
-            {
-                SetState(AppState.AssetsPreloaded);
-
-                List<IPromise<IModule>> coreModules = new List<IPromise<IModule>>(GetBuiltInModulesInitPromises());
-
-                Promise.All(coreModules).Always(() =>
-                {
-                    SetState(AppState.CoreModulesInitialized);
-                    InitModules().Then(() =>
-                        {
-                            SetState(AppState.ModulesInitialized);
-                            OnInit();
-                        })
-                        .Catch(logger.LogException);
-                });
-            });
-
-            return initPromise;
         }
 
         private IEnumerable<IPromise<IModule>> GetBuiltInModulesInitPromises()
@@ -294,7 +235,7 @@ namespace SwiftFramework.Core
             where TImp : BehaviourModule where TInt : IModule
         {
             Promise<IModule> promise = Promise<IModule>.Create();
-            var go = new GameObject(typeof(TImp).Name);
+            GameObject go = new GameObject(typeof(TImp).Name);
             Object.DontDestroyOnLoad(go);
             TInt module = go.AddComponent<TImp>().GetComponent<TInt>();
             module.SetUp(this);
@@ -307,15 +248,11 @@ namespace SwiftFramework.Core
             return promise;
         }
 
-        protected virtual void OnInit()
-        {
-        }
-
         private IPromise InitModules()
         {
             List<IPromise<IModule>> promises = new List<IPromise<IModule>>();
 
-            foreach (ModuleLink coreModuleLink in moduleFactory.GetModuleLinks())
+            foreach (ModuleLink coreModuleLink in moduleFactory.GetDefinedModules(ModuleLoadType.OnInitialize))
             {
                 promises.Add(CreateModule(coreModuleLink));
             }
@@ -325,7 +262,7 @@ namespace SwiftFramework.Core
             return initPromise;
         }
 
-        public override T GetModule<T>(ModuleLink moduleLink)
+        public T GetModule<T>(ModuleLink moduleLink) where T : class, IModule
         {
             if (readyModules.TryGetValue(moduleLink, out IModule module))
             {
@@ -335,25 +272,79 @@ namespace SwiftFramework.Core
             return default;
         }
 
-        public override T GetModule<T>()
+        public T GetModule<T>() where T : class, IModule
         {
-            foreach (var m in readyModules)
+            Type type = typeof(T);
+
+            if (readyModulesDict.TryGetValue(type, out IModule module))
             {
-                if (typeof(T).IsAssignableFrom(m.Value.GetType()))
+                return (T) module;
+            }
+
+            foreach (KeyValuePair<ModuleLink, IModule> m in readyModules)
+            {
+                if (m.Value is T value)
                 {
-                    return (T) m.Value;
+                    readyModulesDict.Add(type, m.Value);
+                    return value;
                 }
             }
 
             return default;
         }
+        
+        public bool UnloadModule<T>() where T : class, IModule
+        {
+            Type type = typeof(T);
+
+            ModuleLink link = GetModuleLink(type);
+
+            if (link == null)
+            {
+                return false;
+            }
+
+            if (readyModulesDict.TryGetValue(type, out IModule module))
+            {
+                module.Unload();
+                readyModulesDict.Remove(type);
+
+                if (createdModules.ContainsKey(link))
+                {
+                    createdModules.Remove(link);
+                }
+
+                if (readyModules.ContainsKey(link))
+                {
+                    readyModules.Remove(link);
+                }
+                
+                return true;
+            }
+
+            return false;
+        }
 
 
-        public override IPromise<IModule> CreateModule(ModuleLink moduleLink)
+        public IPromise<T> LoadModule<T>() where T : class, IModule
+        {
+            Promise<T> promise = Promise<T>.Create();
+            Type type = typeof(T);
+            if (IsCreated(GetModuleLink(type), out IPromise<IModule> modulePromise))
+            {
+                modulePromise.Then(m => promise.Resolve(m as T), e => promise.Reject(e));
+                return promise;
+            }
+            CreateModule(GetModuleLink(type)).Then(m => promise.Resolve(m as T), e => promise.Reject(e));
+            return promise;
+        }
+
+
+        public IPromise<IModule> CreateModule(ModuleLink moduleLink)
         {
             if (moduleLink == null)
             {
-                return Promise<IModule>.Rejected(new Exception("Module not found!"));
+                return Promise<IModule>.Rejected(new Exception($"Module not found!"));
             }
 
             Promise<IModule> result = Promise<IModule>.Create();
@@ -375,117 +366,118 @@ namespace SwiftFramework.Core
             }
 
             createModulePromise.Then(newModule =>
+            {
+                newModule.SetUp(this);
+
+                List<IPromise> dependenciesInitPromiseList = new List<IPromise>();
+
+                foreach (ModuleLink depLink in newModule.GetDependencies())
                 {
-                    newModule.SetUp(this);
-
-                    List<IPromise> dependenciesInitPromiseList = new List<IPromise>();
-
-                    foreach (ModuleLink depLink in newModule.GetDependencies())
+                    if (debugMode)
                     {
-                        if (debugMode)
-                        {
-                            logger.Log(
-                                $"Trying to resolve dependency: <b>{depLink.InterfaceType.Name}</b> for <b>{moduleLink.InterfaceType.Name}</b>");
-                        }
+                        logger.Log(
+                            $"Trying to resolve dependency: <b>{depLink.InterfaceType.Name}</b> for <b>{moduleLink.InterfaceType.Name}</b>");
+                    }
 
-                        if (IsCreated(depLink, out IPromise<IModule> depModCreatePromise))
-                        {
-                            Promise depInitPromise = Promise.Create();
+                    if (IsCreated(depLink, out IPromise<IModule> depModCreatePromise))
+                    {
+                        Promise depInitPromise = Promise.Create();
 
-                            depModCreatePromise.Done(depModule =>
+                        depModCreatePromise.Done(depModule =>
+                        {
+                            bool circularDependency = false;
+                            foreach (ModuleLink subDep in depModule.GetDependencies())
                             {
-                                bool circularDependency = false;
-                                foreach (var subDep in depModule.GetDependencies())
+                                if (subDep == moduleLink)
                                 {
-                                    if (subDep == moduleLink)
-                                    {
-                                        logger.LogError(
-                                            $"Circular dependency detected: {depLink.ImplementationType.Name} and {moduleLink.ImplementationType.Name} depend on each other");
-                                        circularDependency = true;
-                                        break;
-                                    }
+                                    logger.LogError(
+                                        $"Circular dependency detected: {depLink.ImplementationType.Name} and {moduleLink.ImplementationType.Name} depend on each other");
+                                    circularDependency = true;
+                                    break;
                                 }
+                            }
 
-                                if (circularDependency == false)
-                                {
-                                    depModule.Init().Done(() => depInitPromise.Resolve());
-                                }
-                                else
-                                {
-                                    depInitPromise.Resolve();
-                                }
-                            });
-
-                            dependenciesInitPromiseList.Add(depInitPromise);
-                        }
-                        else
-                        {
-                            if (depLink != null)
+                            if (circularDependency == false)
                             {
-                                Promise newDepModuleInitPromise = Promise.Create();
-
-                                CreateModule(depLink).Then(_m => { newDepModuleInitPromise.Resolve(); })
-                                    .Catch(e =>
-                                    {
-                                        logger.LogException(e);
-                                        logger.LogError($"Cannot resolve dependency {depLink} for module {moduleLink}");
-                                        newDepModuleInitPromise.Resolve();
-                                    });
-
-                                dependenciesInitPromiseList.Add(newDepModuleInitPromise);
+                                depModule.Init().Done(() => depInitPromise.Resolve());
                             }
                             else
                             {
-                                logger.Log(
-                                    $"Cannot resolve dependency for module: {moduleLink}. Cannot find dependency!");
+                                depInitPromise.Resolve();
                             }
+                        });
+
+                        dependenciesInitPromiseList.Add(depInitPromise);
+                    }
+                    else
+                    {
+                        if (depLink != null)
+                        {
+                            Promise newDepModuleInitPromise = Promise.Create();
+
+                            CreateModule(depLink).Then(m => { newDepModuleInitPromise.Resolve(); })
+                                .Catch(e =>
+                                {
+                                    logger.LogException(e);
+                                    logger.LogError($"Cannot resolve dependency {depLink} for module {moduleLink}");
+                                    newDepModuleInitPromise.Resolve();
+                                });
+
+                            dependenciesInitPromiseList.Add(newDepModuleInitPromise);
+                        }
+                        else
+                        {
+                            logger.Log(
+                                $"Cannot resolve dependency for module: {moduleLink}. Cannot find dependency!");
                         }
                     }
+                }
 
-                    Promise.All(dependenciesInitPromiseList.ToArray()).Then(() =>
+                Promise.All(dependenciesInitPromiseList.ToArray()).Then(() =>
+                {
+                    if (debugMode)
+                    {
+                        logger.Log($"Trying to initialize {newModule}");
+                    }
+
+                    IPromise init = newModule.Init();
+
+                    init.Done(() =>
+                    {
+                        readyModules.Add(moduleLink, newModule);
+
+                        result.ReportProgress(1);
+
+                        result.Resolve(newModule);
+
+                        if (debugMode)
                         {
-                            if (debugMode)
-                            {
-                                logger.Log($"Trying to initialize {newModule}");
-                            }
+                            logger.Log($"{newModule} initialized");
+                        }
+                    });
 
-                            IPromise init = newModule.Init();
-
-                            init.Done(() =>
-                            {
-                                readyModules.Add(moduleLink, newModule);
-
-                                result.ReportProgress(1);
-
-                                result.Resolve(newModule);
-
-                                if (debugMode)
-                                {
-                                    logger.Log($"{newModule} initialized");
-                                }
-                            });
-
-                            init.Catch(e =>
-                            {
-                                logger.LogException(e);
-                                logger.LogError($"Cannot resolve dependencies for module {moduleLink}");
-                                result.Reject(e);
-                            });
-                        })
-                        .Catch(e =>
-                        {
-                            logger.LogException(e);
-                            logger.LogError($"Cannot resolve dependencies for module {moduleLink}");
-                            result.Resolve(newModule);
-                        });
+                    init.Catch(e =>
+                    {
+                        logger.LogException(e);
+                        logger.LogError($"Cannot resolve dependencies for module {moduleLink}");
+                        result.Reject(e);
+                    });
                 })
                 .Catch(e =>
                 {
-                    logger.Log(
-                        $"Cannot create module of type < b >{moduleLink.ImplementationType?.Name}</ b > that implements < b >{moduleLink.InterfaceType?.Name}</ b >.");
-                    result.Reject(new EntryPointNotFoundException(
-                        $"Cannot create module of type <b>{moduleLink.ImplementationType?.Name}</b> that implements <b>{moduleLink.InterfaceType?.Name}</b>."));
+                    logger.LogException(e);
+                    logger.LogError($"Cannot resolve dependencies for module {moduleLink}");
+                    result.Resolve(newModule);
                 });
+            })
+            .Catch(e =>
+            {
+                string error =
+                    $"Cannot create module of type <b>{moduleLink.ImplementationType?.Name}</b> " +
+                    $"that implements <b>{moduleLink.InterfaceType?.Name}</ b >.";
+                logger.Log(error);
+                result.Reject(new EntryPointNotFoundException(error));
+            });
 
             return result;
         }
@@ -501,15 +493,15 @@ namespace SwiftFramework.Core
             return createdModules.TryGetValue(moduleLink, out createPromise);
         }
 
-        public override T GetCachedModule<T>(ref T cachedModule)
+        public T GetCachedModule<T>(ref T cachedModule) where T : class, IModule
         {
             if (cachedModule == null)
             {
-                foreach (var m in readyModules)
+                foreach (KeyValuePair<ModuleLink, IModule> m in readyModules)
                 {
-                    if (m.Value is T)
+                    if (m.Value is T value)
                     {
-                        cachedModule = (T) m.Value;
+                        cachedModule = value;
                         break;
                     }
                 }
@@ -524,14 +516,15 @@ namespace SwiftFramework.Core
             return cachedModule;
         }
 
-        public override ModuleLink GetModuleLink<T>()
+        public ModuleLink GetModuleLink<T>() where T : class, IModule
         {
             return GetModuleLink(typeof(T));
         }
 
-        public override ModuleLink GetModuleLink(Type type)
+        public ModuleLink GetModuleLink(Type type)
         {
-            foreach (ModuleLink link in moduleFactory.GetModuleLinks())
+            foreach (ModuleLink link in moduleFactory.GetDefinedModules(
+                ModuleLoadType.OnDemand | ModuleLoadType.OnInitialize))
             {
                 if (link.InterfaceType == type)
                 {
@@ -539,11 +532,11 @@ namespace SwiftFramework.Core
                 }
             }
 
-            logger.LogWarning($"Core Link of type {type.Name} not found");
+            logger.LogWarning($"Module of type {type.Name} not defined!");
             return null;
         }
 
-        public override IPromise MakeTransition(IPromise promiseToWait, Action action)
+        public IPromise MakeTransition(IPromise promiseToWait, Action action)
         {
             Promise result = Promise.Create();
 
@@ -561,12 +554,11 @@ namespace SwiftFramework.Core
             return result;
         }
 
-        protected override void Destroy()
+        private void Destroy()
         {
             awaitingActions.Clear();
             AssetCache.Dispose();
             Pool.DisposeAllPools();
-            main = null;
             Core = null;
             initPromise = Promise.Create();
         }

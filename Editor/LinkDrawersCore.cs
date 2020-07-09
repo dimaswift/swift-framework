@@ -47,11 +47,6 @@ namespace SwiftFramework.Core.Editor
     public class MaterialLinkDrawer : LinkPropertyDrawer<UnityEngine.Material>
     {
     }
-
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.ModuleManifestLink))]
-    public class ModuleManifestLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.BaseModuleManifest>
-    {
-    }
     
     [CustomPropertyDrawer(typeof(SwiftFramework.Core.BehaviourModuleLink))]
     public class BehaviourModuleLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.BehaviourModule>

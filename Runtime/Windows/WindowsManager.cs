@@ -94,7 +94,7 @@ namespace SwiftFramework.Core.Windows
                     topBar.IsShown = false;
                 }
             }
-
+            
             Promise promise = Promise.Create();
 
             foreach (Window winPrefab in AssetCache.GetPrefabs<Window>())
@@ -130,19 +130,18 @@ namespace SwiftFramework.Core.Windows
             window.name = windowPrefab.name;
 
             window.Init(this);
-
-            //UNCOMMENT THIS ON DIFFERENT UNITY VERSION (IT FREEZES WHEN EXCEPTION IS THROWN ON UNITY 2019.3.4f1)
-            //try
-            //{
-            //    window.Init(this);
-            //}
-            //catch (Exception e)
-            //{
-            //    Debug.LogException(e);
-            //    Debug.LogError($"Window <b>{window.name}</b> not initialized! Exception was thrown. Ignoring...");
-            //    window.gameObject.SetActive(false);
-            //    return;
-            //}
+            
+            try
+            {
+                window.Init(this);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                Debug.LogError($"Window <b>{window.name}</b> not initialized! Exception was thrown. Ignoring...");
+                window.gameObject.SetActive(false);
+                return;
+            }
 
             RootCanvas rootCanvas = FindCanvas(window.CanvasType);
 
@@ -169,6 +168,7 @@ namespace SwiftFramework.Core.Windows
             }
 
             Core.App.WaitForState(AppState.ModulesInitialized, () => window.WarmUp());
+            
         }
 
         public IEnumerable<IWindow> GetWindowStack()

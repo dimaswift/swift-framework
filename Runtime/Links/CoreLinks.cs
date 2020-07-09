@@ -55,15 +55,7 @@ namespace SwiftFramework.Core
     {
 
     }
-
-    [FlatHierarchy]
-    [LinkFolder(Folders.Configs)]
-    [Serializable()]
-    public class ModuleManifestLink : LinkTo<BaseModuleManifest>
-    {
-
-    }
-
+    
     [FlatHierarchy]
     [Serializable()]
     public class BehaviourModuleLink : LinkToPrefab<BehaviourModule>

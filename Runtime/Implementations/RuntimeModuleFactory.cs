@@ -170,19 +170,19 @@ namespace SwiftFramework.Core
             }
         }
 
+        public IPromise Init()
+        {
+            return Promise.Resolved();
+        }
+
         public T CreateModule<T>() where T : IModule
         {
             return (T) CreateAnyImplementation(typeof(T), null);
         }
 
-        public virtual IEnumerable<ModuleLink> GetModuleLinks()
+        public virtual IEnumerable<ModuleLink> GetDefinedModules(ModuleLoadType loadType)
         {
             yield break;
-        }
-
-        IPromise<T> IModuleFactory.CreateModule<T>()
-        {
-            return Promise<T>.Resolved(CreateModule<T>());
         }
 
         IPromise<IModule> IModuleFactory.CreateModule(ModuleLink moduleLink)

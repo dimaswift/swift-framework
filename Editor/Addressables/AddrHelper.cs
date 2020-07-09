@@ -233,8 +233,7 @@ namespace SwiftFramework.Core.Editor
 
             Type assetType = asset.GetType();
 
-            if (assetType == typeof(BootConfig) ||
-               typeof(BaseModuleManifest).IsAssignableFrom(assetType))
+            if (assetType == typeof(BootConfig))
             {
                 return GetOrCreateGroup(AddrGroups.Boot);
             }

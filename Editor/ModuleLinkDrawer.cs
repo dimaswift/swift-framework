@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using SwiftFramework.EditorUtils;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core.Editor
 {
     [CustomPropertyDrawer(typeof(ModuleLink), false)]
     internal class ModuleLinkDrawer : PropertyDrawer
     {
-        private static event Action OnModuleImplementationChanged = () => { };
-
         private const string NULL = "null";
 
         private const float SIDE_BUTTON_WIDTH = 120;
@@ -21,27 +21,18 @@ namespace SwiftFramework.Core.Editor
 
         private static readonly GUIContent configLabel = new GUIContent("Config");
         private static readonly GUIContent behaviourLabel = new GUIContent("Behaviour");
-
-        private bool checkedForImplementation;
-
-        private readonly Dictionary<string, Data> dataCache = new Dictionary<string, Data>();
+        private static readonly List<Type> customModuleInterfaces = new List<Type>();
+        
+        private Data cachedData;
+        private string[] moduleNames;
 
         private Data GetData(SerializedProperty property)
         {
-            var key = property.propertyPath + property.serializedObject.targetObject.GetInstanceID().ToString();
-            if (dataCache.TryGetValue(key, out Data data) == false)
+            if (cachedData == null)
             {
-                data = new Data(property);
-                dataCache.Add(key, data);
+                cachedData = new Data(property);
             }
-
-            if (data.property?.serializedObject == null)
-            {
-                dataCache.Remove(key);
-                return GetData(property);
-            }
-
-            return data;
+            return cachedData;
         }
 
         public override bool CanCacheInspectorGUI(SerializedProperty property)
@@ -56,27 +47,52 @@ namespace SwiftFramework.Core.Editor
             public bool dependenciesChecked;
             public readonly List<string> unresolvedDependencies = new List<string>();
             public readonly List<string> unresolvedUsedModules = new List<string>();
-            public SerializedProperty typeProperty;
+            public readonly SerializedProperty typeProperty;
+            public readonly SerializedProperty interfaceTypeProperty;
+
             public readonly SerializedProperty property;
             public readonly List<Type> implementationTypes = new List<Type>();
             public List<BehaviourModule> filteredBehaviourModules = null;
             public string[] names = new string[0];
-            public LinkFilterAttribute interfaceAttribute;
             public Type selectedType;
             public AssetLinkDrawer behaviourModuleDrawer;
             public AssetLinkDrawer configDrawer;
-            public float baseHeight;
 
+            public Type InterfaceType
+            {
+                get => interfaceType;
+                set
+                {
+                    implementationTypes.Clear();
+                    interfaceType = value;
+                    if (value == null)
+                    {
+                        return;
+                    }
+                    
+                    foreach (Type type in Util.GetAllTypes())
+                    {
+                        if (value.IsAssignableFrom(type) && type.IsInterface == false)
+                        {
+                            implementationTypes.Add(type);
+                        }
+                    }
+                    
+                 
+                }
+            }
+            public float baseHeight;
+            private Type interfaceType;
+ 
             public Data(SerializedProperty property)
             {
                 this.property = property;
-            }
-
-            public void ClearDeps()
-            {
-                unresolvedDependencies.Clear();
-                unresolvedUsedModules.Clear();
-                dependenciesChecked = false;
+                typeProperty = property.FindPropertyRelative("implementationType");
+                interfaceTypeProperty = property.FindPropertyRelative("interfaceType");
+                if (string.IsNullOrEmpty(interfaceTypeProperty.stringValue) == false)
+                {
+                    InterfaceType = Type.GetType(interfaceTypeProperty.stringValue);
+                }
             }
         }
 
@@ -86,7 +102,7 @@ namespace SwiftFramework.Core.Editor
             Data data = GetData(property);
             data.baseHeight = h + 5;
             h += h;
-            h += 15;
+            h += 25;
             if (IsConfigurable(data))
             {
                 h += data.baseHeight;
@@ -99,50 +115,27 @@ namespace SwiftFramework.Core.Editor
 
             h += (data.baseHeight + MARGIN) * data.unresolvedDependencies.Count;
             h += (data.baseHeight + MARGIN) * data.unresolvedUsedModules.Count;
-
+            h += data.baseHeight + MARGIN;
             return h;
         }
 
 
         private static bool IsDependencyResolved(Type type, Data data)
         {
-            if (data.property.serializedObject.targetObject is BaseModuleManifest == false)
+            foreach (ModuleManifest moduleManifest in Util.GetModuleManifests())
             {
-                return true;
-            }
-
-            SerializedProperty current = data.property.serializedObject.GetIterator();
-
-            current.Next(true);
-
-            while (current.Next(false))
-            {
-                if (current.propertyType == SerializedPropertyType.Generic)
+                if (moduleManifest.InterfaceType == type && moduleManifest.ImplementationType != null)
                 {
-                    string interfaceTypeStr = current.FindPropertyRelative("interfaceType")?.stringValue;
-                    if (string.IsNullOrEmpty(interfaceTypeStr) == false)
-                    {
-                        Type interfaceType = Type.GetType(interfaceTypeStr);
-                        string implementationTypeStr = current.FindPropertyRelative("implementationType")?.stringValue;
-
-                        if (string.IsNullOrEmpty(implementationTypeStr))
-                        {
-                            continue;
-                        }
-
-                        Type implementationType = Type.GetType(implementationTypeStr);
-
-                        if (interfaceType == type && implementationType != null)
-                        {
-                            return true;
-                        }
-                    }
+                    return true;
                 }
             }
 
-            current.Reset();
-
             return false;
+        }
+
+        private void UndoRedoPerformed()
+        {
+            cachedData = null;
         }
 
         private static bool IsConfigurable(Data data)
@@ -162,24 +155,17 @@ namespace SwiftFramework.Core.Editor
 
         private void FindModuleImplementationTypes(Data data)
         {
-            if (data.interfaceAttribute == null)
+            string interfaceTypeStr = data.property.FindPropertyRelative("interfaceType").stringValue;
+            if (string.IsNullOrEmpty(interfaceTypeStr))
             {
-                data.interfaceAttribute = fieldInfo.GetCustomAttribute<LinkFilterAttribute>();
+                return;
             }
 
-            if (data.interfaceAttribute != null && data.implementationTypes.Count == 0 &&
-                checkedForImplementation == false)
+            Type interfaceType = Type.GetType(interfaceTypeStr);
+            
+            if (interfaceType == null)
             {
-                checkedForImplementation = true;
-                foreach (Type type in Util.GetAllTypes())
-                {
-                    if (data.interfaceAttribute.interfaceType != null
-                        && data.interfaceAttribute.interfaceType.IsAssignableFrom(type)
-                        && type.IsInterface == false)
-                    {
-                        data.implementationTypes.Add(type);
-                    }
-                }
+                return;
             }
 
             if (data.names.Length != data.implementationTypes.Count + 1)
@@ -213,6 +199,18 @@ namespace SwiftFramework.Core.Editor
                 data.typeProperty.serializedObject.ApplyModifiedProperties();
             }
         }
+        
+        private static void DrawDuplicateModule(ref Rect position, Rect viewport, ModuleManifest manifest)
+        {
+            position.width -= BUTTON_WIDTH;
+            position.width = viewport.width;
+            position.height = 33;
+            EditorGUI.HelpBox(position, $"Module already defined in manifest: {AssetDatabase.GetAssetPath(manifest)}", MessageType.Error);
+            position.x += BUTTON_WIDTH * 2;
+            position.width = viewport.width - BUTTON_WIDTH * 2;
+            position.x = viewport.x + (viewport.width - BUTTON_WIDTH);
+            position.width = BUTTON_WIDTH;
+        }
 
         private static void DrawImplementationPopUp(ref Rect position, Rect viewPort, float baseHeight, Data data)
         {
@@ -229,8 +227,6 @@ namespace SwiftFramework.Core.Editor
             int newIndex = EditorGUI.Popup(new Rect(position.x, position.y, position.width, baseHeight),
                 "Implementation", selectedTypeIndex + 1, data.names);
 
-            bool moduleSelected = false;
-
             if (newIndex != selectedTypeIndex + 1)
             {
                 if (newIndex <= 0 && selectedTypeIndex != -1)
@@ -242,8 +238,6 @@ namespace SwiftFramework.Core.Editor
                     data.typeProperty.stringValue = data.implementationTypes[newIndex - 1].AssemblyQualifiedName;
                     data.typeProperty.serializedObject.ApplyModifiedProperties();
                 }
-
-                moduleSelected = true;
             }
 
             data.selectedType = selectedTypeIndex != -1 ? data.implementationTypes[selectedTypeIndex] : null;
@@ -283,11 +277,6 @@ namespace SwiftFramework.Core.Editor
                 Rect warningRect = new Rect(position.x, position.y, position.width, baseHeight);
                 EditorGUI.HelpBox(warningRect, $"Uses {dep} module. Implementation not found!", MessageType.Warning);
                 position.y += MARGIN;
-            }
-
-            if (moduleSelected)
-            {
-                OnModuleImplementationChanged();
             }
         }
 
@@ -339,6 +328,8 @@ namespace SwiftFramework.Core.Editor
                 behaviourLabel, true);
         }
 
+        
+        
         private void DrawConfigPopUp(ref Rect position, float baseHeight, Data data)
         {
             data.configurable = data.selectedType.GetCustomAttribute<ConfigurableAttribute>();
@@ -404,9 +395,7 @@ namespace SwiftFramework.Core.Editor
                 if (GUI.Button(new Rect(position.x + position.width, position.y, SIDE_BUTTON_WIDTH, 18), "Create Config"))
                 {
                     Util.CreateModuleConfig(data.configurable.configType, configProperty);
-#if USE_ADDRESSABLES
-                    AddrHelper.Reload();
-#endif
+
                 }
             }
 
@@ -423,21 +412,9 @@ namespace SwiftFramework.Core.Editor
         {
             Data data = GetData(property);
 
-            data.typeProperty = property.FindPropertyRelative("implementationType");
+            string interfaceTypeName = data.property.FindPropertyRelative("interfaceType").stringValue;
 
             FindModuleImplementationTypes(data);
-
-            OnModuleImplementationChanged -= data.ClearDeps;
-            OnModuleImplementationChanged += data.ClearDeps;
-
-            string interfaceTypeName = null;
-
-            if (data.interfaceAttribute != null && data.interfaceAttribute.interfaceType != null)
-            {
-                interfaceTypeName = data.interfaceAttribute.interfaceType.Name;
-                property.FindPropertyRelative("interfaceType").stringValue =
-                    data.interfaceAttribute.interfaceType.AssemblyQualifiedName;
-            }
 
             Rect titleRect = new Rect(position.x, position.y, position.width, data.baseHeight);
             GUI.Label(
@@ -446,7 +423,43 @@ namespace SwiftFramework.Core.Editor
 
             Color color = GUI.color;
 
-            GUI.Label(titleRect, $"{label.text} ({interfaceTypeName})", EditorGUIEx.GroupScope.GetStyleHeader());
+            Type interfaceType = string.IsNullOrEmpty(interfaceTypeName) ? null : Type.GetType(interfaceTypeName);
+
+            if (data.InterfaceType != interfaceType)
+            {
+                cachedData = null;
+                data = GetData(property);
+            }
+            
+            if (interfaceType == null)
+            {
+                GUI.Label(titleRect, "None", EditorGUIEx.GroupScope.GetStyleHeader());
+
+                if (string.IsNullOrEmpty(interfaceTypeName) == false)
+                {
+                    titleRect.y += data.baseHeight;
+                    GUI.color = GetRedErrorColor();
+                    GUI.Label(titleRect, $"Type '{interfaceTypeName.Split(',')[0]}' not found!", EditorGUIEx.GroupScope.GetStyleHeader());
+                    GUI.color = color;
+                    
+                    titleRect.y += data.baseHeight;
+
+                    if (GUI.Button(titleRect, "Reset"))
+                    {
+                        cachedData.interfaceTypeProperty.stringValue = null;
+                        cachedData.interfaceTypeProperty.serializedObject.ApplyModifiedProperties();
+                    }
+                    
+                    return;
+                }
+                
+            }
+            else
+            {
+                GUI.Label(titleRect, $"{label.text} ({interfaceType.Name})", EditorGUIEx.GroupScope.GetStyleHeader());
+            }
+            
+       
             GUI.color = color;
             position.x += MARGIN;
             position.y += MARGIN;
@@ -455,15 +468,83 @@ namespace SwiftFramework.Core.Editor
 
             position.y += data.baseHeight;
 
+            if (moduleNames == null)
+            {
+                customModuleInterfaces.Clear();
+                ModuleManifest manifest = property.serializedObject.targetObject as ModuleManifest;
+                string group = ModuleGroups.Custom;
+                if (manifest != null)
+                {
+                    group = manifest.ModuleGroup;
+                }
+                customModuleInterfaces.AddRange(Util.GetModuleInterfaces(group));
+                List<string> names = new List<string>(customModuleInterfaces.Select(s => s.Name));
+                names.Insert(0, "None");
+                moduleNames = names.ToArray();
+            }
+            
+            position.height = data.baseHeight;
+
+            int prevSelectedInterfaceIndex =
+                customModuleInterfaces.FindIndex(m => m.AssemblyQualifiedName == interfaceTypeName) + 1;
+
+            int newSelectedInterfaceIndex = EditorGUI.Popup(position, prevSelectedInterfaceIndex, moduleNames);
+            
+            if (newSelectedInterfaceIndex != prevSelectedInterfaceIndex)
+            {
+                if (newSelectedInterfaceIndex == 0)
+                {
+                    data.property.FindPropertyRelative("interfaceType").stringValue = null;
+                    data.property.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue = null;
+                    data.property.FindPropertyRelative("behaviourLink").FindPropertyRelative("Path").stringValue = null;
+                    data.InterfaceType = null;
+                }
+                else
+                {
+                    interfaceTypeName = customModuleInterfaces[newSelectedInterfaceIndex - 1].AssemblyQualifiedName;
+                    data.property.FindPropertyRelative("interfaceType").stringValue = interfaceTypeName;
+                    data.InterfaceType = Type.GetType(interfaceTypeName);
+                }
+
+                data.typeProperty.stringValue = null;
+                data.typeProperty.serializedObject.ApplyModifiedProperties();
+                cachedData = null;
+                return;
+            }
+
+
+            position.y += data.baseHeight;
+            
             Rect labelRect = new Rect(position.x, position.y, LABEL_WIDTH, data.baseHeight);
 
             Rect viewPort = position;
-
-            if (data.interfaceAttribute == null || data.interfaceAttribute.interfaceType == null)
+            
+            
+            if (interfaceType != null)
             {
-                GUI.Label(position, $"LinkFilter attribute is missing", EditorGUIEx.GroupScope.GetStyleHeader());
-                return;
+                foreach (ModuleManifest otherManifest in Util.GetModuleManifests())
+                {
+                    if (interfaceType == otherManifest.InterfaceType)
+                    {
+                        ModuleManifest thisManifest = property.serializedObject.targetObject as ModuleManifest;
+                        if (thisManifest != null && thisManifest != otherManifest)
+                        {
+                            if (otherManifest.State == ModuleState.Enabled && thisManifest.State == ModuleState.Enabled)
+                            {
+                                DrawDuplicateModule(ref position, viewPort, otherManifest);
+                                return;
+                            }
+                        }
+                    }
+                }
             }
+            
+            if (string.IsNullOrEmpty(interfaceTypeName))
+            {
+                GUI.Label(position, $"Module Interface not selected", EditorGUIEx.GroupScope.GetStyleHeader());
+
+                return;
+            } 
 
             labelRect.y = position.y;
 
@@ -478,11 +559,6 @@ namespace SwiftFramework.Core.Editor
 
                 DrawConfigPopUp(ref position, data.baseHeight, data);
             }
-        }
-
-        public static void NotifyAboutModuleImplementationChange()
-        {
-            OnModuleImplementationChanged();
         }
     }
 }

@@ -33,23 +33,6 @@ namespace SwiftFramework.Core.Editor
             return config;
         }
 
-        private static ScriptableObject EnsureModuleManifestExists()
-        {
-            Type manifestClass = Util.FindChildClass(typeof(BaseModuleManifest));
-            if (manifestClass == null)
-            {
-                return null;
-            }
-
-            ScriptableObject manifest = Util.FindScriptableObject(manifestClass);
-            if (manifest == null)
-            {
-                Debug.Log("Manifest not found");
-            }
-
-            return manifest;
-        }
-
 #if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Boot Config")]
 #endif
@@ -58,19 +41,5 @@ namespace SwiftFramework.Core.Editor
             Selection.activeObject = EnsureConfigExists<BootConfig>(BootConfigFolder);
         }
 
-#if SWIFT_FRAMEWORK_INSTALLED
-        [MenuItem("SwiftFramework/Module Manifest")]
-#endif
-        private static void SelectModuleManifest()
-        {
-            ScriptableObject manifest = EnsureModuleManifestExists();
-            if (manifest == null)
-            {
-                Debug.LogError("Module Manifest not found!");
-                return;
-            }
-
-            Selection.activeObject = manifest;
-        }
     }
 }

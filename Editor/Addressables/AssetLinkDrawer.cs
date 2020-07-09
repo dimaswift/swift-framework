@@ -50,7 +50,7 @@ namespace SwiftFramework.Core.Editor
                     assets.RemoveAll(t =>
                     {
                         Object asset = AssetDatabase.LoadAssetAtPath(t.AssetPath, typeof(Object));
-                        return interfaceFilter.interfaceType.IsAssignableFrom(asset.GetType()) == false;
+                        return interfaceFilter.interfaceType.IsInstanceOfType(asset) == false;
                     });
                 }
 

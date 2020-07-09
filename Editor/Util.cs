@@ -72,6 +72,23 @@ namespace SwiftFramework.EditorUtils
 
     public class Util : ScriptableSingleton<Util>
     {
+        public static IEnumerable<Type> GetModuleInterfaces(string groupId)
+        {
+            foreach (Type type in GetAllTypes())
+            {
+                if (type.IsInterface && typeof(IModule).IsAssignableFrom(type) && type != typeof(IModule))
+                {
+                    ModuleGroupAttribute groupAttribute = type.GetCustomAttribute<ModuleGroupAttribute>();
+                    if (groupAttribute != null && groupAttribute.GroupId != groupId)
+                    {
+                        continue;
+                    }
+
+                    yield return type;
+                }
+            }
+        }
+
         public const string ADDRESSABLE_VERSION = "1.8.3";
 
         public static event Action<Type, ModuleConfig> OnModuleConfigApplied = (type, moduleConfig) => { };
@@ -442,7 +459,7 @@ namespace SwiftFramework.EditorUtils
         {
             GameObject newBehaviour = new GameObject(type.Name);
             newBehaviour.AddComponent(type);
-            string moduleFolder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}";
+            string moduleFolder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Behaviours}";
 
             EnsureProjectFolderExists(moduleFolder);
             string prefabName = newBehaviour.name;
@@ -453,13 +470,25 @@ namespace SwiftFramework.EditorUtils
                 prefabName += " (NEW)";
             }
 
-            link?.SaveLink($"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}/{prefabName}");
+            link?.SaveLink($"{Folders.Behaviours}/{prefabName}");
 
             PrefabUtility.SaveAsPrefabAsset(newBehaviour, PrefabPath(), out bool created);
             
             DestroyImmediate(newBehaviour);
+
+            ReloadLinks();
         }
 
+        public static void ReloadLinks()
+        {
+#if USE_ADDRESSABLES
+            AddrHelper.Reload();
+#else
+            ResourcesAssetHelper.Reload();
+#endif
+        }
+        
+        
         public static ModuleConfig CreateModuleConfig(Type type, SerializedProperty link = null)
         {
             ScriptableObject config = CreateInstance(type);
@@ -480,10 +509,23 @@ namespace SwiftFramework.EditorUtils
             AssetDatabase.CreateAsset(config, ConfigPath());
             
             link?.SaveLink($"{Folders.Configs}/{configName}");
+            
+            ReloadLinks();
 
             return AssetDatabase.LoadAssetAtPath(ConfigPath(), type) as ModuleConfig;
         }
 
+        public static IEnumerable<ModuleManifest> GetModuleManifests()
+        {
+            foreach (ModuleManifest manifest in GetAssets<ModuleManifest>())
+            {
+                if (manifest.State == ModuleState.Enabled)
+                {
+                    yield return manifest;
+                }
+            }
+        }
+        
         public static void EnsureProjectFolderExists(string folder)
         {
             if (AssetDatabase.IsValidFolder(folder))

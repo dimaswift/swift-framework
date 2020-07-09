@@ -55,8 +55,8 @@ namespace SwiftFramework.Core
             Promise<T> promise = Promise<T>.Create();
             Load().Then(prefab => 
             {
-                var isntance = UnityEngine.Object.Instantiate(cachedGameObject);
-                promise.Resolve(isntance.GetComponent<T>());
+                GameObject instance = UnityEngine.Object.Instantiate(cachedGameObject);
+                promise.Resolve(instance.GetComponent<T>());
             })
             .Catch(e => promise.Reject(e));
             return promise;
@@ -78,7 +78,7 @@ namespace SwiftFramework.Core
                 result(cachedAsset);
                 return;
             }
-            Load().Then(r => result(r)).Catch(e => fail?.Invoke(e));
+            Load().Then(result).Catch(e => fail?.Invoke(e));
         }
 
         public virtual IPromise<T> Load()

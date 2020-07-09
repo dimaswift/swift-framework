@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SwiftFramework.Core;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -10,7 +11,7 @@ namespace SwiftFramework.Core
     public class SaveStorageManager : Module, ISaveStorage
     {
         public long SaveTimestamp => container.timestamp;
-        
+
         private const string NOT_LINKED = "not_linked";
 
         private const string DEFAULT_SAVE_ID = "default_save";
@@ -36,7 +37,10 @@ namespace SwiftFramework.Core
             {
                 return 0;
             }
+          
         }
+
+        public event Action OnBeforeSaveOnPause = () => { };
 
         public event Action OnBeforeSave = () => { };
         public event Action OnAfterLoad = () => { };
@@ -127,11 +131,16 @@ namespace SwiftFramework.Core
 
         private void Boot_OnPaused()
         {
+            OnBeforeSaveOnPause();
+            WriteSaveToDisk();
+        }
+
+        public void WriteSaveToDisk()
+        {
             OnBeforeSave();
             WriteSave();
         }
-
-
+        
         private void WriteSave()
         {
             container.id = saveId;

@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 namespace SwiftFramework.Core
 {
-    public abstract class AppSceneBoot<A> : AppBoot<A>, IBoot where A : App<A>, new()
+    public abstract class AppSceneBoot<A> : AppBoot
     {
         [SerializeField] private SceneLink mainScene = null;
 

@@ -34,7 +34,7 @@ namespace SwiftFramework.Core.Editor
 
                 if (GUILayout.Button("Cancel"))
                 {
-                    FinishInstalling();
+                    FinishInstalling(false);
                     Repaint();
                 }
 
@@ -103,7 +103,7 @@ namespace SwiftFramework.Core.Editor
 
                     GUI.color = color;
 
-                    GUI.enabled = plugin.CanRemove() && data.copiedFiles.Count > 0;
+                    GUI.enabled = plugin.CanRemove();
 
                     buttonRect = new Rect(rect.x + rect.width - DELETE_BTN_WIDTH, rect.y, DELETE_BTN_WIDTH, lineHeight);
 
@@ -158,7 +158,7 @@ namespace SwiftFramework.Core.Editor
 
             foreach (var file in data.copiedFiles)
             {
-                AssetDatabase.DeleteAsset(file);
+                Debug.LogError($"Path: {file} - { AssetDatabase.DeleteAsset(file)}");
                 if (!finishOnRecompile && file.EndsWith(".cs"))
                 {
                     Compile.OnFinishedCompile += FinishUninstalling;
@@ -171,24 +171,6 @@ namespace SwiftFramework.Core.Editor
             data.copiedFiles.Clear();
             
             List<ModuleInstaller> moduleInstallers = GetModuleInstallers(plugin);
-
-            BaseModuleManifest manifest = GetModuleManifest();
-            
-            foreach (ModuleInstaller moduleInstaller in moduleInstallers)
-            {
-                foreach ((FieldInfo field, ModuleLink link) in manifest.GetAllModuleLinks())
-                {
-                    Type interfaceType = field.CustomAttributes.Where(a => a.AttributeType == typeof(LinkFilterAttribute))
-                        .FirstOrDefaultFast()?.ConstructorArguments.FirstOrDefaultFast().Value as Type;
-
-                    if (interfaceType == moduleInstaller.module.GetInterfaceType())
-                    {
-                        link.ImplementationType = null;
-                    }
-                }
-            }
-            
-            EditorUtility.SetDirty(manifest);
 
             EditorUtility.SetDirty(PluginsManifest.Instance);
 
@@ -203,9 +185,14 @@ namespace SwiftFramework.Core.Editor
             plugin.OnRemoved();
             
             Repaint();
+
+            if (!finishOnRecompile)
+            {
+                FinishUninstalling(true);
+            }
         }
 
-        public static void FinishInstalling()
+        public static void FinishInstalling(bool compiled)
         {
             IsProcessing = false;
 
@@ -215,9 +202,10 @@ namespace SwiftFramework.Core.Editor
             }
 
             PatchModuleManifest();
-
+            
+            
+            
             PluginsManifest.Instance.FinishProcess();
-
         }
 
         private static List<ModuleInstaller> GetModuleInstallers(PluginInfo pluginInfo)
@@ -238,30 +226,10 @@ namespace SwiftFramework.Core.Editor
             return moduleInstallers;
         }
 
-
-        private static BaseModuleManifest GetModuleManifest()
-        {
-            string manifestGuid = AssetDatabase.FindAssets("t:BaseModuleManifest", new[] { ResourcesAssetHelper.RootFolder }).FirstOrDefaultFast();
-
-            if (string.IsNullOrEmpty(manifestGuid))
-            {
-                return null;
-            }
-
-            return AssetDatabase.LoadAssetAtPath<BaseModuleManifest>(AssetDatabase.GUIDToAssetPath(manifestGuid));
-        }
-        
         [MenuItem("SwiftFramework/Plugin Installer/Patch")]
         private static void PatchModuleManifest()
         {
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-
-            BaseModuleManifest manifest = GetModuleManifest();
-
-            if (manifest == null)
-            {
-                return;
-            }
 
             PluginInfo pluginInfo = PluginsManifest.Instance.CurrentPlugin;
         
@@ -271,67 +239,68 @@ namespace SwiftFramework.Core.Editor
 
             foreach (ModuleInstaller moduleInstaller in moduleInstallers)
             {
-                string installerDir = AssetDatabase.GetAssetPath(moduleInstaller);
+                ModuleManifest manifest = CreateInstance<ModuleManifest>();
+                manifest.name = moduleInstaller.name;
+                var so = new SerializedObject(manifest);
+                var moduleProp = so.FindProperty("module");
+                moduleProp.FindPropertyRelative("implementationType").stringValue =
+                    moduleInstaller.module.implementationType;
+                moduleProp.FindPropertyRelative("interfaceType").stringValue =
+                    moduleInstaller.module.interfaceType;
 
-                CopyFolders(new FileInfo(installerDir).Directory, data);
-
-                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-
-                string installerName = moduleInstaller.name + ".asset";
-
-                string root = installerDir.Substring(0, installerDir.Length - installerName.Length - 1);
-
-                const string resourcesFolder = "/_Resources/";
-
-                foreach ((FieldInfo field, ModuleLink link) in manifest.GetAllModuleLinks())
+                if (moduleInstaller.module.config)
                 {
-                    Type interfaceType = field.CustomAttributes.Where(a => a.AttributeType == typeof(LinkFilterAttribute))
-                        .FirstOrDefaultFast()?.ConstructorArguments.FirstOrDefaultFast().Value as Type;
-
-                    if (interfaceType == moduleInstaller.module.GetInterfaceType())
-                    {
-                        link.ImplementationType = moduleInstaller.module.GetImplementationType();
-
-                        foreach (var guid in AssetDatabase.FindAssets("t:Object", new[] { root }))
-                        {
-                            var path = AssetDatabase.GUIDToAssetPath(guid);
-
-                            if (string.IsNullOrEmpty(path))
-                            {
-                                continue;
-                            }
-
-                            Object prefab = AssetDatabase.LoadAssetAtPath(path, link.ImplementationType);
-
-                            if (prefab)
-                            {
-                                string linkPath = path.Substring(root.Length + resourcesFolder.Length, 
-                                    path.Length - root.Length - resourcesFolder.Length - Path.GetExtension(path).Length);
-                                link.SetBehaviourPath(linkPath);
-                            }
-                            ConfigurableAttribute configAttr = link.ImplementationType.GetCustomAttribute<ConfigurableAttribute>();
-                            
-                            if (configAttr != null)
-                            {
-                                Object config = AssetDatabase.LoadAssetAtPath(path, configAttr.configType);
-                                if (config)
-                                {
-                                    string linkPath = path.Substring(root.Length + resourcesFolder.Length, 
-                                        path.Length - root.Length - resourcesFolder.Length - Path.GetExtension(path).Length);
-                                    link.SetConfigPath(linkPath);
-                                }
-                            }
-                        }
-                    }
+                    moduleProp.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue =
+                        Folders.Configs + "/" + moduleInstaller.module.config.name;
+                    
+                    string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Configs}/";
+                    string configPath = $"{folder}/{moduleInstaller.module.config.name}.asset";
+                    Util.EnsureProjectFolderExists(folder);
+                    
+                    AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(moduleInstaller.module.config), configPath);
+                    
+                    RegisterFile(configPath);
                 }
+                
+                if (moduleInstaller.module.behaviour)
+                {
+                    string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Behaviours}/";
+                    
+                    Util.EnsureProjectFolderExists(folder);
+                    string behaviourPath = $"{folder}/{moduleInstaller.module.behaviour.name}.prefab";
+                    moduleProp.FindPropertyRelative("behaviourLink").FindPropertyRelative("Path").stringValue =
+                        Folders.Behaviours + "/" + moduleInstaller.module.behaviour.name;
+                    AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(moduleInstaller.module.behaviour), behaviourPath);
+                    
+                    RegisterFile(behaviourPath);
+                }
+                
+                so.ApplyModifiedProperties();
+                string f = ResourcesAssetHelper.RootFolder + "/Modules/";
+                Util.EnsureProjectFolderExists(f);
+                string manifestPath = ResourcesAssetHelper.RootFolder + "/Modules/" + manifest.ImplementationType.Name +
+                                      ".asset";
+                AssetDatabase.CreateAsset(manifest, manifestPath);
+                RegisterFile(manifestPath);
             }
 
-            EditorUtility.SetDirty(manifest);
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
         }
-
+            
+        public static void RegisterFile(string localPath)
+        {
+            var data = PluginsManifest.Instance.CurrentPluginData;
+            if (data == null)
+            {
+                return;
+            }
+            Debug.LogError(localPath);
+            data.copiedFiles.Add(localPath);
+            EditorUtility.SetDirty(PluginsManifest.Instance);
+        }
+        
         private static void FinishUninstalling(bool compiled)
         {
             IsProcessing = false;
@@ -380,12 +349,12 @@ namespace SwiftFramework.Core.Editor
 
             if (plugin.CanInstall() == false)
             {
-                FinishInstalling();
+                FinishInstalling(false);
                 Repaint();
                 return;
             }
 
-            plugin.OnInstall();
+            plugin.OnWillInstall();
 
             SymbolCatalog.Add(plugin.GetSymbols());
 
@@ -424,6 +393,17 @@ namespace SwiftFramework.Core.Editor
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
+            if (data.copiedFiles.FindIndex(f => f.EndsWith(".cs")) != -1 
+                || plugin.defineSymbols.Length > 0
+                || plugin.packageDependencies.Length > 0)
+            {
+                Compile.OnFinishedCompile += FinishInstalling;
+            }
+            else
+            {
+                FinishInstalling(false);
+            }
+            
             Repaint();
         }
 

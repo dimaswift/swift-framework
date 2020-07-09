@@ -13,6 +13,9 @@ MonoBehaviour:
   m_Name: WindowsManagerInstaller
   m_EditorClassIdentifier: 
   module:
+    config: {fileID: 0}
+    behaviour: {fileID: 6162641699601750456, guid: c8ba561c71d1884478c2cbcc73ae5b7f,
+      type: 3}
     interfaceType: SwiftFramework.Core.IWindowsManager, SwiftFramework.Core, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
     implementationType: SwiftFramework.Core.Windows.WindowsManager, SwiftFramework.Core,

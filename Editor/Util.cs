@@ -88,9 +88,7 @@ namespace SwiftFramework.EditorUtils
                 }
             }
         }
-
-        public const string ADDRESSABLE_VERSION = "1.8.3";
-
+        
         public static event Action<Type, ModuleConfig> OnModuleConfigApplied = (type, moduleConfig) => { };
 
         public static event Action OnScriptsReloaded = () => { };
@@ -151,24 +149,25 @@ namespace SwiftFramework.EditorUtils
             return manifestText.Contains(dependencyName);
         }
 
-        public static void AddDependencyToPackageManifest(string dependency, string version)
+        public static bool AddDependencyToPackageManifest(string dependency, string version)
         {
             if (string.IsNullOrEmpty(dependency) || string.IsNullOrEmpty(version))
             {
                 Debug.LogError($"Cannot add package {dependency}:{version}. Invalid name and/or version");
-                return;
+                return false;
             }
 
             var dep = $"\"{dependency}\": \"{version}\"";
             if (HasPackageDependency(dep))
             {
-                return;
+                return false;
             }
 
             var manifestLines = new List<string>(File.ReadAllLines(ManifestPackagePath));
             var startIndex = manifestLines.FindIndex(l => l.Contains($"dependencies\": {{")) + 1;
             manifestLines.Insert(startIndex, $"   {dep},");
             File.WriteAllLines(ManifestPackagePath, manifestLines);
+            return true;
         }
 
         internal static string RelativeFrameworkRootFolder

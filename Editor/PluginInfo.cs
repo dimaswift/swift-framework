@@ -23,15 +23,6 @@ namespace SwiftFramework.Core.Editor
 
         public virtual bool CanInstall() => true;
         public virtual bool CanRemove() => canBeRemoved;
-
-        public BehaviourModuleFactory[] behaviourModules = { };
- 
-        [Serializable]
-        public class BehaviourModuleFactory
-        {
-            public string type;
-            public string name;
-        }
         
         public virtual void OnWillInstall()
         {
@@ -46,12 +37,17 @@ namespace SwiftFramework.Core.Editor
         {
         }
 
-        public IEnumerable<(string symbolName, string symbolDesc)> GetSymbols()
+        public virtual IEnumerable<(string symbolName, string symbolDesc)> GetSymbols()
         {
             foreach (var item in defineSymbols)
             {
                 yield return (item, description);
             }
+        }
+        
+        public virtual IEnumerable<PackageDependency> GetPackages()
+        {
+            return packageDependencies;
         }
 
         public virtual void DrawCustomGUI(Action repaintHandler, PluginData data)
@@ -68,23 +64,7 @@ namespace SwiftFramework.Core.Editor
         public void FinishInstall()
         {
             
-            foreach (BehaviourModuleFactory module in behaviourModules)
-            {
-                GameObject moduleObject = new GameObject(module.name);
-                moduleObject.AddComponent(Type.GetType(module.type));
-                string dir = ResourcesAssetHelper.RootFolder + "/Modules/";
-                
-                if (Directory.Exists(dir) == false)
-                {
-                    Directory.CreateDirectory(dir);
-                    AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-                }
-
-                string prefabPath = dir + module.name + ".prefab";
-                PluginsManifest.Instance.CurrentPluginData.copiedFiles.Add(prefabPath);
-                EditorUtility.SetDirty(PluginsManifest.Instance);
-                PrefabUtility.SaveAsPrefabAsset(moduleObject, prefabPath);
-            }
+            
         }
     }
 }

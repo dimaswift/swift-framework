@@ -206,6 +206,8 @@ namespace SwiftFramework.Core.Editor
                 }
             }
 
+            
+
             foreach (string guid in AssetDatabase.FindAssets("", rootFolders))
             {
                 CreateOrModifyEntry(guid);

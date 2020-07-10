@@ -36,16 +36,22 @@ namespace SwiftFramework.Core.Editor
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WebGL, defineSymbols);
         }
 
-        public static void Add(string name, string description)
+        public static bool Add(string name, string description)
         {
+            Instance.Revert();
+            
             foreach (Symbol symbol in Instance.list)
             {
                 if (symbol.name == name)
                 {
+                    if (symbol.Enabled)
+                    {
+                        return false;
+                    }
                     symbol.Enabled = true;
                     EditorUtility.SetDirty(Instance);
                     Instance.Apply();
-                    return;
+                    return true;
                 }
             }
 
@@ -53,27 +59,35 @@ namespace SwiftFramework.Core.Editor
                 {Enabled = true, name = name, description = description, style = SymbolStyle.Symbol});
             EditorUtility.SetDirty(Instance);
             Instance.Apply();
+            return true;
         }
 
-        public static void Add(IEnumerable<(string name, string description)> symbols)
+        public static bool Add(IEnumerable<(string name, string description)> symbols)
         {
+            Instance.Revert();
+            
             bool added = false;
 
             foreach (var (symbol, description) in symbols)
             {
-                added = true;
                 bool exists = false;
                 foreach (Symbol existingSymbol in Instance.list)
                 {
                     if (existingSymbol.name == symbol)
                     {
                         exists = true;
-                        existingSymbol.Enabled = true;
+
+                        if (existingSymbol.Enabled == false)
+                        {
+                            added = true;
+                            existingSymbol.Enabled = true;
+                        }
                     }
                 }
 
                 if (exists == false)
                 {
+                    added = true;
                     Instance.list.Add(new Symbol()
                     {
                         Enabled = true, name = symbol, description = description,
@@ -84,49 +98,57 @@ namespace SwiftFramework.Core.Editor
 
             if (!added)
             {
-                return;
+                return false;
             }
             
             EditorUtility.SetDirty(Instance);
             Instance.Apply();
+            return true;
         }
 
-        public static void Disable(string name)
+        public static bool Disable(string name)
         {
+            Instance.Revert();
+            
             foreach (Symbol symbol in Instance.list)
             {
-                if (symbol.name == name)
+                if (symbol.name == name && symbol.Enabled)
                 {
                     symbol.Enabled = false;
                     EditorUtility.SetDirty(Instance);
                     Instance.Apply();
-                    return;
+                    return true;
                 }
             }
+
+            return false;
         }
 
-        public static void Disable(IEnumerable<(string name, string description)> symbols)
+        public static bool Disable(IEnumerable<(string name, string description)> symbols)
         {
+            Instance.Revert();
+            
             bool disabled = false;
             foreach (var (symbol, _) in symbols)
             {
-                disabled = true;
                 foreach (Symbol existingSymbol in Instance.list)
                 {
-                    if (existingSymbol.name == symbol)
+                    if (existingSymbol.name == symbol && existingSymbol.Enabled)
                     {
                         existingSymbol.Enabled = false;
+                        disabled = true;
                     }
                 }
             }
 
             if (!disabled)
             {
-                return;
+                return false;
             }
 
             EditorUtility.SetDirty(Instance);
             Instance.Apply();
+            return true;
         }
 
         public void Revert()

@@ -12,16 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b63ac1226092cb4c836d3d290152aa1, type: 3}
   m_Name: SwiftFrameworkCore
   m_EditorClassIdentifier: 
-  priority: 5
-  defineSymbols: []
+  priority: 9999999
+  defineSymbols:
+  - SWIFT_FRAMEWORK_INSTALLED
+  - USE_ADDRESSABLES
   description: SwiftFramework Core
-  packageDependencies: []
+  packageDependencies:
+  - packageName: com.unity.addressables
+    version: 1.8.4
   version: 1
   displayVersion: 0.0.1
   canBeRemoved: 1
-  canBeUpdated: 0
-  behaviourModules: []
+  canBeUpdated: 1
   useAddressables: 1
-  modules: []
-  selectedModule: 0
   show: 1

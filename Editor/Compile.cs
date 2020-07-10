@@ -26,7 +26,6 @@ namespace SwiftFramework.EditorUtils
                     Debug.LogError(path + " is anonymous method.");
                 else
                     instance.onFinishedCompile.Add(path);
-                Debug.Log(path);
             }
             remove => instance.onFinishedCompile.Remove($"{value.Method.DeclaringType?.FullName}.{value.Method.Name}");
         }
@@ -55,6 +54,7 @@ namespace SwiftFramework.EditorUtils
         {
             foreach (var methodPath in onFinishedCompile.ToArray())
             {
+                onFinishedCompile.Remove(methodPath);
                 try
                 {
                     string className = Path.GetFileNameWithoutExtension(methodPath);
@@ -68,8 +68,6 @@ namespace SwiftFramework.EditorUtils
                 {
                     Debug.LogError(methodPath + " cannot call. " + e.Message);
                 }
-
-                onFinishedCompile.Remove(methodPath);
             }
         }
     }

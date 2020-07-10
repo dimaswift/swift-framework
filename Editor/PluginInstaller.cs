@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
+using UnityEditor.VersionControl;
 using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core.Editor
@@ -18,7 +19,6 @@ namespace SwiftFramework.Core.Editor
 
         private const float INSTALL_BTN_WIDTH = 70;
         private const float DELETE_BTN_WIDTH = 20;
-        public static bool IsProcessing { get; private set; }
 
         private Vector2 scrollPos;
 
@@ -28,13 +28,13 @@ namespace SwiftFramework.Core.Editor
 
             EditorGUILayout.Separator();
 
-            if (IsProcessing)
+            if (PluginsManifest.Instance.CurrentStage != InstallStage.None)
             {
-                EditorGUILayout.LabelField("Installing...", EditorGUIEx.BoldCenteredLabel);
+                EditorGUILayout.LabelField(PluginsManifest.GetInstallStageDescription(PluginsManifest.Instance.CurrentStage), EditorGUIEx.BoldCenteredLabel);
 
                 if (GUILayout.Button("Cancel"))
                 {
-                    FinishInstalling(false);
+                    PluginsManifest.Instance.CurrentStage = InstallStage.None;
                     Repaint();
                 }
 
@@ -127,6 +127,7 @@ namespace SwiftFramework.Core.Editor
                     if (GUI.Button(buttonRect, "Install"))
                     {
                         Install(plugin);
+                        Repaint();
                     }
 
                     plugin.DrawCustomGUI(Repaint, data);
@@ -140,25 +141,25 @@ namespace SwiftFramework.Core.Editor
 
         private void UpdatePlugin(PluginInfo plugin, PluginData data)
         {
-            PluginsManifest.Instance.StartProcess(plugin);
             plugin.OnUpdate(data.version, plugin.version);
+            data.version = plugin.version;
+            EditorUtility.SetDirty(PluginsManifest.Instance);
+            Repaint();
         }
 
         private void RemovePlugin(PluginInfo plugin)
         {
-            PluginsManifest.Instance.StartProcess(plugin);
-
-            IsProcessing = true;
-
+            PluginsManifest.Instance.BeginInstallation(plugin);
+            
             Repaint();
 
-            var data = PluginsManifest.Instance.FindData(plugin);
+            PluginData data = PluginsManifest.Instance.FindData(plugin);
 
             bool finishOnRecompile = false;
 
-            foreach (var file in data.copiedFiles)
+            foreach (string file in data.copiedFiles)
             {
-                Debug.LogError($"Path: {file} - { AssetDatabase.DeleteAsset(file)}");
+                AssetDatabase.DeleteAsset(file);
                 if (!finishOnRecompile && file.EndsWith(".cs"))
                 {
                     Compile.OnFinishedCompile += FinishUninstalling;
@@ -169,8 +170,6 @@ namespace SwiftFramework.Core.Editor
             data.installed = false;
             data.version = 0;
             data.copiedFiles.Clear();
-            
-            List<ModuleInstaller> moduleInstallers = GetModuleInstallers(plugin);
 
             EditorUtility.SetDirty(PluginsManifest.Instance);
 
@@ -194,122 +193,121 @@ namespace SwiftFramework.Core.Editor
 
         public static void FinishInstalling(bool compiled)
         {
-            IsProcessing = false;
-
+            PluginsManifest.Instance.CurrentStage = InstallStage.None;
+            
             if (PluginsManifest.Instance.CurrentPlugin == null)
             {
                 return;
             }
 
-            PatchModuleManifest();
+            if (compiled)
+            {
+                PluginData data = PluginsManifest.Instance.FindData(PluginsManifest.Instance.CurrentPlugin);
+                data.installed = true;
+                data.version = PluginsManifest.Instance.CurrentPlugin.version;
+                EditorUtility.SetDirty(PluginsManifest.Instance);
+            }
             
-            
-            
-            PluginsManifest.Instance.FinishProcess();
+            PluginsManifest.Instance.FinishInstallation();
         }
 
-        private static List<ModuleInstaller> GetModuleInstallers(PluginInfo pluginInfo)
+        private static List<ModuleInstallInfo> GetModuleInstallers(PluginInfo pluginInfo)
         {
             DirectoryInfo pluginRootDir = pluginInfo.RootDirectory;
 
-            List<ModuleInstaller> moduleInstallers = new List<ModuleInstaller>();
+            List<ModuleInstallInfo> moduleInstallers = new List<ModuleInstallInfo>();
 
-            foreach (string guid in AssetDatabase.FindAssets("t:ModuleInstaller"))
+            foreach (string guid in AssetDatabase.FindAssets($"t:{typeof(ModuleInstallInfo).FullName}"))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 if (path.Contains($"/{pluginRootDir.Name}/"))
                 {
-                    moduleInstallers.Add(AssetDatabase.LoadAssetAtPath<ModuleInstaller>(path));
+                    moduleInstallers.Add(AssetDatabase.LoadAssetAtPath<ModuleInstallInfo>(path));
                 }
             }
 
             return moduleInstallers;
         }
 
-        [MenuItem("SwiftFramework/Plugin Installer/Patch")]
-        private static void PatchModuleManifest()
+        private static void InstallModules()
         {
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-
             PluginInfo pluginInfo = PluginsManifest.Instance.CurrentPlugin;
-        
-            PluginData data = PluginsManifest.Instance.FindData(pluginInfo);
+            
+            List<ModuleInstallInfo> moduleInstallers = GetModuleInstallers(pluginInfo);
 
-            List<ModuleInstaller> moduleInstallers = GetModuleInstallers(pluginInfo);
-
-            foreach (ModuleInstaller moduleInstaller in moduleInstallers)
+            foreach (ModuleInstallInfo moduleInstaller in moduleInstallers)
             {
-                ModuleManifest manifest = CreateInstance<ModuleManifest>();
-                manifest.name = moduleInstaller.name;
-                var so = new SerializedObject(manifest);
-                var moduleProp = so.FindProperty("module");
-                moduleProp.FindPropertyRelative("implementationType").stringValue =
-                    moduleInstaller.module.implementationType;
-                moduleProp.FindPropertyRelative("interfaceType").stringValue =
-                    moduleInstaller.module.interfaceType;
-
-                if (moduleInstaller.module.config)
-                {
-                    moduleProp.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue =
-                        Folders.Configs + "/" + moduleInstaller.module.config.name;
-                    
-                    string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Configs}/";
-                    string configPath = $"{folder}/{moduleInstaller.module.config.name}.asset";
-                    Util.EnsureProjectFolderExists(folder);
-                    
-                    AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(moduleInstaller.module.config), configPath);
-                    
-                    RegisterFile(configPath);
-                }
-                
-                if (moduleInstaller.module.behaviour)
-                {
-                    string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Behaviours}/";
-                    
-                    Util.EnsureProjectFolderExists(folder);
-                    string behaviourPath = $"{folder}/{moduleInstaller.module.behaviour.name}.prefab";
-                    moduleProp.FindPropertyRelative("behaviourLink").FindPropertyRelative("Path").stringValue =
-                        Folders.Behaviours + "/" + moduleInstaller.module.behaviour.name;
-                    AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(moduleInstaller.module.behaviour), behaviourPath);
-                    
-                    RegisterFile(behaviourPath);
-                }
-                
-                so.ApplyModifiedProperties();
-                string f = ResourcesAssetHelper.RootFolder + "/Modules/";
-                Util.EnsureProjectFolderExists(f);
-                string manifestPath = ResourcesAssetHelper.RootFolder + "/Modules/" + manifest.ImplementationType.Name +
-                                      ".asset";
-                AssetDatabase.CreateAsset(manifest, manifestPath);
-                RegisterFile(manifestPath);
+                InstallModule(moduleInstaller);
             }
-
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-
         }
-            
-        public static void RegisterFile(string localPath)
+
+
+        private static void InstallModule(ModuleInstallInfo moduleInstallInfo)
         {
-            var data = PluginsManifest.Instance.CurrentPluginData;
-            if (data == null)
+            ModuleManifest manifest = moduleInstallInfo.isCoreModule ? CreateInstance<CoreModuleManifest>() : CreateInstance<ModuleManifest>();
+            manifest.name = moduleInstallInfo.name;
+            SerializedObject so = new SerializedObject(manifest);
+            SerializedProperty moduleProp = so.FindProperty("module");
+            moduleProp.FindPropertyRelative("implementationType").stringValue =
+                moduleInstallInfo.module.implementationType;
+            moduleProp.FindPropertyRelative("interfaceType").stringValue =
+                moduleInstallInfo.module.interfaceType;
+
+            if (moduleInstallInfo.module.config)
             {
-                return;
+                moduleProp.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue =
+                    Folders.Configs + "/" + moduleInstallInfo.module.config.name;
+                
+                string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Configs}/";
+                string configPath = $"{folder}/{moduleInstallInfo.module.config.name}.asset";
+                Util.EnsureProjectFolderExists(folder);
+                
+                AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(moduleInstallInfo.module.config), configPath);
+                
+                RegisterCopiedFile(configPath);
             }
-            Debug.LogError(localPath);
+            
+            if (moduleInstallInfo.module.behaviour)
+            {
+                string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Behaviours}/";
+                
+                Util.EnsureProjectFolderExists(folder);
+                string behaviourPath = $"{folder}/{moduleInstallInfo.module.behaviour.name}.prefab";
+                moduleProp.FindPropertyRelative("behaviourLink").FindPropertyRelative("Path").stringValue =
+                    Folders.Behaviours + "/" + moduleInstallInfo.module.behaviour.name;
+                AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(moduleInstallInfo.module.behaviour), behaviourPath);
+                
+                RegisterCopiedFile(behaviourPath);
+            }
+            
+            so.ApplyModifiedProperties();
+            string manifestFolder = ResourcesAssetHelper.RootFolder + "/Modules/";
+            Util.EnsureProjectFolderExists(manifestFolder);
+            string manifestPath = ResourcesAssetHelper.RootFolder + "/Modules/" + manifest.ImplementationType.Name +
+                                  ".asset";
+            AssetDatabase.CreateAsset(manifest, manifestPath);
+            RegisterCopiedFile(manifestPath);
+        }
+        
+        public static void RegisterCopiedFile(string localPath)
+        {
+            PluginData data = PluginsManifest.Instance.FindData(PluginsManifest.Instance.CurrentPlugin);
             data.copiedFiles.Add(localPath);
             EditorUtility.SetDirty(PluginsManifest.Instance);
         }
         
         private static void FinishUninstalling(bool compiled)
         {
-            IsProcessing = false;
-            PluginsManifest.Instance.FinishProcess();
+            PluginsManifest.Instance.FinishInstallation();
         }
 
-        private static void CopyFolders(DirectoryInfo pluginRootDir, PluginData data)
+        private static bool CopyFiles()
         {
-            foreach (DirectoryInfo subDir in pluginRootDir.GetDirectories())
+            PluginData data = PluginsManifest.Instance.FindData(PluginsManifest.Instance.CurrentPlugin);
+            data.copiedFiles.Clear();
+            foreach (DirectoryInfo subDir in PluginsManifest.Instance.CurrentPlugin.RootDirectory.GetDirectories())
             {
                 string targetFolder = subDir.Name;
 
@@ -318,6 +316,11 @@ namespace SwiftFramework.Core.Editor
                     continue;
                 }
 
+                if (targetFolder == "_Resources")
+                {
+                    targetFolder = ResourcesAssetHelper.RootFolderName;
+                }
+                
                 if (targetFolder.StartsWith("_"))
                 {
                     targetFolder = targetFolder.Substring(1, targetFolder.Length - 1);
@@ -332,20 +335,17 @@ namespace SwiftFramework.Core.Editor
                     data.copiedFiles[i] = Util.ToRelativePath(data.copiedFiles[i]);
                 }
             }
-
+            
+            InstallModules();
+            
+            EditorUtility.SetDirty(PluginsManifest.Instance);
+            
+            return data.copiedFiles.FindIndex(c => c.EndsWith(".cs")) != -1;
         }
 
         private void Install(PluginInfo plugin)
         {
-            PluginsManifest.Instance.StartProcess(plugin);
-
-            IsProcessing = true;
-
-            Repaint();
-
-            PluginData data = pluginsData[plugin];
-
-            data.copiedFiles.Clear();
+            PluginsManifest.Instance.BeginInstallation(plugin);
 
             if (plugin.CanInstall() == false)
             {
@@ -356,64 +356,105 @@ namespace SwiftFramework.Core.Editor
 
             plugin.OnWillInstall();
 
-            SymbolCatalog.Add(plugin.GetSymbols());
-
-            string unityPackage = null;
-
-            DirectoryInfo pluginRootDir = new FileInfo(AssetDatabase.GetAssetPath(plugin)).Directory;
-
-            if (pluginRootDir != null)
-            {
-                foreach (FileInfo item in pluginRootDir.GetFiles())
-                {
-                    if (item.Extension == ".unitypackage")
-                    {
-                        unityPackage = item.FullName;
-                    }
-                }
-
-                if (unityPackage != null)
-                {
-                    AssetDatabase.ImportPackage(Util.ToRelativePath(unityPackage), false);
-                }
-
-                foreach (PluginInfo.PackageDependency dep in plugin.packageDependencies)
-                {
-                    Util.AddDependencyToPackageManifest(dep.packageName, dep.version);
-                }
-
-                CopyFolders(pluginRootDir, data);
-            }
-
-
-            data.installed = true;
-
-            data.version = plugin.version;
-            EditorUtility.SetDirty(PluginsManifest.Instance);
-
+            ProceedInstall(true);
+            
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-            if (data.copiedFiles.FindIndex(f => f.EndsWith(".cs")) != -1 
-                || plugin.defineSymbols.Length > 0
-                || plugin.packageDependencies.Length > 0)
-            {
-                Compile.OnFinishedCompile += FinishInstalling;
-            }
-            else
-            {
-                FinishInstalling(false);
-            }
-            
             Repaint();
         }
 
-        [MenuItem("SwiftFramework/Plugin Installer/Reset")]
-        public static void ResetAll()
+        public static void ProceedInstall(bool compiled)
         {
-            PluginsManifest.Instance.ResetAll();
+            PluginsManifest.Instance.CurrentStage = (InstallStage)((int) PluginsManifest.Instance.CurrentStage + 1);
+            
+            switch (PluginsManifest.Instance.CurrentStage)
+            {
+                case InstallStage.InstallingUnityPackages:
+                    if (InstallUnityPackages())
+                    {
+                        Compile.OnFinishedCompile += ProceedInstall;
+                    }
+                    else
+                    {
+                        ProceedInstall(true);
+                    }
+                    break;
+                case InstallStage.ModifyingPackageManager:
+                    if (InstallToPackageManager())
+                    {
+                        Compile.OnFinishedCompile += ProceedInstall;
+                    }
+                    else
+                    {
+                        ProceedInstall(true);
+                    }
+                    break;
+                case InstallStage.AddingDefines:
+                    if (SymbolCatalog.Add(PluginsManifest.Instance.CurrentPlugin.GetSymbols()))
+                    {
+                        Compile.OnFinishedCompile += ProceedInstall;
+                    }
+                    else
+                    {
+                        ProceedInstall(true);
+                    }
+                    break;
+                case InstallStage.CopyingFiles:
+                    if (CopyFiles())
+                    {
+                        Compile.OnFinishedCompile += ProceedInstall;
+                    }
+                    else
+                    {
+                        ProceedInstall(true);
+                    }
+                    break;
+                case InstallStage.Finished:
+                    FinishInstalling(true);
+                    break;
+            }
         }
 
-        [MenuItem("SwiftFramework/Plugin Installer/Install")]
+        private static bool InstallToPackageManager()
+        {
+            bool addedPackage = false;
+            
+            foreach (PluginInfo.PackageDependency dep in PluginsManifest.Instance.CurrentPlugin.GetPackages())
+            {
+                if (Util.AddDependencyToPackageManifest(dep.packageName, dep.version))
+                {
+                    addedPackage = true;
+                }
+            }
+
+            return addedPackage;
+        }
+        
+        private static bool InstallUnityPackages()
+        {
+            string unityPackage = null;
+
+            DirectoryInfo pluginRootDir = PluginsManifest.Instance.CurrentPlugin.RootDirectory;
+
+            foreach (FileInfo item in pluginRootDir.GetFiles())
+            {
+                if (item.Extension == ".unitypackage")
+                {
+                    unityPackage = item.FullName;
+                    break;
+                }
+            }
+
+            if (unityPackage != null)
+            {
+                AssetDatabase.ImportPackage(Util.ToRelativePath(unityPackage), false);
+                return true;
+            }
+
+            return false;
+        }
+        
+        [MenuItem("SwiftFramework/Plugins")]
         public static void Install()
         {
             pluginsData.Clear();

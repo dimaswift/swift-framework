@@ -10,9 +10,11 @@ namespace SwiftFramework.Core.Pooling
 
         private readonly Func<IPooled> createInstanceHandler;
 
-        private Stack<IPooled> poolStack = new Stack<IPooled>();
+        private readonly Stack<IPooled> poolStack = new Stack<IPooled>();
 
-        private List<IPooled> activeItems = new List<IPooled>();
+        private readonly HashSet<IPooled> activeItems = new HashSet<IPooled>();
+        
+        private readonly List<IPooled> buffer = new List<IPooled>();
 
         private static readonly List<Pool> pools = new List<Pool>();
 
@@ -43,6 +45,7 @@ namespace SwiftFramework.Core.Pooling
                     Debug.LogError($"{e.Message}"); 
                 }
             }
+            
             pools.Clear();
         }
 
@@ -73,37 +76,33 @@ namespace SwiftFramework.Core.Pooling
 
         public void WarmUp(int capacity)
         {
-            int activeCount = activeItems.Count;
-
             for (int i = 0; i < capacity; i++)
             {
                 AddInstanceToPool();
-                activeItems.Add(null);
             }
-
-            activeItems.RemoveRange(activeCount, capacity);
         }
 
         private void AddInstanceToPool()
         {
             IPooled item = createInstanceHandler();
             item.Init(this);
+            activeItems.Add(item);
             item.ReturnToPool();
         }
 
         public IEnumerable<T> GetActiveItems<T>() where T : IPooled
         {
-            for (int i = 0; i < activeItems.Count; i++)
+            foreach (IPooled activeItem in activeItems)
             {
-                yield return (T)activeItems[i];
+                yield return (T) activeItem;
             }
         }
 
         public void ForEachActiveItem(Action<IPooled> handler)
         {
-            for (int i = 0; i < activeItems.Count; i++)
+            foreach (IPooled activeItem in activeItems)
             {
-                handler(activeItems[i]);
+                handler(activeItem);
             }
         }
 
@@ -133,10 +132,13 @@ namespace SwiftFramework.Core.Pooling
 
         public void ReturnAll()
         {
-            for (int i = activeItems.Count - 1; i >= 0; i--)
+            buffer.Clear();
+            buffer.AddRange(activeItems);
+            foreach (IPooled pooled in buffer)
             {
-                activeItems[i].ReturnToPool();
+                Return(pooled);
             }
+            buffer.Clear();
         }
 
         public IPromise WarmUpAsync(int capacity)

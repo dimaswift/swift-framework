@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core.Editor
 {
@@ -51,6 +52,11 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
+        public static T CreateLink<T>(Object asset) where T : Link, new()
+        {
+            string path = AssetDatabase.GetAssetPath(asset);
+            return Link.Create<T>(ToRelativePath(path).Replace(Path.GetExtension(path), ""));
+        }
 
         internal static IEnumerable<ResourcesAssetEntry> GetAssets(Type type)
         {
@@ -84,6 +90,12 @@ namespace SwiftFramework.Core.Editor
                     yield return ResourcesAssetEntry.Create(go);
                 }
             }
+        }
+
+        public static string ToRelativePath(string projectPath)
+        {
+            return projectPath.Substring(RootFolder.Length + 1,
+                projectPath.Length - RootFolder.Length - 1);
         }
 
         public static IEnumerable<ResourcesAssetEntry> GetScriptableObjectsWithInterface(Type @interface)

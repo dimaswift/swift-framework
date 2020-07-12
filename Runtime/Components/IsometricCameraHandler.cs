@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace SwiftFramework.Core
 {
@@ -14,9 +15,7 @@ namespace SwiftFramework.Core
         protected bool pointerDown;
 
         protected Bounds cameraBounds;
-
-        private IEventManager eventManager;
-
+        
         private void OnEnable()
         {
             cam = Camera.main;
@@ -30,7 +29,6 @@ namespace SwiftFramework.Core
             {
                 cam.orthographicSize = cameraSize;
                 UpdateBounds();
-                eventManager = App.Core.GetModule<IEventManager>();
                 OnInit();
             });
 
@@ -61,8 +59,8 @@ namespace SwiftFramework.Core
 
         protected bool IsPointerDown()
         {
-            return Input.GetMouseButtonDown(0)
-                   && (eventManager == null || eventManager.IsPointerHandledByUI == false);
+            return Input.GetMouseButtonDown(0) &&
+                  (!EventSystem.current || EventSystem.current.IsPointerOverGameObject() == false);
         }
 
         protected static bool IsPointerUp()

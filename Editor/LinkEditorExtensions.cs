@@ -17,6 +17,7 @@ namespace SwiftFramework.Core.Editor
         public static void SaveLink(this SerializedProperty serializedProperty, string path)
         {
             serializedProperty.FindPropertyRelative(Link.PathPropertyName).stringValue = path;
+            serializedProperty.serializedObject.ApplyModifiedProperties();
         }
     }
 }

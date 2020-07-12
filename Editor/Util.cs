@@ -19,72 +19,50 @@ using Object = UnityEngine.Object;
 
 namespace SwiftFramework.EditorUtils
 {
-    public static class EditorUtilExtensions
-    {
-        public static void MoveToCenter(this EditorWindow window)
-        {
-            var position = window.position;
-            position.center = new Rect(0f, 0f, Screen.currentResolution.width, Screen.currentResolution.height).center;
-            window.position = position;
-            window.Show();
-        }
-
-        public static string FromRelativeResourcesPathToAbsoluteProjectPath(this string path)
-        {
-            return string.IsNullOrEmpty(path) ? "Assets/Resources" : $"Assets/Resources/{path}";
-        }
-
-        public static string ToRelativeResourcesPath(this string path)
-        {
-            if (path.Contains("/Resources/") == false)
-            {
-                return "";
-            }
-
-            FileInfo file = new FileInfo(path);
-            string result = file.Directory?.Name;
-
-            if (result == "Resources")
-            {
-                return "";
-            }
-
-            DirectoryInfo current = file.Directory?.Parent;
-            while (current != null && current.Name != "Resources")
-            {
-                result = $"{current.Name}/{result}";
-                current = current.Parent;
-            }
-
-            return result;
-        }
-
-        public static T Value<T>(this LinkTo<T> link) where T : Object
-        {
-#if USE_ADDRESSABLES
-            return AddrHelper.GetAsset<T>(link);
-#else
-            return link.Value;
-#endif
-        }
-    }
-
-
     public class Util : ScriptableSingleton<Util>
     {
+        public static IEnumerable<Type> GetCustomModuleInterfaces()
+        {
+            CacheModuleTypes();
+            
+            foreach (Type type in cachedModuleInterfaces)
+            {
+                ModuleGroupAttribute groupAttribute = type.GetCustomAttribute<ModuleGroupAttribute>();
+                if (groupAttribute != null && groupAttribute.GroupId == ModuleGroups.Core)
+                {
+                    continue;
+                }
+
+                yield return type;
+            }
+        }
+
         public static IEnumerable<Type> GetModuleInterfaces(string groupId)
         {
-            foreach (Type type in GetAllTypes())
+            CacheModuleTypes();
+            
+            foreach (Type type in cachedModuleInterfaces)
             {
-                if (type.IsInterface && typeof(IModule).IsAssignableFrom(type) && type != typeof(IModule))
+                ModuleGroupAttribute groupAttribute = type.GetCustomAttribute<ModuleGroupAttribute>();
+                if (groupAttribute == null || groupAttribute.GroupId != groupId)
                 {
-                    ModuleGroupAttribute groupAttribute = type.GetCustomAttribute<ModuleGroupAttribute>();
-                    if (groupAttribute != null && groupAttribute.GroupId != groupId)
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    yield return type;
+                yield return type;
+            }
+        }
+        
+        private static void CacheModuleTypes()
+        {
+            if (cachedModuleInterfaces.Count == 0)
+            {
+                foreach (Type type in GetAllTypes())
+                {
+                    if (type.IsInterface && typeof(IModule).IsAssignableFrom(type) && type != typeof(IModule))
+                    {
+                        cachedModuleInterfaces.Add(type);
+                    }
                 }
             }
         }
@@ -92,11 +70,17 @@ namespace SwiftFramework.EditorUtils
         public static event Action<Type, ModuleConfig> OnModuleConfigApplied = (type, moduleConfig) => { };
 
         public static event Action OnScriptsReloaded = () => { };
-
+        public static event Action OnAssetsReimported = () => { };
+        private static readonly List<Type> cachedModuleInterfaces = new List<Type>();
         private static readonly List<Type> cachedTypes = new List<Type>();
         private static readonly MD5CryptoServiceProvider hashSumProvider = new MD5CryptoServiceProvider();
 
-
+        private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets,
+            string[] movedAssets, string[] movedFromAssetPaths)
+        {
+            
+        }
+        
         [SerializeField]
         internal List<DeferredInstantiation> deferredScriptableCreations = new List<DeferredInstantiation>();
 
@@ -149,6 +133,19 @@ namespace SwiftFramework.EditorUtils
             return manifestText.Contains(dependencyName);
         }
 
+        public static Type FindImplementation(Type interfaceType)
+        {
+            foreach (Type type in GetAllTypes())
+            {
+                if (type != interfaceType && interfaceType.IsAssignableFrom(type))
+                {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+        
         public static bool AddDependencyToPackageManifest(string dependency, string version)
         {
             if (string.IsNullOrEmpty(dependency) || string.IsNullOrEmpty(version))

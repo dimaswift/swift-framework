@@ -9,8 +9,18 @@ namespace SwiftFramework.Core
     public class ModuleLink
     {
         public bool HasImplementation => ImplementationType != null;
-        public BehaviourModuleLink BehaviourLink => behaviourLink;
-        public ModuleConfigLink ConfigLink => configLink;
+
+        public BehaviourModuleLink BehaviourLink
+        {
+            get => behaviourLink;
+            set => behaviourLink = value;
+        }
+
+        public ModuleConfigLink ConfigLink
+        {
+            get => configLink;
+            set => configLink = value;
+        }
 
         public Type InterfaceType
         {
@@ -30,7 +40,7 @@ namespace SwiftFramework.Core
                     return null;
                 }
             }
-
+            set => interfaceType = value?.AssemblyQualifiedName;
         }
 
         public Type ImplementationType

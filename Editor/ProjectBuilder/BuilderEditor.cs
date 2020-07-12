@@ -229,7 +229,6 @@ namespace SwiftFramework.EditorUtils
                 serializedObject.Update();
 
                 GUILayout.Label(contentTitle, styleTitle);
-                DrawBootConfig();
 
                 DrawCustomProjectBuilder();
                 DrawApplicationBuildSettings();
@@ -331,13 +330,6 @@ namespace SwiftFramework.EditorUtils
             }
         }
 
-        private void DrawBootConfig()
-        {
-            using (new EditorGUIEx.GroupScope("Boot Config"))
-            {
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("manifest"));
-            }
-        }
 
         private void DrawBuildTargetSettings()
         {

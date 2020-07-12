@@ -202,12 +202,12 @@ namespace SwiftFramework.Core
 
         private IEnumerable<IPromise<IModule>> GetBuiltInModulesInitPromises()
         {
-            yield return CreateCoreModule<ISaveStorage, SaveStorageManager>();
-            yield return CreateBehaviourCoreModule<ITimer, CoroutineTimer>();
-            yield return CreateBehaviourCoreModule<ICoroutineManager, CoroutineManager>();
-            yield return CreateBehaviourCoreModule<IClock, Clock>();
-            yield return CreateBehaviourCoreModule<IViewFactory, ViewFactory>();
-            yield return CreateBehaviourCoreModule<INetworkManager, NetworkManager>();
+            yield return CreateModule(GetModuleLink<ISaveStorage>());
+            yield return CreateModule(GetModuleLink<ITimer>());
+            yield return CreateModule(GetModuleLink<ICoroutineManager>());
+            yield return CreateModule(GetModuleLink<IClock>());
+            yield return CreateModule(GetModuleLink<IViewFactory>());
+            yield return CreateModule(GetModuleLink<INetworkManager>());
             yield return CreateModule(GetModuleLink<ILocalizationManager>());
         }
 

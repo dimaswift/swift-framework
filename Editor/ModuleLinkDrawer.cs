@@ -15,33 +15,36 @@ namespace SwiftFramework.Core.Editor
         private const string NULL = "null";
 
         private const float SIDE_BUTTON_WIDTH = 120;
-        private const float LABEL_WIDTH = 100;
-        private const float MARGIN = 5;
+        private static float Margin => EditorGUIUtility.standardVerticalSpacing + 1;
         private const float BUTTON_WIDTH = 100;
 
         private static readonly GUIContent configLabel = new GUIContent("Config");
         private static readonly GUIContent behaviourLabel = new GUIContent("Behaviour");
         private static readonly List<Type> customModuleInterfaces = new List<Type>();
+        private static readonly List<ModuleManifest> manifestsBuffer = new List<ModuleManifest>();
         
-        private Data cachedData;
-        private string[] moduleNames;
-
-        private Data GetData(SerializedProperty property)
+        private static readonly Dictionary<SerializedObject, Data> cachedData = new Dictionary<SerializedObject, Data>();
+        
+        private static Data GetData(SerializedProperty property, bool drawInterfaceType, bool drawLabel)
         {
-            if (cachedData == null)
+            if (cachedData.TryGetValue(property.serializedObject, out Data data) == false)
             {
-                cachedData = new Data(property);
+                data = new Data(property, drawInterfaceType, drawLabel);
+                cachedData.Add(property.serializedObject, data);
             }
-            return cachedData;
+            return data;
         }
 
         public override bool CanCacheInspectorGUI(SerializedProperty property)
         {
-            return false;
+            return true;
         }
 
         private class Data
         {
+            public bool drawLabel;
+            public bool drawInterfaceType;
+            public string[] moduleNames;
             public ConfigurableAttribute configurable;
             public bool? hasValidConstructor;
             public bool dependenciesChecked;
@@ -49,7 +52,7 @@ namespace SwiftFramework.Core.Editor
             public readonly List<string> unresolvedUsedModules = new List<string>();
             public readonly SerializedProperty typeProperty;
             public readonly SerializedProperty interfaceTypeProperty;
-
+            private Type interfaceType;
             public readonly SerializedProperty property;
             public readonly List<Type> implementationTypes = new List<Type>();
             public List<BehaviourModule> filteredBehaviourModules = null;
@@ -57,7 +60,8 @@ namespace SwiftFramework.Core.Editor
             public Type selectedType;
             public AssetLinkDrawer behaviourModuleDrawer;
             public AssetLinkDrawer configDrawer;
-
+            public float baseHeight;
+            
             public Type InterfaceType
             {
                 get => interfaceType;
@@ -81,10 +85,8 @@ namespace SwiftFramework.Core.Editor
                  
                 }
             }
-            public float baseHeight;
-            private Type interfaceType;
- 
-            public Data(SerializedProperty property)
+
+            public Data(SerializedProperty property, bool drawInterfaceType, bool drawLabel)
             {
                 this.property = property;
                 typeProperty = property.FindPropertyRelative("implementationType");
@@ -93,32 +95,56 @@ namespace SwiftFramework.Core.Editor
                 {
                     InterfaceType = Type.GetType(interfaceTypeProperty.stringValue);
                 }
+
+                this.drawInterfaceType = drawInterfaceType;
+                this.drawLabel = drawLabel;
             }
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            float h = base.GetPropertyHeight(property, label);
-            Data data = GetData(property);
-            data.baseHeight = h + 5;
-            h += h;
-            h += 25;
+            return GetPropertyHeight(base.GetPropertyHeight(property, label), property);
+        }
+
+        public static float GetPropertyHeight(float baseHeight, SerializedProperty property)
+        {
+            float height = baseHeight;
+            
+            Data data = GetData(property, true, true);
+            
+            data.baseHeight = height;
+            
+            height += Margin * 3;
+
+            if (data.drawLabel)
+            {
+                height += EditorGUIUtility.singleLineHeight;
+            }
+            
             if (IsConfigurable(data))
             {
-                h += data.baseHeight;
+                height += data.baseHeight + Margin;
             }
 
             if (IsBehaviourModule(data))
             {
-                h += data.baseHeight;
+                height += data.baseHeight + Margin;
             }
 
-            h += (data.baseHeight + MARGIN) * data.unresolvedDependencies.Count;
-            h += (data.baseHeight + MARGIN) * data.unresolvedUsedModules.Count;
-            h += data.baseHeight + MARGIN;
-            return h;
+            if (data.selectedType != null)
+            {
+                height += (data.baseHeight + Margin * 2) * data.unresolvedDependencies.Count;
+            
+                height += (data.baseHeight + Margin * 2) * data.unresolvedUsedModules.Count;
+            }
+            
+            if (data.drawInterfaceType)
+            {
+                height += EditorGUIUtility.singleLineHeight + Margin;
+            }
+            
+            return height;
         }
-
 
         private static bool IsDependencyResolved(Type type, Data data)
         {
@@ -132,12 +158,7 @@ namespace SwiftFramework.Core.Editor
 
             return false;
         }
-
-        private void UndoRedoPerformed()
-        {
-            cachedData = null;
-        }
-
+        
         private static bool IsConfigurable(Data data)
         {
             return data.selectedType != null && data.selectedType.GetCustomAttribute<ConfigurableAttribute>() != null;
@@ -153,7 +174,7 @@ namespace SwiftFramework.Core.Editor
             return isBehaviourModule;
         }
 
-        private void FindModuleImplementationTypes(Data data)
+        private static void FindModuleImplementationTypes(Data data)
         {
             string interfaceTypeStr = data.property.FindPropertyRelative("interfaceType").stringValue;
             if (string.IsNullOrEmpty(interfaceTypeStr))
@@ -202,14 +223,21 @@ namespace SwiftFramework.Core.Editor
         
         private static void DrawDuplicateModule(ref Rect position, Rect viewport, ModuleManifest manifest)
         {
-            position.width -= BUTTON_WIDTH;
             position.width = viewport.width;
-            position.height = 33;
-            EditorGUI.HelpBox(position, $"Module already defined in manifest: {AssetDatabase.GetAssetPath(manifest)}", MessageType.Error);
+            position.height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing * 2;
+            EditorGUI.HelpBox(position, $"Module already defined in another manifest", MessageType.Error);
             position.x += BUTTON_WIDTH * 2;
             position.width = viewport.width - BUTTON_WIDTH * 2;
             position.x = viewport.x + (viewport.width - BUTTON_WIDTH);
             position.width = BUTTON_WIDTH;
+            float buttonWidth = 50;
+            if (GUI.Button(new Rect(position.x + position.width - buttonWidth - EditorGUIUtility.standardVerticalSpacing,
+                position.y + EditorGUIUtility.standardVerticalSpacing, 
+                buttonWidth, 
+                EditorGUIUtility.singleLineHeight), "Ping"))
+            {
+                EditorGUIUtility.PingObject(manifest);
+            }
         }
 
         private static void DrawImplementationPopUp(ref Rect position, Rect viewPort, float baseHeight, Data data)
@@ -263,24 +291,46 @@ namespace SwiftFramework.Core.Editor
                 data.dependenciesChecked = true;
             }
 
-            foreach (string dep in data.unresolvedDependencies)
+            void DrawPingButton(Rect pos, string dependencyName)
             {
-                position.y += baseHeight;
-                Rect warningRect = new Rect(position.x, position.y, position.width, baseHeight);
-                EditorGUI.HelpBox(warningRect, $"Depends on {dep}. Implementation not found!", MessageType.Error);
-                position.y += MARGIN;
+                Rect warningRect = new Rect(pos.x, pos.y, pos.width, baseHeight);
+                float buttonWidth = 60;
+                float spacing = EditorGUIUtility.standardVerticalSpacing;
+                if (GUI.Button(
+                    new Rect(warningRect.x + warningRect.width - buttonWidth - spacing,
+                        warningRect.y, buttonWidth, warningRect.height - spacing), "Resolve"))
+                {
+                    Type depType = new List<Type>(Util.GetAllTypes()).Find(i => i.Name == dependencyName);
+                    ModuleInstaller.Install(depType);
+                    ClearCache(data.property);
+                }
             }
 
-            foreach (string dep in data.unresolvedUsedModules)
+            if (data.selectedType != null)
             {
-                position.y += baseHeight;
-                Rect warningRect = new Rect(position.x, position.y, position.width, baseHeight);
-                EditorGUI.HelpBox(warningRect, $"Uses {dep} module. Implementation not found!", MessageType.Warning);
-                position.y += MARGIN;
+                foreach (string dep in data.unresolvedDependencies)
+                {
+                    position.y += baseHeight + Margin;
+                    Rect warningRect = new Rect(position.x, position.y, position.width, baseHeight + Margin);
+                    EditorGUI.HelpBox(warningRect, $"Depends on {dep}. Implementation not found!", MessageType.Error);
+                    position.y += Margin;
+                    DrawPingButton(position, dep);
+                }
+
+                foreach (string dep in data.unresolvedUsedModules)
+                {
+                    position.y += baseHeight + Margin;
+                    Rect warningRect = new Rect(position.x, position.y, position.width, baseHeight + Margin);
+                    EditorGUI.HelpBox(warningRect, $"Uses {dep} module. Implementation not found!", MessageType.Warning);
+                    position.y += Margin;
+                    DrawPingButton(position, dep);
+                }
             }
+            
+            position.y += Margin;
         }
 
-        private void DrawBehaviourModulePopUp(ref Rect position, float baseHeight, Data data)
+        private static void DrawBehaviourModulePopUp(ref Rect position, float baseHeight, Data data)
         {
             if (data.filteredBehaviourModules == null)
             {
@@ -326,11 +376,13 @@ namespace SwiftFramework.Core.Editor
 
             data.behaviourModuleDrawer.Draw(new Rect(position.x, position.y, width, baseHeight), behaviourLinkProperty,
                 behaviourLabel, true);
+
+            position.y += Margin;
         }
 
         
         
-        private void DrawConfigPopUp(ref Rect position, float baseHeight, Data data)
+        private static void DrawConfigPopUp(ref Rect position, float baseHeight, Data data)
         {
             data.configurable = data.selectedType.GetCustomAttribute<ConfigurableAttribute>();
 
@@ -408,27 +460,34 @@ namespace SwiftFramework.Core.Editor
             return EditorGUIEx.WarningRedColor;
         }
 
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        public static void Draw(Rect position, SerializedProperty property, GUIContent label, bool drawInterfaceField, bool drawLabel)
         {
-            Data data = GetData(property);
-
+            Data data = GetData(property, drawInterfaceField, drawLabel);
+            data.drawInterfaceType = drawInterfaceField;
+            data.drawLabel = drawLabel;
+            
             string interfaceTypeName = data.property.FindPropertyRelative("interfaceType").stringValue;
 
             FindModuleImplementationTypes(data);
 
+            AssetsUtil.OnAssetsPostProcessed -= OnAssetsPostProcessed;
+            AssetsUtil.OnAssetsPostProcessed += OnAssetsPostProcessed;
+            
             Rect titleRect = new Rect(position.x, position.y, position.width, data.baseHeight);
+            
             GUI.Label(
-                new Rect(position.x, position.y + data.baseHeight, position.width, position.height - data.baseHeight),
+                new Rect(position.x, position.y, position.width, position.height),
                 "", EditorStyles.helpBox);
-
+            
+            
             Color color = GUI.color;
 
             Type interfaceType = string.IsNullOrEmpty(interfaceTypeName) ? null : Type.GetType(interfaceTypeName);
 
             if (data.InterfaceType != interfaceType)
             {
-                cachedData = null;
-                data = GetData(property);
+                ClearCache(property);
+                data = GetData(property, drawInterfaceField, drawLabel);
             }
             
             if (interfaceType == null)
@@ -446,8 +505,8 @@ namespace SwiftFramework.Core.Editor
 
                     if (GUI.Button(titleRect, "Reset"))
                     {
-                        cachedData.interfaceTypeProperty.stringValue = null;
-                        cachedData.interfaceTypeProperty.serializedObject.ApplyModifiedProperties();
+                        data.interfaceTypeProperty.stringValue = null;
+                        data.interfaceTypeProperty.serializedObject.ApplyModifiedProperties();
                     }
                     
                     return;
@@ -456,73 +515,80 @@ namespace SwiftFramework.Core.Editor
             }
             else
             {
-                GUI.Label(titleRect, $"{label.text} ({interfaceType.Name})", EditorGUIEx.GroupScope.GetStyleHeader());
+                if (drawLabel)
+                {
+                    GUI.Label(titleRect, $"{label.text} ({interfaceType.Name})", EditorGUIEx.GroupScope.GetStyleHeader());
+                }
             }
             
-       
             GUI.color = color;
-            position.x += MARGIN;
-            position.y += MARGIN;
-            position.height -= MARGIN * 2;
-            position.width -= MARGIN * 2;
-
-            position.y += data.baseHeight;
-
-            if (moduleNames == null)
+            position.x += Margin;
+            position.y += Margin;
+            position.height -= Margin * 2;
+            position.width -= Margin * 2;
+            
+            if (data.moduleNames == null)
             {
                 customModuleInterfaces.Clear();
-                ModuleManifest manifest = property.serializedObject.targetObject as ModuleManifest;
-                string group = ModuleGroups.Custom;
-                if (manifest != null)
-                {
-                    group = manifest.ModuleGroup;
-                }
-                customModuleInterfaces.AddRange(Util.GetModuleInterfaces(group));
+                customModuleInterfaces.AddRange(Util.GetCustomModuleInterfaces());
                 List<string> names = new List<string>(customModuleInterfaces.Select(s => s.Name));
                 names.Insert(0, "None");
-                moduleNames = names.ToArray();
+                data.moduleNames = names.ToArray();
             }
             
-            position.height = data.baseHeight;
+          
 
-            int prevSelectedInterfaceIndex =
-                customModuleInterfaces.FindIndex(m => m.AssemblyQualifiedName == interfaceTypeName) + 1;
-
-            int newSelectedInterfaceIndex = EditorGUI.Popup(position, prevSelectedInterfaceIndex, moduleNames);
-            
-            if (newSelectedInterfaceIndex != prevSelectedInterfaceIndex)
+            if (drawInterfaceField)
             {
-                if (newSelectedInterfaceIndex == 0)
-                {
-                    data.property.FindPropertyRelative("interfaceType").stringValue = null;
-                    data.property.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue = null;
-                    data.property.FindPropertyRelative("behaviourLink").FindPropertyRelative("Path").stringValue = null;
-                    data.InterfaceType = null;
-                }
-                else
-                {
-                    interfaceTypeName = customModuleInterfaces[newSelectedInterfaceIndex - 1].AssemblyQualifiedName;
-                    data.property.FindPropertyRelative("interfaceType").stringValue = interfaceTypeName;
-                    data.InterfaceType = Type.GetType(interfaceTypeName);
-                }
+                position.y += data.baseHeight + Margin;
+                position.height = data.baseHeight;
+                
+                int prevSelectedInterfaceIndex =
+                    customModuleInterfaces.FindIndex(m => m.AssemblyQualifiedName == interfaceTypeName) + 1;
 
-                data.typeProperty.stringValue = null;
-                data.typeProperty.serializedObject.ApplyModifiedProperties();
-                cachedData = null;
-                return;
+                int newSelectedInterfaceIndex = EditorGUI.Popup(position, prevSelectedInterfaceIndex, data.moduleNames);
+            
+                if (newSelectedInterfaceIndex != prevSelectedInterfaceIndex)
+                {
+                    if (newSelectedInterfaceIndex == 0)
+                    {
+                        data.property.FindPropertyRelative("interfaceType").stringValue = null;
+                        data.property.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue = null;
+                        data.property.FindPropertyRelative("behaviourLink").FindPropertyRelative("Path").stringValue = null;
+                        data.InterfaceType = null;
+                    }
+                    else
+                    {
+                        interfaceTypeName = customModuleInterfaces[newSelectedInterfaceIndex - 1].AssemblyQualifiedName;
+                        data.property.FindPropertyRelative("interfaceType").stringValue = interfaceTypeName;
+                        data.InterfaceType = Type.GetType(interfaceTypeName);
+                    }
+
+                    data.typeProperty.stringValue = null;
+                    data.typeProperty.serializedObject.ApplyModifiedProperties();
+                    ClearCache(property);
+                    return;
+                }
+                
+                
+                position.y += Margin;
+
             }
 
-
-            position.y += data.baseHeight;
+            if (data.drawLabel)
+            {
+                position.y += data.baseHeight;
+            }
             
-            Rect labelRect = new Rect(position.x, position.y, LABEL_WIDTH, data.baseHeight);
-
             Rect viewPort = position;
-            
             
             if (interfaceType != null)
             {
-                foreach (ModuleManifest otherManifest in Util.GetModuleManifests())
+                if (manifestsBuffer.Count == 0)
+                {
+                    manifestsBuffer.AddRange(Util.GetAssets<ModuleManifest>());
+                }
+                foreach (ModuleManifest otherManifest in manifestsBuffer)
                 {
                     if (interfaceType == otherManifest.InterfaceType)
                     {
@@ -544,9 +610,7 @@ namespace SwiftFramework.Core.Editor
                 GUI.Label(position, $"Module Interface not selected", EditorGUIEx.GroupScope.GetStyleHeader());
 
                 return;
-            } 
-
-            labelRect.y = position.y;
+            }
 
             DrawImplementationPopUp(ref position, viewPort, data.baseHeight, data);
 
@@ -559,6 +623,24 @@ namespace SwiftFramework.Core.Editor
 
                 DrawConfigPopUp(ref position, data.baseHeight, data);
             }
+        }
+
+        private static void ClearCache(SerializedProperty property)
+        {
+            if (cachedData.ContainsKey(property.serializedObject))
+            {
+                cachedData.Remove(property.serializedObject);
+            }
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            Draw(position, property, label, true, true);
+        }
+
+        private static void OnAssetsPostProcessed()
+        {
+            manifestsBuffer.Clear();
         }
     }
 }

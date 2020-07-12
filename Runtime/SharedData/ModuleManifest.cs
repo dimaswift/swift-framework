@@ -8,8 +8,6 @@ namespace SwiftFramework.Core
     [CreateAssetMenu(menuName = "SwiftFramework/ModuleManifest")]
     public class ModuleManifest : ScriptableObject
     {
-        public virtual string ModuleGroup => ModuleGroups.Custom;
-
         public ModuleLoadType LoadType
         {
             get
@@ -24,7 +22,11 @@ namespace SwiftFramework.Core
         }
         public ModuleState State => options.state;
 
-        public ModuleLink Link => module;
+        public ModuleLink Link
+        {
+            get => module;
+            set => module = value;
+        }
         
         public Type InterfaceType => module.InterfaceType;
         public Type ImplementationType => module.ImplementationType;

@@ -108,7 +108,6 @@ namespace SwiftFramework.Core.Editor
 
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {
-
             foreach (var path in movedAssets)
             {
                 string guid = AssetDatabase.AssetPathToGUID(path);

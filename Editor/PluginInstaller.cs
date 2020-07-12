@@ -246,7 +246,7 @@ namespace SwiftFramework.Core.Editor
 
         private static void InstallModule(ModuleInstallInfo moduleInstallInfo)
         {
-            ModuleManifest manifest = moduleInstallInfo.isCoreModule ? CreateInstance<CoreModuleManifest>() : CreateInstance<ModuleManifest>();
+            ModuleManifest manifest = CreateInstance<ModuleManifest>();
             manifest.name = moduleInstallInfo.name;
             SerializedObject so = new SerializedObject(manifest);
             SerializedProperty moduleProp = so.FindProperty("module");
@@ -455,7 +455,7 @@ namespace SwiftFramework.Core.Editor
         }
         
         [MenuItem("SwiftFramework/Plugins")]
-        public static void Install()
+        public static void OpenWindow()
         {
             pluginsData.Clear();
 

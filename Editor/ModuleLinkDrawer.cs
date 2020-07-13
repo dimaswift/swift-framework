@@ -23,21 +23,25 @@ namespace SwiftFramework.Core.Editor
         private static readonly List<Type> customModuleInterfaces = new List<Type>();
         private static readonly List<ModuleManifest> manifestsBuffer = new List<ModuleManifest>();
         
-        private static readonly Dictionary<SerializedObject, Data> cachedData = new Dictionary<SerializedObject, Data>();
+        private static readonly Dictionary<string, Data> cachedData = new Dictionary<string, Data>();
         
         private static Data GetData(SerializedProperty property, bool drawInterfaceType, bool drawLabel)
         {
-            if (cachedData.TryGetValue(property.serializedObject, out Data data) == false)
+            string id = property.serializedObject.targetObject.GetInstanceID() + property.propertyPath;
+            if (cachedData.TryGetValue(id, out Data data) == false)
             {
-                data = new Data(property, drawInterfaceType, drawLabel);
-                cachedData.Add(property.serializedObject, data);
+                data = new Data(drawInterfaceType, drawLabel);
+                cachedData.Add(id, data);
             }
+
+            data.Refresh(property);
+            
             return data;
         }
 
         public override bool CanCacheInspectorGUI(SerializedProperty property)
         {
-            return true;
+            return false;
         }
 
         private class Data
@@ -50,10 +54,10 @@ namespace SwiftFramework.Core.Editor
             public bool dependenciesChecked;
             public readonly List<string> unresolvedDependencies = new List<string>();
             public readonly List<string> unresolvedUsedModules = new List<string>();
-            public readonly SerializedProperty typeProperty;
-            public readonly SerializedProperty interfaceTypeProperty;
+            public SerializedProperty typeProperty;
+            public SerializedProperty interfaceTypeProperty;
             private Type interfaceType;
-            public readonly SerializedProperty property;
+            public SerializedProperty property;
             public readonly List<Type> implementationTypes = new List<Type>();
             public List<BehaviourModule> filteredBehaviourModules = null;
             public string[] names = new string[0];
@@ -67,13 +71,20 @@ namespace SwiftFramework.Core.Editor
                 get => interfaceType;
                 set
                 {
+                    if (value == interfaceType)
+                    {
+                        return;
+                    }
+
+                    filteredBehaviourModules = null;
+                    behaviourModuleDrawer = null;
                     implementationTypes.Clear();
                     interfaceType = value;
                     if (value == null)
                     {
                         return;
                     }
-                    
+
                     foreach (Type type in Util.GetAllTypes())
                     {
                         if (value.IsAssignableFrom(type) && type.IsInterface == false)
@@ -81,12 +92,16 @@ namespace SwiftFramework.Core.Editor
                             implementationTypes.Add(type);
                         }
                     }
-                    
-                 
                 }
             }
 
-            public Data(SerializedProperty property, bool drawInterfaceType, bool drawLabel)
+            public Data(bool drawInterfaceType, bool drawLabel)
+            {
+                this.drawInterfaceType = drawInterfaceType;
+                this.drawLabel = drawLabel;
+            }
+
+            public void Refresh(SerializedProperty property)
             {
                 this.property = property;
                 typeProperty = property.FindPropertyRelative("implementationType");
@@ -95,9 +110,6 @@ namespace SwiftFramework.Core.Editor
                 {
                     InterfaceType = Type.GetType(interfaceTypeProperty.stringValue);
                 }
-
-                this.drawInterfaceType = drawInterfaceType;
-                this.drawLabel = drawLabel;
             }
         }
 
@@ -114,11 +126,11 @@ namespace SwiftFramework.Core.Editor
             
             data.baseHeight = height;
             
-            height += Margin * 3;
+            height += Margin * 2;
 
             if (data.drawLabel)
             {
-                height += EditorGUIUtility.singleLineHeight;
+                height += EditorGUIUtility.singleLineHeight + Margin;
             }
             
             if (IsConfigurable(data))
@@ -205,11 +217,11 @@ namespace SwiftFramework.Core.Editor
             position.width -= BUTTON_WIDTH;
             string typeName = data.typeProperty.stringValue.Split(',')[0];
 
-            position.width = BUTTON_WIDTH * 2;
-            position.height = 16;
+            position.width = BUTTON_WIDTH;
+            position.height = EditorGUIUtility.singleLineHeight;
             EditorGUI.HelpBox(position, $"Type not found!", MessageType.Error);
-            position.x += BUTTON_WIDTH * 2;
-            position.width = viewport.width - BUTTON_WIDTH * 2;
+            position.x += BUTTON_WIDTH;
+            position.width = viewport.width - BUTTON_WIDTH;
             EditorGUI.LabelField(position, typeName);
 
             position.x = viewport.x + (viewport.width - BUTTON_WIDTH);
@@ -265,6 +277,7 @@ namespace SwiftFramework.Core.Editor
                 {
                     data.typeProperty.stringValue = data.implementationTypes[newIndex - 1].AssemblyQualifiedName;
                     data.typeProperty.serializedObject.ApplyModifiedProperties();
+                    ClearCache(data.property);
                 }
             }
 
@@ -335,11 +348,11 @@ namespace SwiftFramework.Core.Editor
             if (data.filteredBehaviourModules == null)
             {
                 data.filteredBehaviourModules = new List<BehaviourModule>();
-                foreach (BehaviourModule module in Util.GetAssets<BehaviourModule>())
+                foreach (GameObject module in Util.GetAssets<GameObject>())
                 {
                     if (module.GetComponent(data.selectedType) != null)
                     {
-                        data.filteredBehaviourModules.Add(module);
+                        data.filteredBehaviourModules.Add(module.GetComponent<BehaviourModule>());
                     }
                 }
             }
@@ -530,14 +543,12 @@ namespace SwiftFramework.Core.Editor
             if (data.moduleNames == null)
             {
                 customModuleInterfaces.Clear();
-                customModuleInterfaces.AddRange(Util.GetCustomModuleInterfaces());
+                customModuleInterfaces.AddRange(Util.GetModuleInterfaces());
                 List<string> names = new List<string>(customModuleInterfaces.Select(s => s.Name));
                 names.Insert(0, "None");
                 data.moduleNames = names.ToArray();
             }
             
-          
-
             if (drawInterfaceField)
             {
                 position.y += data.baseHeight + Margin;
@@ -569,7 +580,6 @@ namespace SwiftFramework.Core.Editor
                     ClearCache(property);
                     return;
                 }
-                
                 
                 position.y += Margin;
 
@@ -627,9 +637,10 @@ namespace SwiftFramework.Core.Editor
 
         private static void ClearCache(SerializedProperty property)
         {
-            if (cachedData.ContainsKey(property.serializedObject))
+            string id = property.serializedObject.targetObject.GetInstanceID() + property.propertyPath;
+            if (cachedData.ContainsKey(id))
             {
-                cachedData.Remove(property.serializedObject);
+                cachedData.Remove(id);
             }
         }
 
@@ -640,6 +651,7 @@ namespace SwiftFramework.Core.Editor
 
         private static void OnAssetsPostProcessed()
         {
+            cachedData.Clear();
             manifestsBuffer.Clear();
         }
     }

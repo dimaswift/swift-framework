@@ -37,14 +37,14 @@ namespace SwiftFramework.EditorUtils
             }
         }
 
-        public static IEnumerable<Type> GetModuleInterfaces(string groupId)
+        public static IEnumerable<Type> GetModuleInterfaces(string groupId = null)
         {
             CacheModuleTypes();
             
             foreach (Type type in cachedModuleInterfaces)
             {
                 ModuleGroupAttribute groupAttribute = type.GetCustomAttribute<ModuleGroupAttribute>();
-                if (groupAttribute == null || groupAttribute.GroupId != groupId)
+                if (groupId != null && (groupAttribute == null || groupAttribute.GroupId != groupId))
                 {
                     continue;
                 }

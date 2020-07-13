@@ -6,7 +6,7 @@ using UnityEngine;
 namespace SwiftFramework.Core
 {
     [Serializable]
-    public class ModuleLink
+    public class ModuleLink : ISerializationCallbackReceiver
     {
         public bool HasImplementation => ImplementationType != null;
 
@@ -72,11 +72,12 @@ namespace SwiftFramework.Core
             this.configLink = configLink;
         }
         
+        [SerializeField] private string displayName;
         [SerializeField] private string implementationType;
         [SerializeField] private string interfaceType;
         [SerializeField] private BehaviourModuleLink behaviourLink;
         [SerializeField] private ModuleConfigLink configLink;
-
+        
         [NonSerialized] private IModule module;
         private static readonly RuntimeModuleFactory runtimeModuleFactory = new RuntimeModuleFactory();
 
@@ -188,6 +189,18 @@ namespace SwiftFramework.Core
             return CreateModule(InterfaceType);
         }
 
+        public ModuleLink DeepCopy()
+        {
+            return new ModuleLink()
+            {
+                implementationType = implementationType,
+                displayName = displayName,
+                interfaceType = interfaceType,
+                configLink = configLink != null ? Link.Create<ModuleConfigLink>(configLink.GetPath()) : null,
+                behaviourLink = behaviourLink != null ? Link.Create<BehaviourModuleLink>(behaviourLink.GetPath()) : null,
+            };
+        }
+
         public override string ToString()
         {
             string result = "";
@@ -217,6 +230,16 @@ namespace SwiftFramework.Core
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(interfaceType);
             hashCode = hashCode * -1521134295 + EqualityComparer<BehaviourModuleLink>.Default.GetHashCode(behaviourLink);
             return hashCode;
+        }
+
+        public void OnBeforeSerialize()
+        {
+            
+        }
+
+        public void OnAfterDeserialize()
+        {
+            displayName = InterfaceType != null ? InterfaceType.GetDisplayName() : "None";
         }
     }
 }

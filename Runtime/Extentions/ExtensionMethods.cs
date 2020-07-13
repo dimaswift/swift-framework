@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,8 +13,18 @@ namespace SwiftFramework.Core
 {
     public delegate void FileDownloadHandler(long downloadedBytes, long totalBytes);
 
-    public static class ExtentionMethods
+    public static class ExtensionMethods
     {
+        public static string GetDisplayName(this Type type)
+        {
+            if (type == null)
+            {
+                return "None";
+            }
+            string moduleName = type.IsInterface && type.Name.StartsWith("I") ? type.Name.Remove(0, 1) : type.Name;
+            return Regex.Replace(moduleName, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
+        }
+        
         public static bool TryGetAttribute<T>(this UnityEngine.Object asset, out Type type, out T attr) where T : Attribute
         {
             if (asset == null)

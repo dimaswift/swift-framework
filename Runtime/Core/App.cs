@@ -347,6 +347,11 @@ namespace SwiftFramework.Core
                 return Promise<IModule>.Rejected(new Exception($"Module not found!"));
             }
 
+            if (moduleLink.InterfaceType == null)
+            {
+                return Promise<IModule>.Rejected(new Exception($"Module interface type not found!"));
+            }
+            
             Promise<IModule> result = Promise<IModule>.Create();
 
             if (IsCreated(moduleLink, out IPromise<IModule> i))

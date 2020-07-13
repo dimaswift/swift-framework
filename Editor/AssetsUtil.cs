@@ -11,5 +11,10 @@ namespace SwiftFramework.EditorUtils
         {
             OnAssetsPostProcessed();
         }
+
+        public static void TriggerPostprocessEvent()
+        {
+            OnAssetsPostProcessed();
+        }
     }
 }

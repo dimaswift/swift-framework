@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using SwiftFramework.EditorUtils;
 using UnityEditor;
@@ -114,8 +115,7 @@ namespace SwiftFramework.Core.Editor
             
             foreach (Type moduleInterface in types)
             {
-                string moduleName = moduleInterface.Name.Remove(0, 1);
-                string label = System.Text.RegularExpressions.Regex.Replace(moduleName, "([A-Z])", " $1", System.Text.RegularExpressions.RegexOptions.Compiled).Trim();
+                string label = moduleInterface.GetDisplayName();
                 (ModuleManifest manifest, SerializedObject serializedObject) module = modules.Find(m => m.manifest.InterfaceType == moduleInterface);
                 if (module.manifest == null)
                 {
@@ -152,15 +152,36 @@ namespace SwiftFramework.Core.Editor
                     if (GUI.Button(new Rect(labelPos.x + labelPos.width - 50 - spacing * 4, labelPos.y + spacing * 2, 50, labelPos.height - spacing * 2),
                         "Delete"))
                     {
-                        AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(module.manifest));
+                        if (EditorUtility.DisplayDialog("Warning", $"Do you want to delete {label} module?", "Yes", "Cancel"))
+                        {
+                            AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(module.manifest));
+                        }
                     }
+
+                    Color color = GUI.color;
+                    string toggleLabel = module.manifest.State == ModuleState.Enabled ? "Disable" : "Enable";
+                    GUI.color = module.manifest.State == ModuleState.Enabled
+                        ? EditorGUIEx.GreenColor
+                        : EditorGUIEx.WarningRedColor;
+                    
+                    if (GUI.Button(new Rect(labelPos.x + labelPos.width - 110 - spacing * 4, labelPos.y + spacing * 2, 60, labelPos.height - spacing * 2),
+                        toggleLabel))
+                    {
+                        Undo.RecordObject(module.manifest, "Module Manifest");
+                        module.manifest.State = module.manifest.State == ModuleState.Enabled
+                            ? ModuleState.Disabled
+                            : ModuleState.Enabled;
+                        EditorUtility.SetDirty(module.manifest);
+                        AssetsUtil.TriggerPostprocessEvent();
+                    }
+                    
+                    GUI.color = color;
                 }
             }
         }
         
         public static ModuleManifest Install(Type moduleInterface)
         {
-            ModuleGroupAttribute groupAttribute = moduleInterface.GetCustomAttribute<ModuleGroupAttribute>();
             string moduleName = moduleInterface.Name.Remove(0, 1);
             ModuleManifest manifest = CreateInstance<ModuleManifest>();
             manifest.name = moduleName;
@@ -173,6 +194,32 @@ namespace SwiftFramework.Core.Editor
                 BehaviourLink = LoadOrCreateBehavior(implementation)
             };
             AssetDatabase.CreateAsset(manifest, $"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}/{manifest.name}.asset");
+            return manifest;
+        }
+        
+        public static ModuleManifest Install(ModuleLink link)
+        {
+            if (link.InterfaceType == null)
+            {
+                Debug.LogWarning($"Cannot install module from link: {link}. Interface type not found!");
+                return null;
+            }
+
+            ModuleManifest manifest = Util.GetAssets<ModuleManifest>()
+                .Where(m => m.InterfaceType == link.InterfaceType).FirstOrDefaultFast();
+
+            if (manifest == null)
+            {
+                manifest = CreateInstance<ModuleManifest>();
+                string moduleName = link.InterfaceType.Name.Remove(0, 1);
+                manifest.name = moduleName;
+                AssetDatabase.CreateAsset(manifest, $"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}/{manifest.name}.asset");
+            }
+            
+            manifest.Link = link.DeepCopy();
+
+            EditorUtility.SetDirty(manifest);
+            
             return manifest;
         }
 

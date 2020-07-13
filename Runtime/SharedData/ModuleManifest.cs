@@ -20,7 +20,12 @@ namespace SwiftFramework.Core
                 return ModuleLoadType.OnDemand;
             }
         }
-        public ModuleState State => options.state;
+
+        public ModuleState State
+        {
+            get => options.state;
+            set => options.state = value;
+        } 
 
         public ModuleLink Link
         {

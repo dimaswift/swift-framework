@@ -28,35 +28,48 @@ namespace SwiftFramework.Core
             {
                 try
                 {
-                    Type t = Type.GetType(interfaceType);
-                    if (t != null)
+                    if (cachedInterfaceType != null)
                     {
-                        return t;
+                        return cachedInterfaceType;
                     }
-                    return null;
+                    cachedInterfaceType = Type.GetType(interfaceType);
+                    return cachedInterfaceType;
                 }
                 catch
                 {
                     return null;
                 }
             }
-            set => interfaceType = value?.AssemblyQualifiedName;
+            set
+            {
+                interfaceType = value?.AssemblyQualifiedName;
+                cachedInterfaceType = interfaceType == null ? null : Type.GetType(interfaceType);
+            }
         }
 
         public Type ImplementationType
         {
             get
             {
+                if (cachedImplementationType != null)
+                {
+                    return cachedImplementationType;
+                }
                 try
                 {
-                    return Type.GetType(implementationType);
+                    cachedImplementationType = Type.GetType(implementationType);
+                    return cachedInterfaceType;
                 }
                 catch
                 {
                     return null;
                 }
             }
-            set => implementationType = value?.AssemblyQualifiedName;
+            set
+            {
+                implementationType = value?.AssemblyQualifiedName;
+                cachedImplementationType = implementationType == null ? null : Type.GetType(implementationType);
+            }
         }
 
         public ModuleLink()
@@ -79,7 +92,10 @@ namespace SwiftFramework.Core
         [SerializeField] private ModuleConfigLink configLink;
         
         [NonSerialized] private IModule module;
+        [NonSerialized] private Type cachedInterfaceType;
+        [NonSerialized] private Type cachedImplementationType;
         private static readonly RuntimeModuleFactory runtimeModuleFactory = new RuntimeModuleFactory();
+        
 
         public static ModuleLink Create<T>()
         {

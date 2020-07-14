@@ -12,17 +12,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b63ac1226092cb4c836d3d290152aa1, type: 3}
   m_Name: SwiftFrameworkCore
   m_EditorClassIdentifier: 
-  priority: 9999999
-  defineSymbols:
-  - SWIFT_FRAMEWORK_INSTALLED
-  - USE_ADDRESSABLES
   description: SwiftFramework Core
-  packageDependencies:
-  - packageName: com.unity.addressables
-    version: 1.8.4
+  priority: 9999999
   version: 1
   displayVersion: 0.0.1
   canBeRemoved: 1
   canBeUpdated: 1
-  useAddressables: 1
-  show: 1
+  defineSymbols:
+  - SWIFT_FRAMEWORK_INSTALLED
+  - USE_ADDRESSABLES
+  packageDependencies:
+  - packageName: com.unity.addressables
+    version: 1.8.4
+  dependencies: []
+  modules:
+  - {fileID: 11400000, guid: a992e051b7987a04b8d258b3483ac6c6, type: 2}
+  - {fileID: 11400000, guid: 6f69c71643ab2ac4b96298c94253e29c, type: 2}
+  - {fileID: 11400000, guid: 0c505aaf3ffbfbc4fa51784b5377a4fc, type: 2}
+  - {fileID: 11400000, guid: 608624e339817cc42b71e0188aa61c33, type: 2}
+  - {fileID: 11400000, guid: 8d5a7a3a03bf3574aa6d3f2d2d0d1057, type: 2}
+  - {fileID: 11400000, guid: e4ae2201e72672841afa92de739709ba, type: 2}
+  - {fileID: 11400000, guid: b1709a8a1435e6c409b2e02dd16b4514, type: 2}
+  - {fileID: 11400000, guid: 47ca29f268b33634d93911aeb3467508, type: 2}
+  showInfo: 0
+  showDependencies: 0
+  showOptions: 1
+  useAddressables: 0

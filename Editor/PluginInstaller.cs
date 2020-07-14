@@ -24,10 +24,8 @@ namespace SwiftFramework.Core.Editor
 
         public void OnGUI()
         {
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
-
-            EditorGUILayout.Separator();
-
+            Color defaultColor = GUI.color;
+            
             if (PluginsManifest.Instance.CurrentStage != InstallStage.None)
             {
                 EditorGUILayout.LabelField(PluginsManifest.GetInstallStageDescription(PluginsManifest.Instance.CurrentStage), EditorGUIEx.BoldCenteredLabel);
@@ -42,6 +40,17 @@ namespace SwiftFramework.Core.Editor
 
                 return;
             }
+            
+            this.ShowCompileAndPlayModeWarning(out bool canEdit);
+            
+            if (canEdit == false)
+            {
+                return;
+            }
+
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
+
+            EditorGUILayout.Separator();
 
             EditorGUILayout.LabelField("Plugins", EditorGUIEx.BoldCenteredLabel);
 
@@ -76,11 +85,132 @@ namespace SwiftFramework.Core.Editor
                 PluginInfo plugin = item.Key;
                 PluginData data = item.Value;
                 var lineHeight = EditorGUIUtility.singleLineHeight;
-
                 Rect rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
                 string desc = $"{plugin.description} : {plugin.displayVersion}";
-                GUI.Label(new Rect(rect.x, rect.y, rect.width - INSTALL_BTN_WIDTH, lineHeight), desc);
+                
+                bool isInstallationValid = true;
+                PluginInfo.ErrorSummary installationErrors = null;
+                
+                if (data.installed)
+                {
+                    isInstallationValid = plugin.IsInstallationValid(out installationErrors);
+                }
 
+                GUI.color = isInstallationValid ? defaultColor : EditorGUIEx.WarningRedColor;
+                
+                plugin.showInfo =
+                    EditorGUI.Foldout(new Rect(rect.x, rect.y, rect.width - INSTALL_BTN_WIDTH, lineHeight),
+                        plugin.showInfo, desc, true);
+
+                GUI.color = defaultColor;
+                
+                if (plugin.showInfo)
+                {
+                    EditorGUI.indentLevel++;
+                    
+                    plugin.showDependencies = EditorGUILayout.Foldout(plugin.showDependencies, "Dependencies", true);
+
+                    if (plugin.showDependencies)
+                    {
+                        EditorGUI.indentLevel++;
+                        if (plugin.HasDependencies)
+                        {
+                            EditorGUILayout.LabelField("Plugins:");
+                            EditorGUI.indentLevel++;
+                            foreach (PluginInfo dependency in plugin.GetDependencies())
+                            {
+                                if (dependency == null)
+                                {
+                                    Color c = GUI.color;
+                                    GUI.color = EditorGUIEx.WarningRedColor;
+                                    EditorGUILayout.LabelField("Invalid dependency!");
+                                    GUI.color = c;
+                                    continue;
+                                }
+                                Rect labelRect = EditorGUILayout.GetControlRect();
+                                EnableDependencyWarning(PluginDependencyType.Plugin, installationErrors, AssetDatabase.GetAssetPath(dependency),
+                                    data.installed, defaultColor, labelRect);
+                                
+                                EditorGUI.LabelField(labelRect, dependency.description + " : " + dependency.displayVersion);
+
+                                GUI.color = defaultColor;
+                            }
+                            EditorGUI.indentLevel--;
+                        }
+                        
+                        if (plugin.HasPackageDependencies)
+                        {
+                            EditorGUILayout.LabelField("Packages:");
+                            EditorGUI.indentLevel++;
+                            foreach (PluginInfo.PackageDependency dependency in plugin.GetPackages())
+                            {
+                                Rect labelRect = EditorGUILayout.GetControlRect();
+                                EnableDependencyWarning(PluginDependencyType.Package, installationErrors, dependency.FullName,
+                                    data.installed, defaultColor, labelRect);
+                                EditorGUI.LabelField(labelRect, dependency.FullName);
+                                GUI.color = defaultColor;
+                            }
+                            EditorGUI.indentLevel--;
+                        }
+                        
+                        if (plugin.HasModules)
+                        {
+                            EditorGUILayout.LabelField("Modules:");
+                            EditorGUI.indentLevel++;
+                            foreach (ModuleInstallInfo info in plugin.GetModules())
+                            {
+                                Type interfaceType = info.GetInterfaceType();
+                                if (interfaceType == null)
+                                {
+                                    continue;
+                                }
+                                Type implementationType = info.GetImplementationType();
+                                if (implementationType == null)
+                                {
+                                    continue;
+                                }
+                                Rect labelRect = EditorGUILayout.GetControlRect();
+                                EnableDependencyWarning(PluginDependencyType.Module, installationErrors, AssetDatabase.GetAssetPath(info),
+                                    data.installed, defaultColor, labelRect);
+                                EditorGUI.LabelField(labelRect, $"{interfaceType.GetDisplayName()} ({implementationType.GetDisplayName()})");
+                                GUI.color = defaultColor;
+                            }
+                            EditorGUI.indentLevel--;
+                        }
+                        
+                        if (plugin.HasDefineSymbols)
+                        {
+                            EditorGUILayout.LabelField("Define Symbols:");
+                            EditorGUI.indentLevel++;
+                            foreach (var symbol in plugin.GetSymbols())
+                            {
+                                Rect labelRect = EditorGUILayout.GetControlRect();
+                                EnableDependencyWarning(PluginDependencyType.DefineSymbol, installationErrors, symbol.symbolName,
+                                    data.installed, defaultColor, labelRect);
+                                EditorGUI.LabelField(labelRect, symbol.symbolName);
+                                GUI.color = defaultColor;
+                            }
+                            EditorGUI.indentLevel--;
+                        }
+                        EditorGUI.indentLevel--;
+                    }
+
+                    if (plugin.HasOptions())
+                    {
+                        plugin.showOptions = EditorGUILayout.Foldout(plugin.showOptions, "Options", true);
+
+                        if (plugin.showOptions)
+                        {
+                            EditorGUI.indentLevel++;
+                            plugin.DrawOptions(Repaint, data);
+                            EditorGUI.indentLevel--;
+                        }
+                    }
+                    
+                    EditorGUI.indentLevel--;
+                    
+                }
+                
                 Color color = GUI.color;
 
                 if (data.installed)
@@ -129,16 +259,74 @@ namespace SwiftFramework.Core.Editor
                         Install(plugin);
                         Repaint();
                     }
-
-                    plugin.DrawCustomGUI(Repaint, data);
                 }
-
+                
+                if (GUI.changed)
+                {
+                    EditorUtility.SetDirty(plugin);
+                }
+                
                 GUI.color = color;
             }
 
             EditorGUILayout.EndScrollView();
+
+            if (GUILayout.Button("Refresh"))
+            {
+                Refresh();
+            }
         }
 
+        private void Refresh()
+        {
+            foreach (PluginInfo pluginInfo in plugins)
+            {
+                pluginInfo.Refresh();
+            }
+        }
+
+        private void EnableDependencyWarning(PluginDependencyType type, PluginInfo.ErrorSummary summary, string id, bool installed, Color defaultColor, Rect rect)
+        {
+            if (summary == null)
+            {
+                return;
+            }
+            if (summary.Contains(id, type))
+            {
+                GUI.color = EditorGUIEx.WarningRedColor;
+    
+                if (GUI.Button(new Rect(rect.x + rect.width - 90, rect.y, 90, rect.height),  "Resolve"))
+                {
+                    ResolveDependency(type, id);
+                }
+            }
+            else
+            {
+                GUI.color = installed ? EditorGUIEx.GreenColor : defaultColor;
+            }
+        }
+
+        private void ResolveDependency(PluginDependencyType type, string id)
+        {
+            switch (type)
+            {
+                case PluginDependencyType.Plugin:
+                    Install(AssetDatabase.LoadAssetAtPath<PluginInfo>(id));
+                    break;
+                case PluginDependencyType.DefineSymbol:
+                    DefineSymbols.Add(id, "");
+                    break;
+                case PluginDependencyType.Package:
+                    string[] package = id.Split(':');
+                    Util.AddDependencyToPackageManifest(package[0], package[1]);
+                    break;
+                case PluginDependencyType.Module:
+                    ModuleInstaller.Install(AssetDatabase.LoadAssetAtPath<ModuleInstallInfo>(id).GenerateLink(TryRegisterPluginFile));
+                    break;
+            }
+            Refresh();
+        }
+        
         private void UpdatePlugin(PluginInfo plugin, PluginData data)
         {
             plugin.OnUpdate(data.version, plugin.version);
@@ -173,7 +361,7 @@ namespace SwiftFramework.Core.Editor
 
             EditorUtility.SetDirty(PluginsManifest.Instance);
 
-            SymbolCatalog.Disable(plugin.GetSymbols());
+            DefineSymbols.Disable(plugin.GetSymbols());
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
@@ -209,33 +397,18 @@ namespace SwiftFramework.Core.Editor
             }
             
             PluginsManifest.Instance.FinishInstallation();
-        }
 
-        private static List<ModuleInstallInfo> GetModuleInstallers(PluginInfo pluginInfo)
-        {
-            DirectoryInfo pluginRootDir = pluginInfo.RootDirectory;
-
-            List<ModuleInstallInfo> moduleInstallers = new List<ModuleInstallInfo>();
-
-            foreach (string guid in AssetDatabase.FindAssets($"t:{typeof(ModuleInstallInfo).FullName}"))
+            if (PluginsManifest.Instance.TryGetDependencyFromQueue(out PluginInfo dependencyPlugin))
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                if (path.Contains($"/{pluginRootDir.Name}/"))
-                {
-                    moduleInstallers.Add(AssetDatabase.LoadAssetAtPath<ModuleInstallInfo>(path));
-                }
+                Install(dependencyPlugin);
             }
-
-            return moduleInstallers;
         }
 
         private static void InstallModules()
         {
             PluginInfo pluginInfo = PluginsManifest.Instance.CurrentPlugin;
-            
-            List<ModuleInstallInfo> moduleInstallers = GetModuleInstallers(pluginInfo);
 
-            foreach (ModuleInstallInfo moduleInstaller in moduleInstallers)
+            foreach (ModuleInstallInfo moduleInstaller in pluginInfo.GetModules())
             {
                 InstallModule(moduleInstaller);
             }
@@ -243,56 +416,17 @@ namespace SwiftFramework.Core.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
-
         private static void InstallModule(ModuleInstallInfo moduleInstallInfo)
         {
-            ModuleManifest manifest = CreateInstance<ModuleManifest>();
-            manifest.name = moduleInstallInfo.name;
-            SerializedObject so = new SerializedObject(manifest);
-            SerializedProperty moduleProp = so.FindProperty("module");
-            moduleProp.FindPropertyRelative("implementationType").stringValue =
-                moduleInstallInfo.module.implementationType;
-            moduleProp.FindPropertyRelative("interfaceType").stringValue =
-                moduleInstallInfo.module.interfaceType;
-
-            if (moduleInstallInfo.module.config)
-            {
-                moduleProp.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue =
-                    Folders.Configs + "/" + moduleInstallInfo.module.config.name;
-                
-                string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Configs}/";
-                string configPath = $"{folder}/{moduleInstallInfo.module.config.name}.asset";
-                Util.EnsureProjectFolderExists(folder);
-                
-                AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(moduleInstallInfo.module.config), configPath);
-                
-                RegisterCopiedFile(configPath);
-            }
-            
-            if (moduleInstallInfo.module.behaviour)
-            {
-                string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Behaviours}/";
-                
-                Util.EnsureProjectFolderExists(folder);
-                string behaviourPath = $"{folder}/{moduleInstallInfo.module.behaviour.name}.prefab";
-                moduleProp.FindPropertyRelative("behaviourLink").FindPropertyRelative("Path").stringValue =
-                    Folders.Behaviours + "/" + moduleInstallInfo.module.behaviour.name;
-                AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(moduleInstallInfo.module.behaviour), behaviourPath);
-                
-                RegisterCopiedFile(behaviourPath);
-            }
-            
-            so.ApplyModifiedProperties();
-            string manifestFolder = ResourcesAssetHelper.RootFolder + "/Modules/";
-            Util.EnsureProjectFolderExists(manifestFolder);
-            string manifestPath = ResourcesAssetHelper.RootFolder + "/Modules/" + manifest.ImplementationType.Name +
-                                  ".asset";
-            AssetDatabase.CreateAsset(manifest, manifestPath);
-            RegisterCopiedFile(manifestPath);
+            ModuleInstaller.Install(moduleInstallInfo.GenerateLink(TryRegisterPluginFile), TryRegisterPluginFile);
         }
         
-        public static void RegisterCopiedFile(string localPath)
+        public static void TryRegisterPluginFile(string localPath)
         {
+            if (PluginsManifest.Instance.CurrentPlugin == null)
+            {
+                return;
+            }
             PluginData data = PluginsManifest.Instance.FindData(PluginsManifest.Instance.CurrentPlugin);
             data.copiedFiles.Add(localPath);
             EditorUtility.SetDirty(PluginsManifest.Instance);
@@ -311,12 +445,7 @@ namespace SwiftFramework.Core.Editor
             {
                 string targetFolder = subDir.Name;
 
-                if (targetFolder == "ModuleInstallers")
-                {
-                    continue;
-                }
-
-                if (targetFolder == "_Resources")
+                if (targetFolder == "_Resources" || targetFolder == "_Modules")
                 {
                     targetFolder = ResourcesAssetHelper.RootFolderName;
                 }
@@ -343,14 +472,18 @@ namespace SwiftFramework.Core.Editor
             return data.copiedFiles.FindIndex(c => c.EndsWith(".cs")) != -1;
         }
 
-        private void Install(PluginInfo plugin)
+        public static void Install(PluginInfo plugin)
         {
+            foreach (PluginInfo pluginDependency in plugin.GetDependencies())
+            {
+                PluginsManifest.Instance.AddDependencyToQueue(pluginDependency);
+            }
+            
             PluginsManifest.Instance.BeginInstallation(plugin);
 
             if (plugin.CanInstall() == false)
             {
                 FinishInstalling(false);
-                Repaint();
                 return;
             }
 
@@ -359,8 +492,6 @@ namespace SwiftFramework.Core.Editor
             ProceedInstall(true);
             
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-
-            Repaint();
         }
 
         public static void ProceedInstall(bool compiled)
@@ -390,7 +521,7 @@ namespace SwiftFramework.Core.Editor
                     }
                     break;
                 case InstallStage.AddingDefines:
-                    if (SymbolCatalog.Add(PluginsManifest.Instance.CurrentPlugin.GetSymbols()))
+                    if (DefineSymbols.Add(PluginsManifest.Instance.CurrentPlugin.GetSymbols()))
                     {
                         Compile.OnFinishedCompile += ProceedInstall;
                     }
@@ -458,10 +589,8 @@ namespace SwiftFramework.Core.Editor
         public static void OpenWindow()
         {
             pluginsData.Clear();
-
-            PluginInstaller win = GetWindow<PluginInstaller>(true, "Plugin Installer", true);
-
-            win.MoveToCenter();
+            PluginInstaller win = GetWindow<PluginInstaller>("Plugin Installer", true);
+            win.minSize = new Vector2(400, win.minSize.y);
         }
 
     }

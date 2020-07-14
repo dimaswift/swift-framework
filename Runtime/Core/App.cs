@@ -378,10 +378,14 @@ namespace SwiftFramework.Core
 
                 foreach (ModuleLink depLink in newModule.GetDependencies())
                 {
+                    if (depLink == null)
+                    {
+                        continue;
+                    }
                     if (debugMode)
                     {
                         logger.Log(
-                            $"Trying to resolve dependency: <b>{depLink.InterfaceType.Name}</b> for <b>{moduleLink.InterfaceType.Name}</b>");
+                            $"Trying to resolve dependency: <b>{depLink.InterfaceType?.Name}</b> for <b>{moduleLink.InterfaceType?.Name}</b>");
                     }
 
                     if (IsCreated(depLink, out IPromise<IModule> depModCreatePromise))

@@ -60,6 +60,8 @@ namespace SwiftFramework.Core.Editor
 
         internal static IEnumerable<ResourcesAssetEntry> GetAssets(Type type)
         {
+            Util.EnsureProjectFolderExists(RESOURCES_ROOT_FOLDER);
+            
             if (typeof(Component).IsAssignableFrom(type))
             {
                 foreach (var asset in Util.GetAssets(typeof(GameObject), "", RESOURCES_ROOT_FOLDER))

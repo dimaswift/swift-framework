@@ -11,8 +11,36 @@ namespace SwiftFramework.Core.Editor
         public string interfaceType;
         public string implementationType;
 
-        public Type GetInterfaceType() => Type.GetType(interfaceType);
+        private Type cachedInterfaceType;
+        private Type cachedImplementationType;
 
-        public Type GetImplementationType() => Type.GetType(implementationType);
+
+        public Type GetInterfaceType()
+        {
+            if (cachedInterfaceType != null)
+            {
+                return cachedInterfaceType;
+            }
+
+            cachedInterfaceType = Type.GetType(interfaceType);
+            return cachedInterfaceType;
+        }
+
+        public void ResetCache()
+        {
+            cachedImplementationType = null;
+            cachedInterfaceType = null;
+        }
+
+        public Type GetImplementationType()
+        {
+            if (cachedImplementationType != null)
+            {
+                return cachedImplementationType;
+            }
+
+            cachedImplementationType = Type.GetType(implementationType);
+            return cachedImplementationType;
+        }
     }
 }

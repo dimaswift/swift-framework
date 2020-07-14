@@ -126,11 +126,12 @@ namespace SwiftFramework.EditorUtils
                 return $"{dir.Parent?.FullName}/Packages/manifest.json";
             }
         }
-
-        public static bool HasPackageDependency(string dependencyName)
+        
+        public static bool HasPackageDependency(string dependencyName, string version)
         {
-            var manifestText = File.ReadAllText(ManifestPackagePath);
-            return manifestText.Contains(dependencyName);
+            string dep = $"\"{dependencyName}\": \"{version}\"";
+            string manifestText = File.ReadAllText(ManifestPackagePath);
+            return manifestText.Contains(dep);
         }
 
         public static Type FindImplementation(Type interfaceType)
@@ -154,12 +155,12 @@ namespace SwiftFramework.EditorUtils
                 return false;
             }
 
-            var dep = $"\"{dependency}\": \"{version}\"";
-            if (HasPackageDependency(dep))
+            if (HasPackageDependency(dependency, version))
             {
                 return false;
             }
 
+            var dep = $"\"{dependency}\": \"{version}\"";
             var manifestLines = new List<string>(File.ReadAllLines(ManifestPackagePath));
             var startIndex = manifestLines.FindIndex(l => l.Contains($"dependencies\": {{")) + 1;
             manifestLines.Insert(startIndex, $"   {dep},");
@@ -530,7 +531,7 @@ namespace SwiftFramework.EditorUtils
             }
 
             Directory.CreateDirectory(folder);
-            AssetDatabase.Refresh();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
         public static T CreateScriptable<T>(string name, string folder) where T : ScriptableObject

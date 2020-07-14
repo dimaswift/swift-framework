@@ -36,6 +36,16 @@ namespace SwiftFramework.Core
         {
             get
             {
+                #if UNITY_EDITOR
+
+                if (loaded && Path == NULL)
+                {
+                    loaded = false;
+                    return null;
+                }
+                
+                #endif
+                
                 if (loaded)
                 {
                     return cachedAsset;

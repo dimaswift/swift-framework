@@ -10,12 +10,34 @@ namespace SwiftFramework.EditorUtils
     {
         public static void MoveToCenter(this EditorWindow window)
         {
-            var position = window.position;
-            position.center = new Rect(0f, 0f, Screen.currentResolution.width, Screen.currentResolution.height).center;
+            Rect position = window.position;
+           
+            Rect newRect = new Rect(0f, 0f, Screen.currentResolution.width, Screen.currentResolution.height);
+          
+            position.center = newRect.center;
             window.position = position;
             window.Show();
         }
+        
+        public static void ShowCompileAndPlayModeWarning(this EditorWindow window, out bool canEdit)
+        {
+            if (EditorApplication.isCompiling)
+            {
+                GUI.Label(new Rect(0, 0, window.position.width, window.position.height), $"Cannot modify. Compiling scripts...", EditorStyles.centeredGreyMiniLabel);
+                canEdit = false;
+                return;
+            }
+            
+            if (EditorApplication.isPlaying)
+            {
+                GUI.Label(new Rect(0, 0, window.position.width, window.position.height), $"Cannot modify in Play Mode", EditorStyles.centeredGreyMiniLabel);
+                canEdit = false;
+                return;
+            }
 
+            canEdit = true;
+        }
+        
         public static string FromRelativeResourcesPathToAbsoluteProjectPath(this string path)
         {
             return string.IsNullOrEmpty(path) ? "Assets/Resources" : $"Assets/Resources/{path}";

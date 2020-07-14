@@ -10,13 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63d791dd0cd43a848a5a2fc0b7a21c2d, type: 3}
-  m_Name: WindowsManagerInstaller
+  m_Name: NetworkManager
   m_EditorClassIdentifier: 
   module:
     config: {fileID: 0}
-    behaviour: {fileID: 6162641699601750456, guid: c8ba561c71d1884478c2cbcc73ae5b7f,
-      type: 3}
-    interfaceType: SwiftFramework.Core.IWindowsManager, SwiftFramework.Core, Version=0.0.0.0,
+    behaviour: {fileID: 0}
+    interfaceType: SwiftFramework.Core.INetworkManager, SwiftFramework.Core, Version=0.0.0.0,
       Culture=neutral, PublicKeyToken=null
-    implementationType: SwiftFramework.Core.Windows.WindowsManager, SwiftFramework.Core,
+    implementationType: SwiftFramework.Core.NetworkManager, SwiftFramework.Core,
       Version=0.0.0.0, Culture=neutral, PublicKeyToken=null

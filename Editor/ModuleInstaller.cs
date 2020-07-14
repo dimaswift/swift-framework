@@ -31,10 +31,10 @@ namespace SwiftFramework.Core.Editor
             get => EditorPrefs.GetBool(nameof(ShowCustomModules));
             set => EditorPrefs.SetBool(nameof(ShowCustomModules), value);
         }
-
         
         private void OnEnable()
         {
+            modulesAreUpToDate = false;
             AssetsUtil.OnAssetsPostProcessed += AssetsUtilOnOnAssetsPostProcessed;
         }
 
@@ -45,6 +45,32 @@ namespace SwiftFramework.Core.Editor
 
         public void OnGUI()
         {
+            this.ShowCompileAndPlayModeWarning(out bool canEdit);
+            
+            if (canEdit == false)
+            {
+                return;
+            }
+            
+            bool coreInstalled = false;
+            
+#if SWIFT_FRAMEWORK_INSTALLED
+            coreInstalled = true;
+#endif
+
+            if (coreInstalled == false)
+            {
+                EditorGUILayout.LabelField("SwiftFramework Core not installed!", EditorGUIEx.BoldCenteredLabel);
+
+                if (GUILayout.Button("Install"))
+                {
+                    PluginInstaller.OpenWindow();
+                    Close();
+                }
+                
+                return;
+            }
+            
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 
             EditorGUILayout.Separator();
@@ -101,7 +127,7 @@ namespace SwiftFramework.Core.Editor
                 types.InsertRange(0, definedModules);
             }
             
-            if (modulesAreUpToDate == false || modules.Count == 0)
+            if (modulesAreUpToDate == false)
             {
                 modulesAreUpToDate = true;
                 modules.Clear();
@@ -180,24 +206,20 @@ namespace SwiftFramework.Core.Editor
             }
         }
         
-        public static ModuleManifest Install(Type moduleInterface)
+        public static ModuleManifest Install(Type moduleInterface, Action<string> onAssetCreated = null)
         {
-            string moduleName = moduleInterface.Name.Remove(0, 1);
-            ModuleManifest manifest = CreateInstance<ModuleManifest>();
-            manifest.name = moduleName;
             Type implementation = Util.FindImplementation(moduleInterface);
-            manifest.Link = new ModuleLink()
+            ModuleLink link = new ModuleLink()
             {
                 InterfaceType = moduleInterface,
                 ImplementationType = implementation,
                 ConfigLink = LoadOrCreateConfig(implementation),
                 BehaviourLink = LoadOrCreateBehavior(implementation)
             };
-            AssetDatabase.CreateAsset(manifest, $"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}/{manifest.name}.asset");
-            return manifest;
+            return Install(link, onAssetCreated);
         }
         
-        public static ModuleManifest Install(ModuleLink link)
+        public static ModuleManifest Install(ModuleLink link,  Action<string> onAssetCreated = null)
         {
             if (link.InterfaceType == null)
             {
@@ -213,17 +235,23 @@ namespace SwiftFramework.Core.Editor
                 manifest = CreateInstance<ModuleManifest>();
                 string moduleName = link.InterfaceType.Name.Remove(0, 1);
                 manifest.name = moduleName;
-                AssetDatabase.CreateAsset(manifest, $"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}/{manifest.name}.asset");
+                string folder = $"{ResourcesAssetHelper.RootFolder}/{Folders.Modules}";
+                string path = $"{folder}/{manifest.name}.asset";
+                Util.EnsureProjectFolderExists(folder);
+                AssetDatabase.CreateAsset(manifest, path);
+                onAssetCreated?.Invoke(path);
             }
             
             manifest.Link = link.DeepCopy();
-
+            
             EditorUtility.SetDirty(manifest);
+            
+            AssetsUtil.TriggerPostprocessEvent();
             
             return manifest;
         }
 
-        private static BehaviourModuleLink LoadOrCreateBehavior(Type implementation)
+        private static BehaviourModuleLink LoadOrCreateBehavior(Type implementation, Action<string> onAssetCreated = null)
         {
             if (implementation == null)
             {
@@ -234,23 +262,32 @@ namespace SwiftFramework.Core.Editor
             {
                 return Link.CreateNull<BehaviourModuleLink>();
             }
+
+            DisallowCustomModuleBehavioursAttribute disallowCustomModuleBehavioursAttribute
+                = implementation.GetCustomAttribute<DisallowCustomModuleBehavioursAttribute>();
+
+            if (disallowCustomModuleBehavioursAttribute != null)
+            {
+                return Link.CreateNull<BehaviourModuleLink>();
+            }
             
             Object asset = Util.GetAssets(implementation, "", ResourcesAssetHelper.RootFolder).FirstOrDefaultFast();
 
             if (asset == null)
             {
                 GameObject behavior = new GameObject(implementation.Name);
-                behavior.AddComponent(implementation);
+                behavior.AddComponent(implementation); 
                 string prefabPath = ResourcesAssetHelper.RootFolder + "/Behaviours/" + behavior.name + ".prefab";
                 PrefabUtility.SaveAsPrefabAsset(behavior, prefabPath);
                 DestroyImmediate(behavior);
                 asset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                onAssetCreated?.Invoke(prefabPath);
             }
 
             return ResourcesAssetHelper.CreateLink<BehaviourModuleLink>(asset);
         }
 
-        private static ModuleConfigLink LoadOrCreateConfig(Type implementation)
+        private static ModuleConfigLink LoadOrCreateConfig(Type implementation, Action<string> onAssetCreated = null)
         {
             if (implementation == null)
             {
@@ -268,9 +305,11 @@ namespace SwiftFramework.Core.Editor
 
             if (asset == null)
             {
-                asset = CreateInstance(configurableAttribute.configType.Name);
+                asset = CreateInstance(configurableAttribute.configType);
                 asset.name = configurableAttribute.configType.Name;
                 string configPath = ResourcesAssetHelper.RootFolder + "/Configs/" + asset.name + ".asset";
+                Util.EnsureProjectFolderExists(ResourcesAssetHelper.RootFolder + "/Configs/");
+                onAssetCreated?.Invoke(configPath);
                 AssetDatabase.CreateAsset(asset, configPath);
             }
 
@@ -285,9 +324,51 @@ namespace SwiftFramework.Core.Editor
         [MenuItem("SwiftFramework/Modules")]
         public static void OpenWindow()
         {
-            ModuleInstaller win = GetWindow<ModuleInstaller>(true, "Modules", true);
+            ModuleInstaller win = GetWindow<ModuleInstaller>("Modules", true);
             win.minSize = new Vector2(400, win.minSize.y);
-            win.MoveToCenter();
+        }
+
+        public static bool IsModuleInstallationValid(ModuleInstallInfo moduleInfo)
+        {
+            ModuleManifest manifest = Util.GetAssets<ModuleManifest>().FirstOrDefault(
+                m => m.InterfaceType == moduleInfo.GetInterfaceType());
+
+            if (manifest == null)
+            {
+                return false;
+            }
+
+            if (manifest.ImplementationType == null)
+            {
+                return false;
+            }
+            
+            if (manifest.State == ModuleState.Disabled)
+            {
+                return false;
+            }
+
+            if (manifest.ImplementationType.GetCustomAttribute<ConfigurableAttribute>() != null)
+            {
+                if (manifest.Link.ConfigLink.Value() == null)
+                {
+                    return false;
+                }
+                
+            }
+            
+            if (typeof(BehaviourModule).IsAssignableFrom(manifest.ImplementationType))
+            {
+                if (manifest.ImplementationType.GetCustomAttribute<DisallowCustomModuleBehavioursAttribute>() == null)
+                {
+                    if (manifest.Link.BehaviourLink.Value == null)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

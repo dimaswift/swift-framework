@@ -10,25 +10,14 @@ using UnityEngine;
 namespace SwiftFramework.Core.Editor
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Editor/Internal/Core Plugin Info")]
-    public class CorePluginInfo : PluginInfo
+    internal class CorePluginInfo : PluginInfo
     {
         [NonSerialized] private SerializedObject serializedObject = null;
 
         [SerializeField] private bool useAddressables = true;
-
-        [SerializeField] private bool show;
-
-        public override void DrawCustomGUI(Action repaintHandler, PluginData data)
+        
+        public override void DrawOptions(Action repaintHandler, PluginData data)
         {
-            show = EditorGUILayout.BeginFoldoutHeaderGroup(show, "Options");
-
-            EditorGUI.indentLevel++;
-
-            if (show == false)
-            {
-                return;
-            }
-
             if (serializedObject == null)
             {
                 serializedObject = new SerializedObject(this);
@@ -37,10 +26,9 @@ namespace SwiftFramework.Core.Editor
             EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(useAddressables)));
             serializedObject.ApplyModifiedProperties();
             EditorGUILayout.Separator();
-
-
-            EditorGUI.indentLevel--;
         }
+
+        public override bool HasPackageDependencies => useAddressables;
 
         public override IEnumerable<PackageDependency> GetPackages()
         {
@@ -54,6 +42,11 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
+        public override bool HasOptions()
+        {
+            return true;
+        }
+
         public override IEnumerable<(string symbolName, string symbolDesc)> GetSymbols()
         {
             foreach (var symbol in base.GetSymbols())
@@ -65,7 +58,7 @@ namespace SwiftFramework.Core.Editor
                 yield return symbol;
             }
         }
-
+        
 
         public override bool CanInstall()
         {

@@ -25,6 +25,7 @@ namespace SwiftFramework.Core
             return Regex.Replace(moduleName, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
         }
         
+        
         public static bool TryGetAttribute<T>(this UnityEngine.Object asset, out Type type, out T attr) where T : Attribute
         {
             if (asset == null)

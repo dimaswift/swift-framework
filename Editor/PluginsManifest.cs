@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SwiftFramework.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
@@ -84,6 +85,8 @@ namespace SwiftFramework.Core.Editor
         [NonSerialized] private SerializedObject serializedObject = null;
 
         [SerializeField] private InstallStage currentStage = InstallStage.None;
+        
+        [SerializeField] private List<PluginInfo> dependencyInstallQueue = new List<PluginInfo>();
 
         public InstallStage CurrentStage
         {
@@ -95,6 +98,42 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
+        public void AddDependencyToQueue(PluginInfo pluginInfo)
+        {
+            if (IsInstalled(pluginInfo))
+            {
+                return;
+            }
+            dependencyInstallQueue.Add(pluginInfo);
+            EditorUtility.SetDirty(this);
+        }
+
+        public bool IsInstalled(PluginInfo pluginInfo)
+        {
+            PluginData data = FindData(pluginInfo);
+            if (data == null)
+            {
+                return false;
+            }
+            return data.installed;
+        }
+        
+        
+        
+        public bool TryGetDependencyFromQueue(out PluginInfo dependencyPlugin)
+        {
+            if (dependencyInstallQueue.Count == 0)
+            {
+                dependencyPlugin = null;
+                return false;
+            }
+
+            dependencyPlugin = dependencyInstallQueue[0];
+            dependencyInstallQueue.RemoveAt(0);
+            EditorUtility.SetDirty(this);
+            return true;
+        }
+        
         public static string GetInstallStageDescription(InstallStage stage)
         {
             switch (stage)

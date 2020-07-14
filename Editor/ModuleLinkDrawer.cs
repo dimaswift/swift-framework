@@ -50,6 +50,7 @@ namespace SwiftFramework.Core.Editor
             public bool drawInterfaceType;
             public string[] moduleNames;
             public ConfigurableAttribute configurable;
+            public bool checkedConfigurableAttribute;
             public bool? hasValidConstructor;
             public bool dependenciesChecked;
             public readonly List<string> unresolvedDependencies = new List<string>();
@@ -173,7 +174,7 @@ namespace SwiftFramework.Core.Editor
         
         private static bool IsConfigurable(Data data)
         {
-            return data.selectedType != null && data.selectedType.GetCustomAttribute<ConfigurableAttribute>() != null;
+            return data.selectedType != null && data.configurable != null;
         }
 
         private static bool IsBehaviourModule(Data data)
@@ -276,9 +277,9 @@ namespace SwiftFramework.Core.Editor
                 else if (data.implementationTypes.Count > newIndex - 1)
                 {
                     data.typeProperty.stringValue = data.implementationTypes[newIndex - 1].AssemblyQualifiedName;
-                    data.typeProperty.serializedObject.ApplyModifiedProperties();
-                    ClearCache(data.property);
                 }
+                data.typeProperty.serializedObject.ApplyModifiedProperties();
+                ClearCache(data.property);
             }
 
             data.selectedType = selectedTypeIndex != -1 ? data.implementationTypes[selectedTypeIndex] : null;
@@ -397,7 +398,11 @@ namespace SwiftFramework.Core.Editor
         
         private static void DrawConfigPopUp(ref Rect position, float baseHeight, Data data)
         {
-            data.configurable = data.selectedType.GetCustomAttribute<ConfigurableAttribute>();
+            if (data.checkedConfigurableAttribute == false)
+            {
+                data.configurable = data.selectedType.GetCustomAttribute<ConfigurableAttribute>();
+                data.checkedConfigurableAttribute = true;
+            }
 
             if (data.configurable == null)
             {

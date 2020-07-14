@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Core.Editor
 {
-    public class SymbolCatalog : ScriptableEditorSettings<SymbolCatalog>
+    public class DefineSymbols : ScriptableEditorSettings<DefineSymbols>
     {
         public List<Symbol> list = new List<Symbol>()
         {
@@ -36,6 +36,26 @@ namespace SwiftFramework.Core.Editor
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.WebGL, defineSymbols);
         }
 
+        public bool IsEnabled(string symbol)
+        {
+            string defineString =
+                PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
+
+            IEnumerable<string> currentDefines = defineString.Replace(" ", "")
+                .Split(';')
+                .Where(x => !string.IsNullOrEmpty(x));
+
+            foreach (string define in currentDefines)
+            {
+                if (define == symbol)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        
         public static bool Add(string name, string description)
         {
             Instance.Revert();
@@ -235,21 +255,21 @@ namespace SwiftFramework.Core.Editor
                 wordWrap = false
             };
 
-            ro = new ReorderableList(new List<SymbolCatalog.Symbol>(), typeof(SymbolCatalog.Symbol))
+            ro = new ReorderableList(new List<DefineSymbols.Symbol>(), typeof(DefineSymbols.Symbol))
             {
                 drawElementCallback = DrawSymbol,
                 headerHeight = 0,
                 onAddDropdownCallback = (rect, list) =>
                 {
                     GenericMenu gm = new GenericMenu();
-                    gm.AddItem(new GUIContent("Symbol"), false, () => AddSymbol(SymbolCatalog.SymbolStyle.Symbol));
-                    gm.AddItem(new GUIContent("Header"), false, () => AddSymbol(SymbolCatalog.SymbolStyle.Header));
+                    gm.AddItem(new GUIContent("Symbol"), false, () => AddSymbol(DefineSymbols.SymbolStyle.Symbol));
+                    gm.AddItem(new GUIContent("Header"), false, () => AddSymbol(DefineSymbols.SymbolStyle.Header));
                     gm.AddItem(new GUIContent("Separator"), false,
-                        () => AddSymbol(SymbolCatalog.SymbolStyle.Separator));
+                        () => AddSymbol(DefineSymbols.SymbolStyle.Separator));
                     gm.DropDown(rect);
                 },
-                onRemoveCallback = list => RemoveSymbol(SymbolCatalog.Instance.list[list.index]),
-                onCanRemoveCallback = list => (0 <= list.index && list.index < SymbolCatalog.Instance.list.Count),
+                onRemoveCallback = list => RemoveSymbol(DefineSymbols.Instance.list[list.index]),
+                onCanRemoveCallback = list => (0 <= list.index && list.index < DefineSymbols.Instance.list.Count),
                 elementHeight = 44,
                 onSelectCallback = (list) => GUIUtility.keyboardControl = 0
             };
@@ -268,7 +288,7 @@ namespace SwiftFramework.Core.Editor
         {
             Initialize();
 
-            SymbolCatalog catalog = SymbolCatalog.Instance;
+            DefineSymbols catalog = DefineSymbols.Instance;
 
             string define =
                 PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
@@ -285,7 +305,7 @@ namespace SwiftFramework.Core.Editor
 
                 GUILayout.Label(
                     new GUIContent("   Available Scripting Define Symbols",
-                        EditorGUIUtility.ObjectContent(catalog, typeof(SymbolCatalog)).image), styleTitle);
+                        EditorGUIUtility.ObjectContent(catalog, typeof(DefineSymbols)).image), styleTitle);
 
                 ro.list = catalog.list;
                 ro.DoLayoutList();
@@ -317,54 +337,54 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
-        private void AddSymbol(SymbolCatalog.SymbolStyle style)
+        private void AddSymbol(DefineSymbols.SymbolStyle style)
         {
-            SymbolCatalog.Symbol symbol = new SymbolCatalog.Symbol() {style = style};
+            DefineSymbols.Symbol symbol = new DefineSymbols.Symbol() {style = style};
             switch (style)
             {
-                case SymbolCatalog.SymbolStyle.Symbol:
+                case DefineSymbols.SymbolStyle.Symbol:
                     symbol.name = "SYMBOL_NAME";
                     symbol.description = "symbol description(<i>rich-text is available</i>)";
                     break;
-                case SymbolCatalog.SymbolStyle.Header:
+                case DefineSymbols.SymbolStyle.Header:
                     symbol.name = "Header(<i>rich-text is available</i>)";
                     break;
-                case SymbolCatalog.SymbolStyle.Separator:
+                case DefineSymbols.SymbolStyle.Separator:
                     break;
             }
 
-            SymbolCatalog.Instance.list.Add(symbol);
+            DefineSymbols.Instance.list.Add(symbol);
 
-            focus = $"symbol name {SymbolCatalog.Instance.list.IndexOf(symbol)}";
+            focus = $"symbol name {DefineSymbols.Instance.list.IndexOf(symbol)}";
 
-            EditorUtility.SetDirty(SymbolCatalog.Instance);
+            EditorUtility.SetDirty(DefineSymbols.Instance);
         }
 
-        private void RemoveSymbol(SymbolCatalog.Symbol symbol)
+        private void RemoveSymbol(DefineSymbols.Symbol symbol)
         {
             EditorApplication.delayCall += () =>
             {
-                SymbolCatalog.Instance.list.Remove(symbol);
-                ro.index = Mathf.Clamp(ro.index, 0, SymbolCatalog.Instance.list.Count - 1);
-                EditorUtility.SetDirty(SymbolCatalog.Instance);
+                DefineSymbols.Instance.list.Remove(symbol);
+                ro.index = Mathf.Clamp(ro.index, 0, DefineSymbols.Instance.list.Count - 1);
+                EditorUtility.SetDirty(DefineSymbols.Instance);
                 Repaint();
             };
         }
 
         private void DrawSymbol(Rect rect, int index, bool isActive, bool isFocused)
         {
-            SymbolCatalog.Symbol symbol = ro.list[index] as SymbolCatalog.Symbol;
+            DefineSymbols.Symbol symbol = ro.list[index] as DefineSymbols.Symbol;
                 
             switch (symbol.style)
             {
-                case SymbolCatalog.SymbolStyle.Symbol:
+                case DefineSymbols.SymbolStyle.Symbol:
                     DrawDefaultSymbol(rect, symbol);
                     break;
-                case SymbolCatalog.SymbolStyle.Separator:
+                case DefineSymbols.SymbolStyle.Separator:
                     GUI.Label(new Rect(rect.x + 10, rect.y + 24, rect.width - 20, 16), GUIContent.none,
                         "sv_iconselector_sep");
                     break;
-                case SymbolCatalog.SymbolStyle.Header:
+                case DefineSymbols.SymbolStyle.Header:
                     DrawHeader(rect, symbol);
                     break;
             }
@@ -373,9 +393,9 @@ namespace SwiftFramework.Core.Editor
             GUI.contentColor = Color.white;
         }
 
-        private static void DrawHeader(Rect rect, SymbolCatalog.Symbol symbol)
+        private static void DrawHeader(Rect rect, DefineSymbols.Symbol symbol)
         {
-            int index = SymbolCatalog.Instance.list.IndexOf(symbol);
+            int index = DefineSymbols.Instance.list.IndexOf(symbol);
 
             GUI.contentColor = Color.black;
             string symbolNameId = $"symbol name {index}";
@@ -386,9 +406,9 @@ namespace SwiftFramework.Core.Editor
             GUI.contentColor = Color.white;
         }
 
-        private void DrawDefaultSymbol(Rect rect, SymbolCatalog.Symbol symbol)
+        private void DrawDefaultSymbol(Rect rect, DefineSymbols.Symbol symbol)
         {
-            int index = SymbolCatalog.Instance.list.IndexOf(symbol);
+            int index = DefineSymbols.Instance.list.IndexOf(symbol);
 
             string symbolDescriptionId = $"symbol description {index}";
             GUI.SetNextControlName(symbolDescriptionId);

@@ -451,7 +451,12 @@ namespace SwiftFramework.Core.Editor
             {
                 string targetFolder = subDir.Name;
 
-                if (targetFolder == "_Resources" || targetFolder == "_Modules")
+                if (targetFolder == "_Modules")
+                {
+                    continue;
+                }
+                
+                if (targetFolder == "_Resources")
                 {
                     targetFolder = ResourcesAssetHelper.RootFolderName;
                 }

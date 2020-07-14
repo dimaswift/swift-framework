@@ -36,8 +36,6 @@ namespace SwiftFramework.Core.Editor
                     Repaint();
                 }
 
-                EditorGUILayout.EndScrollView();
-
                 return;
             }
             
@@ -80,7 +78,7 @@ namespace SwiftFramework.Core.Editor
                 }
             }
 
-            foreach (var item in pluginsData)
+            foreach (var item in pluginsData.ToArray())
             {
                 PluginInfo plugin = item.Key;
                 PluginData data = item.Value;
@@ -277,12 +275,15 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
-        private void Refresh()
+        private static void Refresh()
         {
             foreach (PluginInfo pluginInfo in plugins)
             {
                 pluginInfo.Refresh();
             }
+            AssetsUtil.TriggerPostprocessEvent();
+            plugins.Clear();
+            pluginsData.Clear();
         }
 
         private void EnableDependencyWarning(PluginDependencyType type, PluginInfo.ErrorSummary summary, string id, bool installed, Color defaultColor, Rect rect)
@@ -402,6 +403,10 @@ namespace SwiftFramework.Core.Editor
             {
                 Install(dependencyPlugin);
             }
+            else
+            {
+                Refresh();
+            }
         }
 
         private static void InstallModules()
@@ -435,6 +440,7 @@ namespace SwiftFramework.Core.Editor
         private static void FinishUninstalling(bool compiled)
         {
             PluginsManifest.Instance.FinishInstallation();
+            Refresh();
         }
 
         private static bool CopyFiles()

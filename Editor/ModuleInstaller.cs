@@ -350,7 +350,7 @@ namespace SwiftFramework.Core.Editor
 
             if (manifest.ImplementationType.GetCustomAttribute<ConfigurableAttribute>() != null)
             {
-                if (manifest.Link.ConfigLink.Value() == null)
+                if (manifest.Link.ConfigLink == null || manifest.Link.ConfigLink.Value() == null)
                 {
                     return false;
                 }

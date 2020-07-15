@@ -12,26 +12,17 @@ namespace SwiftFramework.Core.Editor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (interfaceDrawer == null)
-            {
-                interfaceDrawer = new ClassPropertyDrawer("Module Interface", IsModule,
-                    property.FindPropertyRelative("interfaceType"));
-
-                implementationDrawer = new ClassPropertyDrawer("Implementation", IsImplementation,
-                    property.FindPropertyRelative("implementationType"));
-
-                interfaceDrawer.OnSelectionChanged += implementationDrawer.Rebuild;
-            }
-
-            position.height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-
+            Init(property);
+            
+            position.height = EditorGUIUtility.singleLineHeight;
+            
             interfaceDrawer.Draw(position);
 
-            position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+            position.y += interfaceDrawer.TotalPropertyHeight;
 
             implementationDrawer.Draw(position);
             
-            position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+            position.y += implementationDrawer.TotalPropertyHeight;
 
             EditorGUI.PropertyField(position, property.FindPropertyRelative("config"));
             
@@ -40,9 +31,26 @@ namespace SwiftFramework.Core.Editor
             EditorGUI.PropertyField(position, property.FindPropertyRelative("behaviour"));
         }
 
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        private void Init(SerializedProperty property)
         {
-            return (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing) * 4;
+            if (interfaceDrawer == null)
+            {
+                interfaceDrawer = new ClassPropertyDrawer("Module Interface", IsModule,
+                    property.FindPropertyRelative("interfaceType"));
+
+                implementationDrawer = new ManualClassPropertyDrawer("Implementation", IsImplementation,
+                    property.FindPropertyRelative("implementationType"));
+
+                interfaceDrawer.OnSelectionChanged += implementationDrawer.Rebuild;
+            }
+
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        { 
+            Init(property);
+            return (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing) * 2 +
+                   (implementationDrawer.TotalPropertyHeight + interfaceDrawer.TotalPropertyHeight);
         }
 
         private bool IsImplementation(Type type)

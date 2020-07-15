@@ -15,8 +15,9 @@ namespace SwiftFramework.Core.Editor
             ModuleLink link = new ModuleLink()
             {
                 InterfaceType = module.GetInterfaceType(),
-                ImplementationType = module.GetImplementationType()
             };
+            
+            link.SetImplementation(module.implementationType);
 
             if (module.config != null)
             {
@@ -54,6 +55,23 @@ namespace SwiftFramework.Core.Editor
         public Type GetInterfaceType()
         {
             return module.GetInterfaceType();
+        }
+
+        public string GetModuleDescription()
+        {
+            if (string.IsNullOrEmpty(module.implementationType))
+            {
+                return "Invalid type";
+            }
+
+            string[] values = module.implementationType.Split(',');
+
+            if (values.Length == 0)
+            {
+                return "Invalid type";
+            }
+            
+            return values[0];
         }
 
         public Type GetImplementationType()

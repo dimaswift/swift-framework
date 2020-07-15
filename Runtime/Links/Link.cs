@@ -64,6 +64,20 @@ namespace SwiftFramework.Core
         {
             return new T() { Path = path };
         }
+        
+        public static T Create<T>(string folder, UnityEngine.Object obj) where T : Link, new()
+        {
+            string root = GetLinkFolder(typeof(T));
+            if (string.IsNullOrEmpty(root) == false)
+            {
+                root += "/";
+            }
+            if (string.IsNullOrEmpty(folder) == false)
+            {
+                root += folder + "/";
+            }
+            return new T() { Path = $"{root}{obj.name}" };
+        }
 
         public static T Generate<T>() where T : Link, new()
         {

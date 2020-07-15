@@ -10,13 +10,15 @@ namespace SwiftFramework.Core
     [DefaultModule]
     public class SaveStorageManager : Module, ISaveStorage
     {
+        public SaveStorageManager(){}
+        
         public long SaveTimestamp => container.timestamp;
 
         private const string NOT_LINKED = "not_linked";
 
         private const string DEFAULT_SAVE_ID = "default_save";
 
-        private static string editorSavePath => Application.dataPath + "/save.json";
+        private static string EditorSavePath => Application.dataPath + "/save.json";
 
         private Dictionary<string, Dictionary<string, object>> linkedItems = new Dictionary<string, Dictionary<string, object>>();
 
@@ -61,7 +63,7 @@ namespace SwiftFramework.Core
         {
             string json = PlayerPrefs.GetString(saveId, null);
 #if UNITY_EDITOR
-            json = File.Exists(editorSavePath) ? File.ReadAllText(editorSavePath) : null;
+            json = File.Exists(EditorSavePath) ? File.ReadAllText(EditorSavePath) : null;
             if (json != null)
             {
                 Debug.Log($"Original save file size: <b>{Encoding.ASCII.GetByteCount(json).ToFileSize() }</b>, compressed file size: <color=green><b>{Encoding.ASCII.GetByteCount(Json.Compress(json)).ToFileSize()}</b></color>");
@@ -161,7 +163,7 @@ namespace SwiftFramework.Core
             PlayerPrefs.Save();
 
 #if UNITY_EDITOR
-            File.WriteAllText(editorSavePath, Json.Serialize(container, Newtonsoft.Json.Formatting.Indented));
+            File.WriteAllText(EditorSavePath, Json.Serialize(container, Newtonsoft.Json.Formatting.Indented));
 #endif
         }
 
@@ -373,7 +375,7 @@ namespace SwiftFramework.Core
         public void DeleteAll()
         {
 #if UNITY_EDITOR
-            File.Delete(editorSavePath);
+            File.Delete(EditorSavePath);
 #endif
             container = new SaveItemsContainer();
             notLinkedItems.Clear();

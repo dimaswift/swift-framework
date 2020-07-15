@@ -46,6 +46,13 @@ namespace SwiftFramework.Core.Editor
 
         private class Data
         {
+            public string InterfaceTypeString => property.FindPropertyRelative("interfaceType")
+                .FindPropertyRelative("type").stringValue;
+            
+            public string ImplementationTypeString => property.FindPropertyRelative("implementationType")
+                .FindPropertyRelative("type").stringValue;
+            
+            public bool hasCustomBehaviour;
             public bool drawLabel;
             public bool drawInterfaceType;
             public string[] moduleNames;
@@ -57,7 +64,6 @@ namespace SwiftFramework.Core.Editor
             public readonly List<string> unresolvedUsedModules = new List<string>();
             public SerializedProperty typeProperty;
             public SerializedProperty interfaceTypeProperty;
-            private Type interfaceType;
             public SerializedProperty property;
             public readonly List<Type> implementationTypes = new List<Type>();
             public List<BehaviourModule> filteredBehaviourModules = null;
@@ -66,6 +72,8 @@ namespace SwiftFramework.Core.Editor
             public AssetLinkDrawer behaviourModuleDrawer;
             public AssetLinkDrawer configDrawer;
             public float baseHeight;
+            
+            private Type interfaceType;
             
             public Type InterfaceType
             {
@@ -81,6 +89,8 @@ namespace SwiftFramework.Core.Editor
                     behaviourModuleDrawer = null;
                     implementationTypes.Clear();
                     interfaceType = value;
+                    hasCustomBehaviour = false;
+                    configDrawer = null;
                     if (value == null)
                     {
                         return;
@@ -105,8 +115,9 @@ namespace SwiftFramework.Core.Editor
             public void Refresh(SerializedProperty property)
             {
                 this.property = property;
-                typeProperty = property.FindPropertyRelative("implementationType");
-                interfaceTypeProperty = property.FindPropertyRelative("interfaceType");
+                typeProperty = property.FindPropertyRelative("implementationType").FindPropertyRelative("type");
+                interfaceTypeProperty = property.FindPropertyRelative("interfaceType").FindPropertyRelative("type");
+                selectedType = Type.GetType(typeProperty.stringValue);
                 if (string.IsNullOrEmpty(interfaceTypeProperty.stringValue) == false)
                 {
                     InterfaceType = Type.GetType(interfaceTypeProperty.stringValue);
@@ -139,7 +150,7 @@ namespace SwiftFramework.Core.Editor
                 height += data.baseHeight + Margin;
             }
 
-            if (IsBehaviourModule(data))
+            if (data.hasCustomBehaviour)
             {
                 height += data.baseHeight + Margin;
             }
@@ -189,7 +200,7 @@ namespace SwiftFramework.Core.Editor
 
         private static void FindModuleImplementationTypes(Data data)
         {
-            string interfaceTypeStr = data.property.FindPropertyRelative("interfaceType").stringValue;
+            string interfaceTypeStr = data.property.FindPropertyRelative("interfaceType").FindPropertyRelative("type").stringValue;
             if (string.IsNullOrEmpty(interfaceTypeStr))
             {
                 return;
@@ -349,6 +360,7 @@ namespace SwiftFramework.Core.Editor
             if (data.filteredBehaviourModules == null)
             {
                 data.filteredBehaviourModules = new List<BehaviourModule>();
+                data.hasCustomBehaviour = IsBehaviourModule(data);
                 foreach (GameObject module in Util.GetAssets<GameObject>())
                 {
                     if (module.GetComponent(data.selectedType) != null)
@@ -483,8 +495,8 @@ namespace SwiftFramework.Core.Editor
             Data data = GetData(property, drawInterfaceField, drawLabel);
             data.drawInterfaceType = drawInterfaceField;
             data.drawLabel = drawLabel;
-            
-            string interfaceTypeName = data.property.FindPropertyRelative("interfaceType").stringValue;
+
+            string interfaceTypeName = data.InterfaceTypeString;
 
             FindModuleImplementationTypes(data);
 
@@ -549,7 +561,7 @@ namespace SwiftFramework.Core.Editor
             {
                 customModuleInterfaces.Clear();
                 customModuleInterfaces.AddRange(Util.GetModuleInterfaces());
-                List<string> names = new List<string>(customModuleInterfaces.Select(s => s.Name));
+                List<string> names = new List<string>(customModuleInterfaces.Select(s => s.FullName.Replace(".", "/")));
                 names.Insert(0, "None");
                 data.moduleNames = names.ToArray();
             }
@@ -568,7 +580,7 @@ namespace SwiftFramework.Core.Editor
                 {
                     if (newSelectedInterfaceIndex == 0)
                     {
-                        data.property.FindPropertyRelative("interfaceType").stringValue = null;
+                        data.property.FindPropertyRelative("interfaceType").FindPropertyRelative("type").stringValue = null;
                         data.property.FindPropertyRelative("configLink").FindPropertyRelative("Path").stringValue = null;
                         data.property.FindPropertyRelative("behaviourLink").FindPropertyRelative("Path").stringValue = null;
                         data.InterfaceType = null;
@@ -576,7 +588,7 @@ namespace SwiftFramework.Core.Editor
                     else
                     {
                         interfaceTypeName = customModuleInterfaces[newSelectedInterfaceIndex - 1].AssemblyQualifiedName;
-                        data.property.FindPropertyRelative("interfaceType").stringValue = interfaceTypeName;
+                        data.property.FindPropertyRelative("interfaceType").FindPropertyRelative("type").stringValue = interfaceTypeName;
                         data.InterfaceType = Type.GetType(interfaceTypeName);
                     }
 
@@ -631,7 +643,7 @@ namespace SwiftFramework.Core.Editor
 
             if (data.selectedType != null)
             {
-                if (IsBehaviourModule(data))
+                if (data.hasCustomBehaviour)
                 {
                     DrawBehaviourModulePopUp(ref position, data.baseHeight, data);
                 }

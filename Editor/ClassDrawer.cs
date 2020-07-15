@@ -16,10 +16,10 @@ namespace SwiftFramework.Core.Editor
         private string[] modules;
         private string[] modulesNames;
 
-        private readonly Action<string> selectHandler;
-        private readonly Func<string> currentHandler;
-        private readonly Func<Type, bool> filter;
-        private readonly string label;
+        protected readonly Action<string> selectHandler;
+        protected readonly Func<string> currentHandler;
+        protected readonly Func<Type, bool> filter;
+        protected readonly string label;
 
         protected ClassDrawer(string label, Func<Type, bool> filter, Action<string> selectHandler,
             Func<string> currentHandler)
@@ -30,6 +30,8 @@ namespace SwiftFramework.Core.Editor
             this.filter = filter;
             Rebuild();
         }
+
+        public virtual float TotalPropertyHeight => EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
         public void Rebuild()
         {
@@ -42,15 +44,19 @@ namespace SwiftFramework.Core.Editor
             foreach (Type type in moduleTypes)
             {
                 modules[i] = type.AssemblyQualifiedName;
-                modulesNames[i] = type.Name;
+                modulesNames[i] = type.FullName.Replace(".", "/");
                 i++;
             }
 
             SelectedType = Type.GetType(currentHandler());
         }
 
-        public void Draw(Rect position)
+                
+        
+        public virtual void Draw(Rect position)
         {
+            position.height = EditorGUIUtility.singleLineHeight;
+            
             var current = currentHandler();
 
             var currentIndex = Array.FindIndex(modules, m => m == current);

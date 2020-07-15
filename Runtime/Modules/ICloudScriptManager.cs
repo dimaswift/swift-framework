@@ -1,4 +1,6 @@
-﻿namespace SwiftFramework.Core
+﻿using System;
+
+namespace SwiftFramework.Core
 {
     public interface ICloudScriptManager : IModule
     {
@@ -15,5 +17,12 @@
         InvalidJson = 501,
         NotLoggedIn = 403,
         NoInternet = 502
+    }
+    
+    [Serializable]
+    public struct CloudScriptResponse
+    {
+        public int code;
+        public string error;
     }
 }

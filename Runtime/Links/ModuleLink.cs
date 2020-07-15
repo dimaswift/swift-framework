@@ -8,8 +8,6 @@ namespace SwiftFramework.Core
     [Serializable]
     public class ModuleLink : ISerializationCallbackReceiver
     {
-        public bool HasImplementation => ImplementationType != null;
-
         public BehaviourModuleLink BehaviourLink
         {
             get => behaviourLink;
@@ -24,54 +22,21 @@ namespace SwiftFramework.Core
 
         public Type InterfaceType
         {
-            get
-            {
-                try
-                {
-                    if (cachedInterfaceType != null)
-                    {
-                        return cachedInterfaceType;
-                    }
-                    cachedInterfaceType = Type.GetType(interfaceType);
-                    return cachedInterfaceType;
-                }
-                catch
-                {
-                    return null;
-                }
-            }
-            set
-            {
-                interfaceType = value?.AssemblyQualifiedName;
-                cachedInterfaceType = interfaceType == null ? null : Type.GetType(interfaceType);
-            }
+            get => interfaceType.Type;
+            set => interfaceType = new SerializedType(value);
         }
 
         public Type ImplementationType
         {
-            get
-            {
-                if (cachedImplementationType != null)
-                {
-                    return cachedImplementationType;
-                }
-                try
-                {
-                    cachedImplementationType = Type.GetType(implementationType);
-                    return cachedInterfaceType;
-                }
-                catch
-                {
-                    return null;
-                }
-            }
-            set
-            {
-                implementationType = value?.AssemblyQualifiedName;
-                cachedImplementationType = implementationType == null ? null : Type.GetType(implementationType);
-            }
+            get => implementationType.Type;
+            set => implementationType = new SerializedType(value);
         }
 
+        public void SetImplementation(string type)
+        {
+            implementationType = new SerializedType(type);
+        }
+        
         public ModuleLink()
         {
 
@@ -79,23 +44,24 @@ namespace SwiftFramework.Core
 
         private ModuleLink(Type implementationType, Type interfaceType, BehaviourModuleLink behaviourLink = null, ModuleConfigLink configLink = null)
         {
-            this.implementationType = implementationType.AssemblyQualifiedName;
-            this.interfaceType = interfaceType.AssemblyQualifiedName;
+            this.implementationType = new SerializedType(implementationType);
+            this.interfaceType = new SerializedType(interfaceType);
             this.behaviourLink = behaviourLink;
             this.configLink = configLink;
         }
         
         [SerializeField] private string displayName;
-        [SerializeField] private string implementationType;
-        [SerializeField] private string interfaceType;
+        [SerializeField] private SerializedType implementationType;
+        [SerializeField] private SerializedType interfaceType;
         [SerializeField] private BehaviourModuleLink behaviourLink;
         [SerializeField] private ModuleConfigLink configLink;
         
         [NonSerialized] private IModule module;
-        [NonSerialized] private Type cachedInterfaceType;
-        [NonSerialized] private Type cachedImplementationType;
         private static readonly RuntimeModuleFactory runtimeModuleFactory = new RuntimeModuleFactory();
-        
+
+        public bool HasImplementation => implementationType.IsDefined;
+
+        public bool HasInterface => interfaceType.IsDefined;
 
         public static ModuleLink Create<T>()
         {
@@ -129,7 +95,7 @@ namespace SwiftFramework.Core
 
         private ModuleLink(Type interfaceType)
         {
-            this.interfaceType = interfaceType.AssemblyQualifiedName;
+            this.interfaceType = new SerializedType(interfaceType);
         }
 
         public T GetModule<T>() where T : class, IModule
@@ -242,9 +208,9 @@ namespace SwiftFramework.Core
         public override int GetHashCode()
         {
             var hashCode = -54518709;
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(implementationType);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(interfaceType);
-            hashCode = hashCode * -1521134295 + EqualityComparer<BehaviourModuleLink>.Default.GetHashCode(behaviourLink);
+            hashCode = hashCode * -1521134295 + implementationType.GetHashCode();
+            hashCode = hashCode * -1521134295 + interfaceType.GetHashCode();
+            hashCode = hashCode * -1521134295 + behaviourLink.GetHashCode();
             return hashCode;
         }
 

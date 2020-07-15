@@ -162,15 +162,12 @@ namespace SwiftFramework.Core.Editor
                                 {
                                     continue;
                                 }
-                                Type implementationType = info.GetImplementationType();
-                                if (implementationType == null)
-                                {
-                                    continue;
-                                }
+                 
                                 Rect labelRect = EditorGUILayout.GetControlRect();
                                 EnableDependencyWarning(PluginDependencyType.Module, installationErrors, AssetDatabase.GetAssetPath(info),
                                     data.installed, defaultColor, labelRect);
-                                EditorGUI.LabelField(labelRect, $"{interfaceType.GetDisplayName()} ({implementationType.GetDisplayName()})");
+                                EditorGUI.LabelField(labelRect,
+                                    $"{interfaceType.GetDisplayName()} ({info.GetModuleDescription()})");
                                 GUI.color = defaultColor;
                             }
                             EditorGUI.indentLevel--;

@@ -5,30 +5,25 @@ using UnityEngine.ResourceManagement.ResourceLocations;
 #endif
 using System;
 using System.Collections.Generic;
-
 using System.Reflection;
-using SwiftFramework.Core;
 using UnityEngine;
-using System.Collections;
-using System.Linq;
-using System.IO;
-using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core
 {
     public static class AssetCache
     {
-        private static readonly Dictionary<string, UnityEngine.Object> preloadedAssets = new Dictionary<string, UnityEngine.Object>();
+        private static readonly Dictionary<string, Object> preloadedAssets = new Dictionary<string, Object>();
 
 #if USE_ADDRESSABLES
         private static readonly Dictionary<string, AsyncOperationHandle> preloadedOperations = new Dictionary<string, AsyncOperationHandle>();
 #else
+        private static readonly HashSet<Object> preloadedResourcesSet = new HashSet<Object>();
         private static readonly Dictionary<string, ResourceRequest> preloadedOperations = new Dictionary<string, ResourceRequest>();
 #endif
 
-        private static readonly Dictionary<string, (Promise<IEnumerable<UnityEngine.Object>> promise, List<string> addresses)> loadedLabels =
-            new Dictionary<string, (Promise<IEnumerable<UnityEngine.Object>> promise, List<string> addresses)>();
+        private static readonly Dictionary<string, (Promise<IEnumerable<Object>> promise, List<string> addresses)> loadedLabels =
+            new Dictionary<string, (Promise<IEnumerable<Object>> promise, List<string> addresses)>();
 
         private static IPromise initPromise;
 
@@ -37,9 +32,9 @@ namespace SwiftFramework.Core
             return preloadedAssets.ContainsKey(address);
         }
 
-        public static T GetAsset<T>(string address) where T : UnityEngine.Object
+        public static T GetAsset<T>(string address) where T : Object
         {
-            if (preloadedAssets.TryGetValue(address, out UnityEngine.Object result))
+            if (preloadedAssets.TryGetValue(address, out Object result))
             {
                 return result as T;
             }
@@ -47,12 +42,25 @@ namespace SwiftFramework.Core
             {
                 return null;
             }
+#if !USE_ADDRESSABLES
+            
+            T resourcesResult = Resources.Load<T>(address);
+            if (resourcesResult != null)
+            {
+                if (preloadedResourcesSet.Contains(resourcesResult) == false)
+                {
+                    preloadedResourcesSet.Add(resourcesResult);
+                }
+                preloadedAssets.Add(address, resourcesResult);
+                return resourcesResult;
+            }
+#endif
+            
             Debug.LogError($"Cannot get preloaded asset of type '{typeof(T).Name}' at address '{address}'. Before accessing synchronous link property 'Value', you need to call async method AssetCache.Preload(addressable label) or mark asset type with [PrewardAsset]");
             return null;
         }
-
-
-        public static T GetSingletonAsset<T>() where T : UnityEngine.Object
+        
+        public static T GetSingletonAsset<T>() where T : Object
         {
             if (TryGetSingletonAddress(typeof(T), out string addr))
             {
@@ -64,9 +72,9 @@ namespace SwiftFramework.Core
 
         public static T GetPrefab<T>()
         {
-            foreach (var asset in preloadedAssets)
+            foreach (var asset in GetPreloadedAssets())
             {
-                GameObject go = asset.Value as GameObject;
+                GameObject go = asset as GameObject;
                 if (go != null)
                 {
                     T component = go.GetComponent<T>();
@@ -110,14 +118,14 @@ namespace SwiftFramework.Core
             return preloadedAssets.ContainsKey(address);
         }
 
-        public static IPromise<T> LoadSingletonAsset<T>() where T : UnityEngine.Object
+        public static IPromise<T> LoadSingletonAsset<T>() where T : Object
         {
             if (TryGetSingletonAddress(typeof(T), out string address) == false)
             {
                 return Promise<T>.Rejected(new InvalidOperationException($"Cannot load asset of type {typeof(T).Name} as a singleton. [AddrSingleton] attribute is missing!"));
             }
 
-            if (preloadedAssets.TryGetValue(address, out UnityEngine.Object asset))
+            if (preloadedAssets.TryGetValue(address, out Object asset))
             {
                 return Promise<T>.Resolved(asset as T);
             }
@@ -150,7 +158,7 @@ namespace SwiftFramework.Core
 
             bool TryGetPreloaded()
             {
-                if (preloadedAssets.TryGetValue(address, out UnityEngine.Object asset))
+                if (preloadedAssets.TryGetValue(address, out Object asset))
                 {
                     if (asset != null)
                     {
@@ -216,22 +224,38 @@ namespace SwiftFramework.Core
             return promise;
         }
 
-        public static IEnumerable<T> GetAssets<T>() where T : UnityEngine.Object
+        private static IEnumerable<Object> GetPreloadedAssets()
         {
+            #if USE_ADDRESSABLES
+            
             foreach (var asset in preloadedAssets)
             {
-                if (asset.Value is T)
+                if (asset.Value is T value)
                 {
-                    yield return asset.Value as T;
+                    yield return value;
+                }
+            }
+#else
+            return preloadedResourcesSet;
+#endif
+        }
+
+        public static IEnumerable<T> GetAssets<T>() where T : Object
+        {
+            foreach (Object preloadedAsset in GetPreloadedAssets())
+            {
+                if (preloadedAsset is T value)
+                {
+                    yield return value;
                 }
             }
         }
 
         public static IEnumerable<T> GetPrefabs<T>()
         {
-            foreach (var asset in preloadedAssets)
+            foreach (Object asset in GetPreloadedAssets())
             {
-                GameObject go = asset.Value as GameObject;
+                GameObject go = asset as GameObject;
                 if (go != null)
                 {
                     T component = go.GetComponent<T>();
@@ -243,9 +267,9 @@ namespace SwiftFramework.Core
             }
         }
 
-        public static bool TryGetAsset<T>(string address, out T asset) where T : UnityEngine.Object
+        public static bool TryGetAsset<T>(string address, out T asset) where T : Object
         {
-            if (preloadedAssets.TryGetValue(address, out UnityEngine.Object result))
+            if (preloadedAssets.TryGetValue(address, out Object result))
             {
                 asset = result as T;
                 return asset;
@@ -277,6 +301,7 @@ namespace SwiftFramework.Core
 #if USE_ADDRESSABLES
             
 #else
+            preloadedResourcesSet.Clear();
             Resources.UnloadUnusedAssets();
 #endif
 
@@ -320,7 +345,7 @@ namespace SwiftFramework.Core
             return true;
         }
 
-        public static IEnumerable<(string link, UnityEngine.Object)> GetPrewarmedAssets()
+        public static IEnumerable<(string link, Object)> GetPrewarmedAssets()
         {
             foreach (var item in preloadedAssets)
             {
@@ -461,7 +486,7 @@ namespace SwiftFramework.Core
             return promise;
         }
 
-        public static IPromise<IEnumerable<UnityEngine.Object>> PreloadAll(string label)
+        public static IPromise<IEnumerable<Object>> PreloadAll(string label)
         {
             if (loadedLabels.TryGetValue(label, out (Promise<IEnumerable<Object>> promise, List<string> assets) alreadyLoadingResult))
             {
@@ -477,9 +502,8 @@ namespace SwiftFramework.Core
 #endif
             }
 
-            Promise<IEnumerable<UnityEngine.Object>> promise = Promise<IEnumerable<UnityEngine.Object>>.Create();
-
-
+            Promise<IEnumerable<Object>> promise = Promise<IEnumerable<Object>>.Create();
+            
             List<string> addresses = new List<string>();
 
             loadedLabels.Add(label, (promise, addresses));
@@ -518,27 +542,60 @@ namespace SwiftFramework.Core
                     promise.Reject(e);
                 }
 #else
-
+                
+                if (preloadedResourcesSet.Count > 0)
+                {
+                    promise.Resolve(preloadedResourcesSet);
+                    return;
+                }
+                
                 List<Object> result = new List<Object>();
                 
-                foreach (Object o in Resources.LoadAll(""))
+                foreach (ScriptableObject o in Resources.LoadAll<ScriptableObject>(""))
                 {
-                    AddrLabelAttribute attr = o.GetType().GetCustomAttribute<AddrLabelAttribute>();
+                    Type type = o.GetType();
+                    bool added = false;
+                    AddrLabelAttribute attr = type.GetCustomAttribute<AddrLabelAttribute>();
                     if (attr != null)
                     {
                         foreach (string l in attr.labels)
                         {
                             if (l == label)
                             {
+                                added = true;
                                 result.Add(o);
+                                preloadedResourcesSet.Add(o);
                                 break;
                             }
                         }
                     }
+
+                    if (added)
+                    {
+                        continue;
+                    }
+                    
+                    PrewarmAssetAttribute prewarmAssetAttribute =
+                        type.GetCustomAttribute<PrewarmAssetAttribute>();
+                    if (prewarmAssetAttribute != null)
+                    {
+                        result.Add(o);
+                        preloadedResourcesSet.Add(o);
+                    }
                 }
                 
+                foreach (GameObject o in Resources.LoadAll<GameObject>(""))
+                {
+                    preloadedResourcesSet.Add(o);
+                }
+
                 promise.Resolve(result);
 
+
+                foreach (var VARIABLE in preloadedResourcesSet)
+                {
+                    Debug.LogError(VARIABLE);
+                }
 #endif
             });
 

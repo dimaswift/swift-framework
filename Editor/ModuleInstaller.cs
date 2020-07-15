@@ -204,6 +204,7 @@ namespace SwiftFramework.Core.Editor
                     GUI.color = color;
                 }
             }
+            Repaint();
         }
         
         public static ModuleManifest Install(Type moduleInterface, Action<string> onAssetCreated = null)
@@ -241,6 +242,8 @@ namespace SwiftFramework.Core.Editor
                 AssetDatabase.CreateAsset(manifest, path);
                 onAssetCreated?.Invoke(path);
             }
+
+            manifest.State = ModuleState.Enabled;
             
             manifest.Link = link.DeepCopy();
             
@@ -319,6 +322,7 @@ namespace SwiftFramework.Core.Editor
         private void AssetsUtilOnOnAssetsPostProcessed()
         {
             modulesAreUpToDate = false;
+            Repaint();
         }
 
         [MenuItem("SwiftFramework/Modules")]
@@ -330,15 +334,10 @@ namespace SwiftFramework.Core.Editor
 
         public static bool IsModuleInstallationValid(ModuleInstallInfo moduleInfo)
         {
-            ModuleManifest manifest = Util.GetAssets<ModuleManifest>().FirstOrDefault(
+            ModuleManifest manifest = Util.GetAssets<ModuleManifest>("", ResourcesAssetHelper.RootFolder).FirstOrDefault(
                 m => m.InterfaceType == moduleInfo.GetInterfaceType());
 
             if (manifest == null)
-            {
-                return false;
-            }
-
-            if (manifest.ImplementationType == null)
             {
                 return false;
             }
@@ -348,13 +347,17 @@ namespace SwiftFramework.Core.Editor
                 return false;
             }
 
+            if (manifest.Link.HasInterface == false || manifest.Link.HasImplementation == false)
+            {
+                return false;
+            }
+            
             if (manifest.ImplementationType.GetCustomAttribute<ConfigurableAttribute>() != null)
             {
                 if (manifest.Link.ConfigLink == null || manifest.Link.ConfigLink.Value() == null)
                 {
                     return false;
                 }
-                
             }
             
             if (typeof(BehaviourModule).IsAssignableFrom(manifest.ImplementationType))

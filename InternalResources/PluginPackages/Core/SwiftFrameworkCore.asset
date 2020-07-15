@@ -35,6 +35,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b1709a8a1435e6c409b2e02dd16b4514, type: 2}
   - {fileID: 11400000, guid: 47ca29f268b33634d93911aeb3467508, type: 2}
   showInfo: 0
-  showDependencies: 0
+  showDependencies: 1
   showOptions: 1
   useAddressables: 0

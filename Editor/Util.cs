@@ -340,7 +340,7 @@ namespace SwiftFramework.EditorUtils
 
         private static Object GetAsset(Type type)
         {
-            foreach (var guid in AssetDatabase.FindAssets($"t:{type.Name}"))
+            foreach (var guid in AssetDatabase.FindAssets($"t:{type.Name}", new string[] { ResourcesAssetHelper.RootFolder }))
             {
                 return AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(guid), type);
             }
@@ -350,7 +350,7 @@ namespace SwiftFramework.EditorUtils
 
         public static GameObject FindPrefabWithInterface(Type interfaceType)
         {
-            foreach (var guid in AssetDatabase.FindAssets("t:GameObject"))
+            foreach (var guid in AssetDatabase.FindAssets("t:GameObject", new string[] { ResourcesAssetHelper.RootFolder }))
             {
                 GameObject go =
                     AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid)) as GameObject;
@@ -387,7 +387,7 @@ namespace SwiftFramework.EditorUtils
         private static int GetConfigCount(Type type)
         {
             int result = 0;
-            foreach (Object asset in GetAssets(type))
+            foreach (Object asset in GetAssets(type, "", ResourcesAssetHelper.RootFolder))
             {
                 result++;
             }

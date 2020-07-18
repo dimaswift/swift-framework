@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: SimpleClock
   m_EditorClassIdentifier: 
   module:
-    config: {fileID: 0}
+    configType:
+      type: 
+    interfaceType:
+      type: SwiftFramework.Core.IClock, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+    implementationType:
+      type: SwiftFramework.Core.Clock, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
     behaviour: {fileID: 0}
-    interfaceType: SwiftFramework.Core.IClock, SwiftFramework.Core, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-    implementationType: SwiftFramework.Core.Clock, SwiftFramework.Core, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
+    config: {fileID: 0}

@@ -114,12 +114,7 @@ namespace SwiftFramework.Core.Editor
             errors = new ErrorSummary();
             errorSummary = errors;
 
-            PluginData data = PluginsManifest.Instance.FindData(this);
-            
-            if (data == null)
-            {
-                return false;
-            }
+            PluginData data = PluginsManifest.Instance.GetPluginData(this);
 
             if (data.installed == false)
             {
@@ -192,10 +187,17 @@ namespace SwiftFramework.Core.Editor
         {
             public string packageName;
             public string version;
+            public string scopedRegistries;
             public string FullName => $"{packageName}:{version}";
         }
+
+        public virtual void FinishInstall()
+        {
+            
+            
+        }
         
-        public void FinishInstall()
+        public virtual void FinishUninstall()
         {
             
             

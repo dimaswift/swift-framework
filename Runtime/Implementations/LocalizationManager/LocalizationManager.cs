@@ -10,32 +10,63 @@ namespace SwiftFramework.Core
     [Configurable(typeof(LocalizationConfig))]
     internal class LocalizationManager : Module, ILocalizationManager
     {
-        private struct SelectedLanguage
-        {
-            public SystemLanguage language;
-        }
-
-        private Dictionary<string, string> warnings = new Dictionary<string, string>();
-
         public LocalizationManager(ModuleConfigLink configLink)
         {
             SetConfig(configLink);
         }
-
-        public LocalizationConfig Config => config;
-
+        
         public SystemLanguage CurrentLanguage { get; private set; } = SystemLanguage.English;
 
-        private readonly Promise downloadPromise = Promise.Create();
+        private Promise downloadPromise = null;
+        
+        private readonly List<LocalizationSheet> sheets = new List<LocalizationSheet>();
 
-        private Dictionary<SystemLanguage, Dictionary<string, string>> dict = new Dictionary<SystemLanguage, Dictionary<string, string>>();
-
-        private const string fileName = "localization";
-
-        private string localSheetPath => $"{Application.persistentDataPath}/{fileName}.csv";
+        private readonly HashSet<string> warnings = new HashSet<string>();
+        
+        private readonly Dictionary<SystemLanguage, Dictionary<string, string>> dict 
+            = new Dictionary<SystemLanguage, Dictionary<string, string>>();
 
         private LocalizationConfig config;
+        
+        protected override IPromise GetInitPromise()
+        {
+            downloadPromise = Promise.Create();
+            config = GetModuleConfig<LocalizationConfig>();
+            SetLanguage();
+            sheets.AddRange(AssetCache.GetAssets<LocalizationSheet>());
+            LoadNextSheet(0);
+            return downloadPromise;
+        }
 
+        private void LoadNextSheet(int current)
+        {
+            if (current >= sheets.Count)
+            {
+                downloadPromise.Resolve();
+                return;
+            }
+
+            LocalizationSheet sheet = sheets[current];
+            
+            sheet.LoadSheet().Then(rows =>
+            {
+                try
+                {
+                    ParseSheet(rows, sheet.Separator);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"LocalizationManager: Error while parsing {sheet.name}: {e.Message}");
+                }
+                LoadNextSheet(++current);
+                
+            }).Catch(e =>
+            {
+                Debug.LogError($"LocalizationManager: Error while loading {sheet.name}: {e.Message}");
+                LoadNextSheet(++current);
+            });
+        }
+        
         public void SetLanguage(SystemLanguage language)
         {
             CurrentLanguage = language;
@@ -49,10 +80,10 @@ namespace SwiftFramework.Core
         {
             string result = GetText(key, CurrentLanguage, out bool success);
 
-            if(success == false)
+            if (success == false)
             {
-                Warn($"Using fallback language for key <b>{key}</b>!");
-                result = GetText(key, Config.fallbackLanguage, out success);
+                Warn($"Using default language for key <b>{key}</b>!");
+                result = GetText(key, config.defaultLanguage, out success);
             }
 
             return result;
@@ -60,13 +91,13 @@ namespace SwiftFramework.Core
 
         private void Warn(string message)
         {
-            if (warnings.ContainsKey(message))
+            if (warnings.Contains(message))
             {
                 return;
             }
 
             LogWarning(message);
-            warnings.Add(message, "");
+            warnings.Add(message);
         }
 
         private string GetText(string key, SystemLanguage lang, out bool success)
@@ -80,7 +111,7 @@ namespace SwiftFramework.Core
             key = key.Trim();
             if (dict.TryGetValue(lang, out Dictionary<string, string> keys) == false)
             {
-                if(warnings.ContainsKey(CurrentLanguage.ToString()) == false)
+                if(warnings.Contains(CurrentLanguage.ToString()) == false)
                 {
                     Warn($"{CurrentLanguage} is not localized!");
                 }
@@ -118,41 +149,7 @@ namespace SwiftFramework.Core
                 return GetText(key);
             }
         }
-
-        public IPromise DownloadSheet(string url, string filePath)
-        {
-            return Download(App.Net).Then(body => File.WriteAllText(filePath, body));
-        }
-
-        protected override IPromise GetInitPromise()
-        {
-            GetModuleConfigAsync<LocalizationConfig>().Then(c => 
-            {
-                config = c;
-              
-                if (string.IsNullOrEmpty(Config.publishedGoogleSheetUrl))
-                {
-                    LogWarning("Cannot download localization, invalid url");
-                    downloadPromise.Resolve();
-                    return;
-                }
-
-                ParseLocal();
-                SetLanguage();
-                downloadPromise.Resolve();
-                if (Application.isEditor == false)
-                {
-                    DownloadSheet(Config.publishedGoogleSheetUrl, localSheetPath).Then(() =>
-                    {
-                        ParseGoogleSheet(File.ReadAllLines(localSheetPath));
-                    });
-                }
-            },
-             e => downloadPromise.Reject(e));
-
-            return downloadPromise;
-        }
-
+        
         private void SetLanguage()
         {
             if (App.Storage.Exists<SelectedLanguage>())
@@ -169,70 +166,36 @@ namespace SwiftFramework.Core
         {
             if (Application.isEditor)
             {
-                SetLanguage(Config.fallbackLanguage);
+                SetLanguage(SystemLanguage.English);
             }
             else
             {
                 SetLanguage(Application.systemLanguage);
             }
         }
-
-        private void ParseLocal()
+        
+        private void ParseSheet(string[] rows, char separator)
         {
-            if (Application.isEditor == false && File.Exists(localSheetPath))
-            {
-                ParseGoogleSheet(File.ReadAllLines(localSheetPath));
-            }
-            else
-            {
-                string[] rows = Resources.Load<TextAsset>(fileName)?.text.Split('\n');
-                if(rows == null)
-                {
-                    LogError($"Cannot parse file from resources! Should be inside Resources/{fileName}.csv");
-                    return;
-                }
-                ParseGoogleSheet(rows);
-            }
-        }
-
-
-        private void ParseGoogleSheet(string[] rows)
-        {
-            char separator;
-
-            switch (Config.extention)
-            {
-                case Extention.TSV:
-                    separator = '\t';
-                    break;
-                case Extention.CSV:
-                    separator = ',';
-                    break;
-                default:
-                    separator = ',';
-                    break;
-            }
-
-            if(rows.Length == 0)
+            if (rows.Length == 0)
             {
                 LogError("Invalid google sheet!");
                 return;
             }
 
-            var langs = rows[0].Split(separator);
+            string[] languages = rows[0].Split(separator);
 
-            for (int i = 0; i < langs.Length; i++)
+            for (int i = 0; i < languages.Length; i++)
             {
-                langs[i] = langs[i].Replace((char)160, (char)32);
+                languages[i] = languages[i].Replace((char)160, (char)32);
             }
 
             for (int i = 1; i < rows.Length; i++)
             {
-                var columns = rows[i].Split(separator);
-                var key = columns[0].Trim();
+                string[] columns = rows[i].Split(separator);
+                string key = columns[0].Trim();
                 for (int j = 1; j < columns.Length; j++)
                 {
-                    var lang = langs[j];
+                    string lang = languages[j];
 
                     if (Enum.TryParse(lang, out SystemLanguage parsedLang) == false)
                     {
@@ -245,7 +208,7 @@ namespace SwiftFramework.Core
                             dict.Add(parsedLang, new Dictionary<string, string>());
                         }
 
-                        var keys = dict[parsedLang];
+                        Dictionary<string, string> keys = dict[parsedLang];
 
                         if(keys.ContainsKey(key) == false && string.IsNullOrEmpty(columns[j]) == false)
                         {
@@ -256,20 +219,9 @@ namespace SwiftFramework.Core
             }
         }
 
-        public IPromise<string> Download(INetworkManager networkManager)
-        {
-            Promise<string> promise = Promise<string>.Create();
-            networkManager.Get(Config.publishedGoogleSheetUrl).Then(body =>
-            {
-                promise.Resolve(body);
-            })
-            .Catch(e => promise.Reject(e));
-            return promise;
-        }
-
         public IEnumerable<SystemLanguage> GetAvailableLanguages()
         {
-            foreach (LocalizationConfig.Language language in Config.availableLanguages)
+            foreach (Language language in config.availableLanguages)
             {
                 yield return language.language;
             }
@@ -277,14 +229,21 @@ namespace SwiftFramework.Core
 
         public Sprite GetLanguageIcon(SystemLanguage language)
         {
-            foreach (LocalizationConfig.Language lang in Config.availableLanguages)
+            foreach (Language lang in config.availableLanguages)
             {
-                if(language == lang.language)
+                if (language == lang.language)
                 {
                     return lang.icon;
                 }
             }
             return null;
         }
+        
+        [Serializable]
+        private struct SelectedLanguage
+        {
+            public SystemLanguage language;
+        }
+
     }
 }

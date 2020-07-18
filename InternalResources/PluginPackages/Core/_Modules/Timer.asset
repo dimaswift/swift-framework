@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: Timer
   m_EditorClassIdentifier: 
   module:
-    config: {fileID: 0}
+    configType:
+      type: 
+    interfaceType:
+      type: SwiftFramework.Core.ITimer, SwiftFramework.Core, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+    implementationType:
+      type: SwiftFramework.Core.CoroutineTimer, SwiftFramework.Core, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
     behaviour: {fileID: 0}
-    interfaceType: SwiftFramework.Core.ITimer, SwiftFramework.Core, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-    implementationType: SwiftFramework.Core.CoroutineTimer, SwiftFramework.Core,
-      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    config: {fileID: 0}

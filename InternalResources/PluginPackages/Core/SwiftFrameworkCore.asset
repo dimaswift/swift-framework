@@ -24,6 +24,7 @@ MonoBehaviour:
   packageDependencies:
   - packageName: com.unity.addressables
     version: 1.8.4
+    scopedRegistries: 
   dependencies: []
   modules:
   - {fileID: 11400000, guid: a992e051b7987a04b8d258b3483ac6c6, type: 2}
@@ -36,5 +37,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 47ca29f268b33634d93911aeb3467508, type: 2}
   showInfo: 0
   showDependencies: 1
-  showOptions: 1
+  showOptions: 0
   useAddressables: 0

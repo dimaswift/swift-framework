@@ -48,6 +48,13 @@ namespace SwiftFramework.EditorUtils
                         instance.HandleFinishedCompile(false);
                 };
             };
+        } 
+
+        [MenuItem("SwiftFramework/Internal/Cancel Delayed Compile Events")]
+        public static void CancelAll()
+        {
+            instance.onFinishedCompile.Clear();
+            EditorUtility.SetDirty(instance);
         }
 
         private void HandleFinishedCompile(bool successfully)

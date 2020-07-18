@@ -76,7 +76,6 @@ namespace SwiftFramework.Core.Editor
                 if (GUI.changed)
                 { 
                     property.stringValue = string.Join(", ", info);
-                    Debug.LogError(property.stringValue + " " + Type.GetType(property.stringValue)?.Name);
                     property.serializedObject.ApplyModifiedProperties();
                 }
                 EditorGUI.indentLevel--;

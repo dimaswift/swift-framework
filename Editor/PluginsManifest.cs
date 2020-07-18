@@ -13,80 +13,105 @@ namespace SwiftFramework.Core.Editor
         ModifyingPackageManager = 2, 
         AddingDefines = 3, 
         CopyingFiles = 4,
-        Finished
+        InstallingModules = 5,
+        Finished = 6
     }
 
     public class PluginsManifest : ScriptableEditorSettings<PluginsManifest>
     {
-        public PluginInfo CurrentPlugin
-        {
-            get => currentPlugin;
-            set
-            {
-                currentPlugin = value;
-                EditorUtility.SetDirty(this);
-            }
-        }
+        public PluginInfo CurrentPlugin => currentPlugin;
 
-        public PluginData FindData(PluginInfo pluginInfo)
+        public PluginData GetPluginData(PluginInfo pluginInfo)
         {
-            var path = AssetDatabase.GetAssetPath(pluginInfo);
-            return pluginsData.Find(d => d.path == path);
+            string path = AssetDatabase.GetAssetPath(pluginInfo);
+            PluginData data = pluginsData.Find(d => d.path == path);
+            if (data == null)
+            {
+                data = new PluginData()
+                {
+                    path = AssetDatabase.GetAssetPath(pluginInfo),
+                    installed = false,
+                    name = pluginInfo.name,
+                    version = 0
+                };
+                Instance.Add(data);
+                EditorUtility.SetDirty(Instance);
+            }
+            return data;
         }
 
         public void BeginInstallation(PluginInfo pluginInfo)
         {
+            assetsRegistryCache = "";
+            assetsRegistry.Clear();
+            foreach (string guid in AssetDatabase.FindAssets("", new string[] { "Assets" }))
+            {
+                assetsRegistryCache += guid + '\n';
+            }
             currentPlugin = pluginInfo;
             EditorUtility.SetDirty(this);
         }
 
+        public void BeginRemoval(PluginInfo pluginInfo)
+        {
+            currentPlugin = pluginInfo;
+            EditorUtility.SetDirty(this);
+        }
+        
         public void FinishInstallation()
         {
             if (currentPlugin == null)
             {
                 return;
             }
+
+            PluginData data = Instance.GetPluginData(Instance.CurrentPlugin);
+   
+            EditorUtility.SetDirty(Instance);
+            assetsRegistry.Clear();
+            string[] assets = Instance.assetsRegistryCache.Split('\n');
+            foreach (string asset in assets)
+            {
+                if (string.IsNullOrEmpty(asset) == false && assetsRegistry.Contains(asset) == false)
+                {
+                    assetsRegistry.Add(asset);
+                }
+            }
+            
+            HashSet<string> assetsAfterInstallation = new HashSet<string>(AssetDatabase.FindAssets("", new string[] {"Assets"}));
+
+            foreach (string guid in assetsAfterInstallation)
+            {
+                if (assetsRegistry.Contains(guid) == false)
+                {
+                    data.copiedFiles.Add(AssetDatabase.GUIDToAssetPath(guid));
+                }
+            }
+            
+            EditorUtility.SetDirty(currentPlugin);
             currentPlugin.FinishInstall();
             currentPlugin = null;
             EditorUtility.SetDirty(this);
         }
 
-        public PluginData CurrentPluginData
+        public void FinishUninstall()
         {
-            get
-            {
-                if (currentPlugin == null)
-                {
-                    return null;
-                }
-
-                var path = AssetDatabase.GetAssetPath(currentPlugin);
-                return pluginsData.Find(d => d.path == path);
-            }
-        }
-
-        public SerializedObject SerializedObject
-        {
-            get
-            {
-                if (serializedObject == null)
-                {
-                    serializedObject = new SerializedObject(this);
-                }
-
-                return serializedObject;
-            }
+            currentPlugin.FinishUninstall();
+            currentPlugin = null;
+            EditorUtility.SetDirty(this);
         }
 
         [SerializeField] private List<PluginData> pluginsData = new List<PluginData>();
 
         [SerializeField] private PluginInfo currentPlugin = null;
 
-        [NonSerialized] private SerializedObject serializedObject = null;
-
         [SerializeField] private InstallStage currentStage = InstallStage.None;
         
         [SerializeField] private List<PluginInfo> dependencyInstallQueue = new List<PluginInfo>();
+
+        [SerializeField] private string assetsRegistryCache = null;
+        
+        private static readonly HashSet<string> assetsRegistry = new HashSet<string>();
 
         public InstallStage CurrentStage
         {
@@ -98,19 +123,28 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
-        public void AddDependencyToQueue(PluginInfo pluginInfo)
+        public void AddPluginToInstallQueue(PluginInfo pluginInfo)
         {
             if (IsInstalled(pluginInfo))
             {
                 return;
             }
+
+            foreach (PluginInfo info in dependencyInstallQueue)
+            {
+                if (info == pluginInfo)
+                {
+                    return;
+                }
+            }
+            
             dependencyInstallQueue.Add(pluginInfo);
             EditorUtility.SetDirty(this);
         }
 
-        public bool IsInstalled(PluginInfo pluginInfo)
+        private bool IsInstalled(PluginInfo pluginInfo)
         {
-            PluginData data = FindData(pluginInfo);
+            PluginData data = GetPluginData(pluginInfo);
             if (data == null)
             {
                 return false;
@@ -118,9 +152,7 @@ namespace SwiftFramework.Core.Editor
             return data.installed;
         }
         
-        
-        
-        public bool TryGetDependencyFromQueue(out PluginInfo dependencyPlugin)
+        public bool TryGetPluginFromInstallQueue(out PluginInfo dependencyPlugin)
         {
             if (dependencyInstallQueue.Count == 0)
             {
@@ -149,7 +181,7 @@ namespace SwiftFramework.Core.Editor
                 case InstallStage.CopyingFiles:
                     return "Copying files...";
                 case InstallStage.Finished:
-                    return "Installed successfully";
+                    return "Finishing...";
                 default:
                     return null;
             }
@@ -157,6 +189,10 @@ namespace SwiftFramework.Core.Editor
 
         internal void Add(PluginData data)
         {
+            if (pluginsData.Find(d => d.name == data.name && d.version == data.version) != null)
+            {
+                return;
+            }
             pluginsData.Add(data);
             EditorUtility.SetDirty(this);
         }

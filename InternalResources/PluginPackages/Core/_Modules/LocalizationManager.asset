@@ -13,9 +13,14 @@ MonoBehaviour:
   m_Name: LocalizationManager
   m_EditorClassIdentifier: 
   module:
-    config: {fileID: 11400000, guid: e180e15d5e13f354387ba42b2a8cb6b9, type: 2}
+    configType:
+      type: SwiftFramework.Core.LocalizationConfig, SwiftFramework.Core, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    interfaceType:
+      type: SwiftFramework.Core.ILocalizationManager, SwiftFramework.Core, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    implementationType:
+      type: SwiftFramework.Core.LocalizationManager, SwiftFramework.Core, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
     behaviour: {fileID: 0}
-    interfaceType: SwiftFramework.Core.ILocalizationManager, SwiftFramework.Core,
-      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-    implementationType: SwiftFramework.Core.LocalizationManager, SwiftFramework.Core,
-      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    config: {fileID: 11400000, guid: e180e15d5e13f354387ba42b2a8cb6b9, type: 2}

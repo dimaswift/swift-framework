@@ -2,6 +2,7 @@
 using SwiftFramework.EditorUtils;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core.Editor
 {
@@ -10,18 +11,18 @@ namespace SwiftFramework.Core.Editor
     {
         [SerializeField] private ModuleInterface module = null;
 
-        public ModuleLink GenerateLink(Action<string> onAssetCreated)
+        public ModuleLink GenerateLink()
         {
             ModuleLink link = new ModuleLink()
             {
-                InterfaceType = module.GetInterfaceType(),
+                InterfaceType = module.interfaceType.Type,
             };
             
-            link.SetImplementation(module.implementationType);
+            link.SetImplementation(module.implementationType.TypeString);
 
-            if (module.config != null)
+            if (module.configType.IsDefined)
             {
-                string path = Folders.Configs + "/" + module.config.name;
+                string path = Folders.Configs + "/" + module.configType.Name;
                 link.ConfigLink = Link.Create<ModuleConfigLink>(path);
 
                 path = $"{ResourcesAssetHelper.RootFolder}/{path}.asset";
@@ -29,11 +30,20 @@ namespace SwiftFramework.Core.Editor
                 if (AssetDatabase.LoadAssetAtPath<ModuleConfig>(path) == null)
                 {
                     Util.EnsureProjectFolderExists($"{ResourcesAssetHelper.RootFolder}/{Folders.Configs}");
-                    AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(module.config), path);
-                    onAssetCreated(path);
+                    
+                    if (module.config)
+                    {
+                        AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(module.config), path);
+                    }
+                    else
+                    {
+                        Object config = CreateInstance(module.configType.Type);
+                        config.name = module.configType.Name;
+                        AssetDatabase.CreateAsset(config, path);
+                    }
                 }
             }
-
+            
             if (module.behaviour != null)
             {
                 string path = Folders.Behaviours + "/" + module.behaviour.name; 
@@ -45,26 +55,25 @@ namespace SwiftFramework.Core.Editor
                 {
                     Util.EnsureProjectFolderExists($"{ResourcesAssetHelper.RootFolder}/{Folders.Behaviours}");
                     AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(module.behaviour), path);
-                    onAssetCreated(path);
                 }
             }
-            
+
             return link;
         }
 
         public Type GetInterfaceType()
         {
-            return module.GetInterfaceType();
+            return module.interfaceType.Type;
         }
 
         public string GetModuleDescription()
         {
-            if (string.IsNullOrEmpty(module.implementationType))
+            if (string.IsNullOrEmpty(module.implementationType.TypeString))
             {
                 return "Invalid type";
             }
 
-            string[] values = module.implementationType.Split(',');
+            string[] values = module.implementationType.TypeString.Split(',');
 
             if (values.Length == 0)
             {
@@ -76,7 +85,7 @@ namespace SwiftFramework.Core.Editor
 
         public Type GetImplementationType()
         {
-            return module.GetImplementationType();
+            return module.implementationType.Type;
         }
     }
 }

@@ -13,7 +13,6 @@ namespace SwiftFramework.Core
         string GetText(string key, params object[] args);
         event Action OnLanguageChanged;
         void SetLanguage(SystemLanguage language);
-        IPromise<string> Download(INetworkManager networkManager);
         Sprite GetLanguageIcon(SystemLanguage language);
     }
 }

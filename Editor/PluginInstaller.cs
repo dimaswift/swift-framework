@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
+using UnityEditor.Compilation;
 using UnityEditor.VersionControl;
 using Object = UnityEngine.Object;
 
@@ -21,6 +22,7 @@ namespace SwiftFramework.Core.Editor
         private const float DELETE_BTN_WIDTH = 20;
 
         private Vector2 scrollPos;
+        
 
         public void OnGUI()
         {
@@ -62,18 +64,7 @@ namespace SwiftFramework.Core.Editor
                 for (int i = 0; i < plugins.Count; i++)
                 {
                     var plugin = plugins[i];
-                    var data = PluginsManifest.Instance.FindData(plugins[i]);
-                    if (data == null)
-                    {
-                        data = new PluginData()
-                        {
-                            path = AssetDatabase.GetAssetPath(plugin),
-                            installed = false,
-                            name = plugin.name,
-                            version = 0
-                        };
-                        PluginsManifest.Instance.Add(data);
-                    }
+                    var data = PluginsManifest.Instance.GetPluginData(plugins[i]);
                     pluginsData.Add(plugin, data);
                 }
             }
@@ -158,16 +149,13 @@ namespace SwiftFramework.Core.Editor
                             foreach (ModuleInstallInfo info in plugin.GetModules())
                             {
                                 Type interfaceType = info.GetInterfaceType();
-                                if (interfaceType == null)
-                                {
-                                    continue;
-                                }
+    
                  
                                 Rect labelRect = EditorGUILayout.GetControlRect();
                                 EnableDependencyWarning(PluginDependencyType.Module, installationErrors, AssetDatabase.GetAssetPath(info),
                                     data.installed, defaultColor, labelRect);
                                 EditorGUI.LabelField(labelRect,
-                                    $"{interfaceType.GetDisplayName()} ({info.GetModuleDescription()})");
+                                    $"{interfaceType?.GetDisplayName()} ({info.GetModuleDescription()})");
                                 GUI.color = defaultColor;
                             }
                             EditorGUI.indentLevel--;
@@ -319,7 +307,7 @@ namespace SwiftFramework.Core.Editor
                     Util.AddDependencyToPackageManifest(package[0], package[1]);
                     break;
                 case PluginDependencyType.Module:
-                    ModuleInstaller.Install(AssetDatabase.LoadAssetAtPath<ModuleInstallInfo>(id).GenerateLink(TryRegisterPluginFile));
+                    ModuleInstaller.Install(AssetDatabase.LoadAssetAtPath<ModuleInstallInfo>(id).GenerateLink());
                     break;
             }
             Refresh();
@@ -335,12 +323,17 @@ namespace SwiftFramework.Core.Editor
 
         private void RemovePlugin(PluginInfo plugin)
         {
-            PluginsManifest.Instance.BeginInstallation(plugin);
+            PluginsManifest.Instance.BeginRemoval(plugin);
             
             Repaint();
 
-            PluginData data = PluginsManifest.Instance.FindData(plugin);
+            PluginData data = PluginsManifest.Instance.GetPluginData(plugin);
 
+            if (data == null)
+            {
+                return;
+            }
+            
             bool finishOnRecompile = false;
 
             foreach (string file in data.copiedFiles)
@@ -385,25 +378,25 @@ namespace SwiftFramework.Core.Editor
             {
                 return;
             }
-
-            if (compiled)
-            {
-                PluginData data = PluginsManifest.Instance.FindData(PluginsManifest.Instance.CurrentPlugin);
-                data.installed = true;
-                data.version = PluginsManifest.Instance.CurrentPlugin.version;
-                EditorUtility.SetDirty(PluginsManifest.Instance);
-            }
+            
+            PluginData data = PluginsManifest.Instance.GetPluginData(PluginsManifest.Instance.CurrentPlugin);
+            data.installed = true;
+            data.version = PluginsManifest.Instance.CurrentPlugin.version;
+            EditorUtility.SetDirty(PluginsManifest.Instance);
             
             PluginsManifest.Instance.FinishInstallation();
 
-            if (PluginsManifest.Instance.TryGetDependencyFromQueue(out PluginInfo dependencyPlugin))
+            if (PluginsManifest.Instance.TryGetPluginFromInstallQueue(out PluginInfo pluginFromQueue))
             {
-                Install(dependencyPlugin);
+                Install(pluginFromQueue);
             }
             else
             {
                 Refresh();
             }
+            
+            
+            
         }
 
         private static void InstallModules()
@@ -420,30 +413,20 @@ namespace SwiftFramework.Core.Editor
 
         private static void InstallModule(ModuleInstallInfo moduleInstallInfo)
         {
-            ModuleInstaller.Install(moduleInstallInfo.GenerateLink(TryRegisterPluginFile), TryRegisterPluginFile);
+            ModuleInstaller.Install(moduleInstallInfo.GenerateLink());
         }
-        
-        public static void TryRegisterPluginFile(string localPath)
-        {
-            if (PluginsManifest.Instance.CurrentPlugin == null)
-            {
-                return;
-            }
-            PluginData data = PluginsManifest.Instance.FindData(PluginsManifest.Instance.CurrentPlugin);
-            data.copiedFiles.Add(localPath);
-            EditorUtility.SetDirty(PluginsManifest.Instance);
-        }
-        
+
+
         private static void FinishUninstalling(bool compiled)
         {
-            PluginsManifest.Instance.FinishInstallation();
+            PluginsManifest.Instance.FinishUninstall();
             Refresh();
         }
 
         private static bool CopyFiles()
         {
-            PluginData data = PluginsManifest.Instance.FindData(PluginsManifest.Instance.CurrentPlugin);
-            data.copiedFiles.Clear();
+            bool copiedScripts = false;
+            
             foreach (DirectoryInfo subDir in PluginsManifest.Instance.CurrentPlugin.RootDirectory.GetDirectories())
             {
                 string targetFolder = subDir.Name;
@@ -462,29 +445,36 @@ namespace SwiftFramework.Core.Editor
                 {
                     targetFolder = targetFolder.Substring(1, targetFolder.Length - 1);
                 }
-                data.copiedFiles.AddRange(Util.CopyDirectory(subDir.FullName, Application.dataPath + "/" + targetFolder, ".meta"));
-            }
 
-            for (int i = 0; i < data.copiedFiles.Count; i++)
-            {
-                if (data.copiedFiles[i].StartsWith("Assets") == false)
+                foreach (string copiedFile in Util.CopyDirectory(subDir.FullName, Application.dataPath + "/" + targetFolder, ".meta"))
                 {
-                    data.copiedFiles[i] = Util.ToRelativePath(data.copiedFiles[i]);
+                    if (copiedFile.EndsWith(".cs"))
+                    {
+                        copiedScripts = true;
+                    }
                 }
             }
             
-            InstallModules();
-            
-            EditorUtility.SetDirty(PluginsManifest.Instance);
-            
-            return data.copiedFiles.FindIndex(c => c.EndsWith(".cs")) != -1;
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+            if (copiedScripts)
+            {
+                CompilationPipeline.RequestScriptCompilation();
+            }
+
+            return copiedScripts;
         }
 
         public static void Install(PluginInfo plugin)
         {
             foreach (PluginInfo pluginDependency in plugin.GetDependencies())
             {
-                PluginsManifest.Instance.AddDependencyToQueue(pluginDependency);
+                if (PluginsManifest.Instance.GetPluginData(pluginDependency).installed == false)
+                {
+                    PluginsManifest.Instance.AddPluginToInstallQueue(plugin);
+                    Install(pluginDependency);
+                    return;
+                }
             }
             
             PluginsManifest.Instance.BeginInstallation(plugin);
@@ -502,16 +492,20 @@ namespace SwiftFramework.Core.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
 
+        static PluginInstaller()
+        {
+            AssetDatabase.importPackageCompleted += OnPackageImportCompleted;
+        }
+        
         public static void ProceedInstall(bool compiled)
         {
             PluginsManifest.Instance.CurrentStage = (InstallStage)((int) PluginsManifest.Instance.CurrentStage + 1);
-            
             switch (PluginsManifest.Instance.CurrentStage)
             {
                 case InstallStage.InstallingUnityPackages:
                     if (InstallUnityPackages())
                     {
-                        Compile.OnFinishedCompile += ProceedInstall;
+                        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                     }
                     else
                     {
@@ -548,10 +542,45 @@ namespace SwiftFramework.Core.Editor
                         ProceedInstall(true);
                     }
                     break;
+                case InstallStage.InstallingModules:
+                    InstallModules();
+                    ProceedInstall(true);
+                    break;
                 case InstallStage.Finished:
-                    FinishInstalling(true);
+
+                    if (HasToRecompileOnFinish())
+                    {
+                        CompilationPipeline.RequestScriptCompilation();
+                        Compile.OnFinishedCompile += FinishInstalling;
+                    }
+                    else
+                    {
+                        FinishInstalling(true);
+                    }
                     break;
             }
+        }
+
+        private static void OnPackageImportCompleted(string package)
+        {
+            if (PluginsManifest.Instance.CurrentStage == InstallStage.InstallingUnityPackages)
+            {
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                
+                if (EditorApplication.isCompiling)
+                {
+                    Compile.OnFinishedCompile += ProceedInstall;
+                }
+                else
+                {
+                    ProceedInstall(true);
+                }
+            }
+        }
+
+        private static bool HasToRecompileOnFinish()
+        {
+            return false;
         }
 
         private static bool InstallToPackageManager()
@@ -592,7 +621,8 @@ namespace SwiftFramework.Core.Editor
 
             return false;
         }
-        
+
+
         [MenuItem("SwiftFramework/Plugins")]
         public static void OpenWindow()
         {

@@ -208,7 +208,13 @@ namespace SwiftFramework.Core.Editor
             foreach (string rootFolder in rootFolders)
             {
                 Util.EnsureProjectFolderExists(rootFolder);
+                if (AssetDatabase.IsValidFolder(rootFolder) == false)
+                {
+                    reloading = false;
+                    return;
+                }
             }
+            
 
             foreach (string guid in AssetDatabase.FindAssets("", rootFolders))
             {

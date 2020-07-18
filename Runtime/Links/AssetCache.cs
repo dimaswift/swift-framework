@@ -4,6 +4,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 #endif
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -230,10 +231,7 @@ namespace SwiftFramework.Core
             
             foreach (var asset in preloadedAssets)
             {
-                if (asset.Value is T value)
-                {
-                    yield return value;
-                }
+                yield return asset.Value;
             }
 #else
             return preloadedResourcesSet;
@@ -374,7 +372,7 @@ namespace SwiftFramework.Core
                     }
                     if (catalogs.Count > 0)
                     {
-                        IList<object> assetsToDownload = catalogs.FirstOrDefaultFast().Keys.ToList();
+                        IList<object> assetsToDownload = new List<object>(catalogs.FirstOrDefaultFast().Keys);
                         Addressables.GetDownloadSizeAsync(assetsToDownload).GetPromise().Done(totalSize =>
                         {
                             promise.Resolve((assetsToDownload, totalSize));
@@ -590,12 +588,7 @@ namespace SwiftFramework.Core
                 }
 
                 promise.Resolve(result);
-
-
-                foreach (var VARIABLE in preloadedResourcesSet)
-                {
-                    Debug.LogError(VARIABLE);
-                }
+                
 #endif
             });
 

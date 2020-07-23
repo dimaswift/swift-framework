@@ -24,7 +24,18 @@ namespace SwiftFramework.Core
             string moduleName = type.IsInterface && type.Name.StartsWith("I") ? type.Name.Remove(0, 1) : type.Name;
             return Regex.Replace(moduleName, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
         }
-        
+
+        public static string GetFullName(this GameObject gameObject)
+        {
+            string name = gameObject.name;
+            Transform parent = gameObject.transform.parent;
+            while (parent != null)
+            {
+                name = parent.name + "/" + name;
+                parent = parent.parent;
+            }
+            return name;
+        }
         
         public static bool TryGetAttribute<T>(this UnityEngine.Object asset, out Type type, out T attr) where T : Attribute
         {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace SwiftFramework.Core
 {
@@ -35,7 +36,7 @@ namespace SwiftFramework.Core
                 }
             }
 
-            subModules.RemoveAll(m => m == GetComponent<T>());
+            subModules.RemoveAll(m => m is CompositeModule<T>);
             foreach (T subModule in subModules)
             {
                 subModule.SetUp(app);

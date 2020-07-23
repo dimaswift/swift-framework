@@ -289,6 +289,8 @@ namespace SwiftFramework.Core.Editor
             {
                 group = Util.CreateScriptable<AddressableAssetGroup>(name, "Assets/AddressableAssetsData/AssetGroups");
                 group.Name = name;
+                group.AddSchema<ContentUpdateGroupSchema>();
+                group.AddSchema<BundledAssetGroupSchema>();
                 EditorUtility.SetDirty(group);
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             }

@@ -364,12 +364,15 @@ namespace SwiftFramework.Core.Editor
             {
                 if (manifest.ImplementationType.GetCustomAttribute<DisallowCustomModuleBehavioursAttribute>() == null)
                 {
-                    string prefabPath = ResourcesAssetHelper.RootFolder + "/" + manifest.Link.BehaviourLink.GetPath() +
-                                        ".prefab";
-                    if (manifest.Link.BehaviourLink == null ||
-                        AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+                    if (manifest.Link != null && manifest.Link.BehaviourLink != null && !manifest.Link.BehaviourLink.IsEmpty)
                     {
-                        return false;
+                        string prefabPath = ResourcesAssetHelper.RootFolder + "/" + manifest.Link.BehaviourLink.GetPath() +
+                                            ".prefab";
+                        if (manifest.Link.BehaviourLink == null ||
+                            AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
+                        {
+                            return false;
+                        }
                     }
                 }
             }

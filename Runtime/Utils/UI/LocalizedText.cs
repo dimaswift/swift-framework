@@ -23,11 +23,18 @@ namespace SwiftFramework.Utils.UI
             Translate();
         }
 
+        protected virtual IText GetText() => GetComponent<IText>();
+
         private void Translate()
         {
             if (text == null)
             {
-                text = GetComponent<IText>();
+                text = GetText();
+                if (text == null)
+                {
+                    Debug.LogError($"IText interface is missing on {gameObject.GetFullName()}");
+                    return;
+                }
             }
             ILocalizationManager localization = App.Core.GetModule<ILocalizationManager>();
             text.Text = localization.GetText(key);

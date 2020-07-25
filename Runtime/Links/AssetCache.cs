@@ -227,7 +227,7 @@ namespace SwiftFramework.Core
 
         private static IEnumerable<Object> GetPreloadedAssets()
         {
-            #if USE_ADDRESSABLES
+#if USE_ADDRESSABLES
             
             foreach (var asset in preloadedAssets)
             {

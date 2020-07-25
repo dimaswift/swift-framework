@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 namespace SwiftFramework.Core
 {
-    public abstract class AppSceneBoot<A> : AppBoot
+    public abstract class AppSceneBoot : AppBoot
     {
         [SerializeField] private SceneLink mainScene = null;
 
@@ -40,7 +40,7 @@ namespace SwiftFramework.Core
         }
 
 
-        public virtual IPromise ShowLoadingScreen()
+        private IPromise ShowLoadingScreen()
         {
             if (loadingScreen == null)
             {
@@ -70,7 +70,7 @@ namespace SwiftFramework.Core
             loadingScreen?.SetLoadProgress(progress);
         }
 
-        public virtual IPromise HideLoadingScreen()
+        private IPromise HideLoadingScreen()
         {
             if (loadingScreen == null)
             {

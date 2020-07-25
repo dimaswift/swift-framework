@@ -9,7 +9,7 @@ namespace SwiftFramework.Utils.UI
     {
         [SerializeField] private float animationDuration = .15f;
         [SerializeField] private float scaleDownPercent = .9f;
-        [SerializeField] private AudioClipLink clickSound = null;
+        [SerializeField] private AudioClipLink clickSound = Link.Create<AudioClipLink>("Sounds/button_click");
 
         private Coroutine currentAnimation;
         private bool clicked;
@@ -18,17 +18,16 @@ namespace SwiftFramework.Utils.UI
 
         private void Awake()
         {
+            App.ExecuteOnLoad(() => soundManager = App.Core.GetModule<ISoundManager>());
             startScale = transform.localScale;
         }
 
         public void Click()
         {
-
             App.Core.Coroutine.Begin(PressAnimationRoutine(), ref currentAnimation);
             
             if (clickSound != null && clickSound.HasValue)
             {
-                App.Core.GetCachedModule(ref soundManager);
                 soundManager.PlayOnce(clickSound, SoundType.SFX);
             }
 

@@ -22,14 +22,6 @@ namespace SwiftFramework.Core.Editor
             return Promise<string>.Resolved(CreateAsset(type, fieldInfo.GetChildValueType()));
         }
 
-        private class Sorter : IComparer<string>
-        {
-            public int Compare(string x, string y)
-            {
-                return CompareName(x, y);
-            }
-        }
-
         protected override void Reload()
         {
             assets.Clear();
@@ -65,8 +57,7 @@ namespace SwiftFramework.Core.Editor
                     });
                 }
             }
-
-
+            
         }
 
     }

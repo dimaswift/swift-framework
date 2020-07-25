@@ -23,7 +23,6 @@ namespace SwiftFramework.Core.Editor
 
         private Vector2 scrollPos;
         
-
         public void OnGUI()
         {
             Color defaultColor = GUI.color;
@@ -338,6 +337,10 @@ namespace SwiftFramework.Core.Editor
 
             foreach (string file in data.copiedFiles)
             {
+                if (AssetDatabase.IsValidFolder(file))
+                {
+                    continue;
+                }
                 AssetDatabase.DeleteAsset(file);
                 if (!finishOnRecompile && file.EndsWith(".cs"))
                 {

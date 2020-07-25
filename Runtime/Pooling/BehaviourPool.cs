@@ -8,9 +8,9 @@ namespace SwiftFramework.Core.Pooling
     {
         private readonly Stack<P> instances = new Stack<P>();
 
-        private readonly Func<P> instanceHadnler;
+        private readonly Func<P> instanceHandler;
 
-        private List<P> activeObjects = new List<P>();
+        private readonly List<P> activeObjects = new List<P>();
 
         public int CurrentCapacity => instances.Count;
 
@@ -25,9 +25,9 @@ namespace SwiftFramework.Core.Pooling
         }
 
 
-        public BehaviourPool(Func<P> instanceHadnler)
+        public BehaviourPool(Func<P> instanceHandler)
         {
-            this.instanceHadnler = instanceHadnler;
+            this.instanceHandler = instanceHandler;
         }
 
         public void WarmUp(int capacity)
@@ -40,7 +40,7 @@ namespace SwiftFramework.Core.Pooling
 
         private void AddInstanceToPool()
         {
-            P instance = instanceHadnler();
+            P instance = instanceHandler();
             instance.gameObject.SetActive(false);
             instances.Push(instance);
         }
@@ -101,6 +101,11 @@ namespace SwiftFramework.Core.Pooling
                 UnityEngine.Object.Destroy(instances.Pop());
             }
             activeObjects.Clear();
+        }
+
+        public void Dispose(IPooled pooled)
+        {
+            activeObjects.RemoveAll(o => o == (P)pooled);
         }
     }
 }

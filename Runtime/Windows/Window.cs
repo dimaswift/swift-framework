@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace SwiftFramework.Core.Windows
@@ -57,6 +59,7 @@ namespace SwiftFramework.Core.Windows
         [SerializeField] private bool showTopBar = false;
         [SerializeField] private Button closeButton = null;
 
+        
 
         public void Hide()
         {
@@ -92,6 +95,57 @@ namespace SwiftFramework.Core.Windows
             if (closeButton == null && transform.Find("CloseButton"))
             {
                 closeButton = transform.Find("CloseButton").GetComponent<Button>();
+            }
+
+            if (animationHandler == null || animationHandler.HasValue == false)
+            {
+                animationHandler = new AppearAnimationHandler();
+                
+                FadeWindowAnimation fadeWindowAnimation = GetComponent<FadeWindowAnimation>();
+
+                if (fadeWindowAnimation == null)
+                {
+                    gameObject.AddComponent<FadeWindowAnimation>();
+                }
+                
+                animationHandler.SetTarget(gameObject);
+
+                UnityEditor.EditorUtility.SetDirty(this);
+            }
+
+            List<Transform> children = new List<Transform>(GetComponentsInChildren<Transform>(true));
+            
+            foreach (FieldInfo field in GetType().GetFields(BindingFlags.NonPublic | 
+                                                            BindingFlags.Instance))
+            {
+                if (typeof(InterfaceComponentField).IsAssignableFrom(field.FieldType))
+                {
+                    InterfaceComponentField value = (InterfaceComponentField)field.GetValue(this);
+
+                    if (value == null)
+                    {
+                        continue;
+                    } 
+                     
+                    Transform button = children.Find(c =>
+                    {
+                        if (c.name == field.Name || c.name == field.Name.FirstCharToUpper())
+                        {
+                            if (c.GetComponent(value.InterfaceType) != null)
+                            {
+                                return true;
+                            }
+                        }
+                        return false;
+                        
+                    });
+
+                    if (button != null)
+                    {
+                        value.SetTarget(button.gameObject);
+                        UnityEditor.EditorUtility.SetDirty(this);
+                    }
+                }
             }
 #endif
         }

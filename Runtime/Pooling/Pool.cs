@@ -40,7 +40,7 @@ namespace SwiftFramework.Core.Pooling
                 {
                     pool.Dispose();
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Debug.LogError($"{e.Message}"); 
                 }
@@ -63,6 +63,14 @@ namespace SwiftFramework.Core.Pooling
                 }
             }
             poolStack.Clear();
+        }
+
+        public void Dispose(IPooled pooled)
+        {
+            if (activeItems.Contains(pooled))
+            {
+                activeItems.Remove(pooled);
+            }
         }
 
         public static int PoolsCount => pools.Count;

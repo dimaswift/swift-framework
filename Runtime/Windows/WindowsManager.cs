@@ -49,6 +49,8 @@ namespace SwiftFramework.Core.Windows
         public event Action<IWindow> OnWindowWillBeHidden = w => { };
         public event Action<IWindow> OnWindowJustEnabled = w => { };
 
+        public bool IsInTransition { get; private set; }
+        
         private readonly LinkedList<Promise> currentChainedWindowQueue = new LinkedList<Promise>();
 
         public bool IsShowingAnimation()
@@ -114,7 +116,7 @@ namespace SwiftFramework.Core.Windows
         private void InstantiateWindow(Window windowPrefab, WindowLink windowLink = null)
         {
             Type type = windowPrefab.GetType();
-
+            
             if (windowLink != null && windowInstances.ContainsKey(windowLink))
             {
                 Debug.LogError($"Ignoring window {windowPrefab.name} of type {type.Name}. Already created window with link: {windowLink.GetPath()}!");
@@ -129,8 +131,6 @@ namespace SwiftFramework.Core.Windows
             Window window = Instantiate(windowPrefab);
             window.name = windowPrefab.name;
 
-            window.Init(this);
-            
             try
             {
                 window.Init(this);
@@ -1079,6 +1079,12 @@ namespace SwiftFramework.Core.Windows
         {
             Promise promise = Promise.Create();
 
+            if (IsInTransition)
+            {
+                promise.Reject(new InvalidOperationException("Already in transition!"));
+                return promise;
+            }
+
             StartCoroutine(TransitionRoutine(promiseToWait, action, promise));
 
             return promise;
@@ -1086,6 +1092,8 @@ namespace SwiftFramework.Core.Windows
 
         private IEnumerator TransitionRoutine(IPromise promiseToWait, Action action, Promise promise)
         {
+            IsInTransition = true;
+
             transitionPanel.gameObject.SetActive(true);
             float a = 0f;
 
@@ -1113,6 +1121,8 @@ namespace SwiftFramework.Core.Windows
                 yield return null;
             }
             transitionPanel.gameObject.SetActive(false);
+            IsInTransition = false;
+            
             promise.Resolve();
         }
 

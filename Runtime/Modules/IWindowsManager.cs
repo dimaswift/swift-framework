@@ -33,6 +33,7 @@ namespace SwiftFramework.Core
         ITopBar GetTopBar();
         IRootCanvas GetRootCanvas(CanvasType type);
         IPromise MakeTransition(IPromise promiseToWait, Action action);
+        bool IsInTransition { get; }
         event Action<IWindow> OnWindowShown;
         event Action<IWindow> OnWindowWillBeShown;
         event Action<IWindow> OnWindowHidden;

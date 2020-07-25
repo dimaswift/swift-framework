@@ -244,6 +244,43 @@ namespace SwiftFramework.Core
             };
         }
 
+        public void RegisterState<T>(out T existingState, ILink link, Func<T> state) where T : new()
+        {
+            existingState = LoadOrCreateNew<T>(link);
+            OnBeforeSave += () =>
+            {
+                Save(state(), link);
+            };
+        }
+        
+        public void RegisterState<T>(out T existingState, Func<T> state) where T : new()
+        {
+            existingState = LoadOrCreateNew<T>();
+            OnBeforeSave += () =>
+            {
+                Save(state());
+            };
+        }
+        
+        public void RegisterState<T>(out T existingState, Func<T> state, Func<T> defaultState) where T : new()
+        {
+            existingState = LoadOrCreateNew(defaultState);
+            OnBeforeSave += () =>
+            {
+                Save(state());
+            };
+        }
+        
+        public void RegisterState<T>(out T existingState, ILink link, Func<T> state,  Func<T> defaultState) where T : new()
+        {
+            existingState = LoadOrCreateNew(link, defaultState);
+            OnBeforeSave += () =>
+            {
+                Save(state(), link);
+            };
+        }
+
+        
         public void Save<T>(T data, ILink link)
         {
             string path = link.GetPath();

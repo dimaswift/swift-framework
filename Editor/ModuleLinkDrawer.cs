@@ -66,7 +66,7 @@ namespace SwiftFramework.Core.Editor
             public SerializedProperty interfaceTypeProperty;
             public SerializedProperty property;
             public readonly List<Type> implementationTypes = new List<Type>();
-            public List<BehaviourModule> filteredBehaviourModules = null;
+            private List<BehaviourModule> filteredBehaviourModules = null;
             public string[] names = new string[0];
             public Type selectedType;
             public AssetLinkDrawer behaviourModuleDrawer;
@@ -86,10 +86,8 @@ namespace SwiftFramework.Core.Editor
                     }
 
                     filteredBehaviourModules = null;
-                    behaviourModuleDrawer = null;
                     implementationTypes.Clear();
                     interfaceType = value;
-                    hasCustomBehaviour = false;
                     configDrawer = null;
                     if (value == null)
                     {
@@ -121,6 +119,21 @@ namespace SwiftFramework.Core.Editor
                 if (string.IsNullOrEmpty(interfaceTypeProperty.stringValue) == false)
                 {
                     InterfaceType = Type.GetType(interfaceTypeProperty.stringValue);
+                }
+                if (filteredBehaviourModules == null && selectedType != null)
+                {
+                    filteredBehaviourModules = new List<BehaviourModule>();
+                    hasCustomBehaviour = IsBehaviourModule(this);
+                    if (hasCustomBehaviour)
+                    {
+                        foreach (GameObject module in Util.GetAssets<GameObject>())
+                        {
+                            if (module.GetComponent(selectedType) != null)
+                            {
+                                filteredBehaviourModules.Add(module.GetComponent<BehaviourModule>());
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -357,17 +370,9 @@ namespace SwiftFramework.Core.Editor
 
         private static void DrawBehaviourModulePopUp(ref Rect position, float baseHeight, Data data)
         {
-            if (data.filteredBehaviourModules == null)
+            if (data.hasCustomBehaviour == false)
             {
-                data.filteredBehaviourModules = new List<BehaviourModule>();
-                data.hasCustomBehaviour = IsBehaviourModule(data);
-                foreach (GameObject module in Util.GetAssets<GameObject>())
-                {
-                    if (module.GetComponent(data.selectedType) != null)
-                    {
-                        data.filteredBehaviourModules.Add(module.GetComponent<BehaviourModule>());
-                    }
-                }
+                return;
             }
 
             if (data.behaviourModuleDrawer == null)
@@ -643,11 +648,8 @@ namespace SwiftFramework.Core.Editor
 
             if (data.selectedType != null)
             {
-                if (data.hasCustomBehaviour)
-                {
-                    DrawBehaviourModulePopUp(ref position, data.baseHeight, data);
-                }
-
+                DrawBehaviourModulePopUp(ref position, data.baseHeight, data);
+                
                 DrawConfigPopUp(ref position, data.baseHeight, data);
             }
         }

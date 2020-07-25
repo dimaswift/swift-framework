@@ -50,12 +50,12 @@ namespace SwiftFramework.Core.Views
             Active = false;
         }
 
-        private void OnDisable()
+        protected virtual void OnDisable()
         {
             isActive = false;
         }
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             isActive = true;
         }
@@ -67,11 +67,15 @@ namespace SwiftFramework.Core.Views
             return gameObject;
         }
 
+        protected virtual void OnBeforeDestroy() {}
+        
         public void Dispose()
         {
             if (gameObject != null)
             {
                 isActive = false;
+                pool.Dispose(this);
+                OnBeforeDestroy();
                 Destroy(gameObject);
             }
         }

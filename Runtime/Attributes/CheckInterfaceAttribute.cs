@@ -26,6 +26,7 @@ namespace SwiftFramework.Core
     public abstract class InterfaceComponentField
     {
         public abstract Type InterfaceType { get; }
+        public abstract void SetTarget(GameObject gameObject);
     }
 
     [Serializable]
@@ -66,6 +67,11 @@ namespace SwiftFramework.Core
 
         [SerializeField] private GameObject target = null;
         [NonSerialized] private T value;
+
+        public override void SetTarget(GameObject target)
+        {
+            this.target = target;
+        }
     }
 
 

@@ -33,6 +33,10 @@ namespace SwiftFramework.Core
         string GetRawCompressedSave();
         void LoadRawSave(string rawCompressedSave);
         void RegisterState<T>(Func<T> state);
+        void RegisterState<T>(out T existingState, Func<T> state) where T : new();
+        void RegisterState<T>(out T existingState, Func<T> state, Func<T> defaultState) where T : new();
+        void RegisterState<T>(out T existingState, ILink link, Func<T> state, Func<T> defaultState) where T : new();
+        void RegisterState<T>(out T existingState, ILink link, Func<T> state) where T : new();
         void RegisterState<T>(Func<T> state, ILink link);
         void DeleteAll();
         long SaveTimestamp { get; }

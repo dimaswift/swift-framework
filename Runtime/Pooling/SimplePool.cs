@@ -89,6 +89,14 @@ namespace SwiftFramework.Core.Pooling
             }
             activeObjects.Clear();
         }
+
+        public void Dispose(IPooled pooled)
+        {
+            if (activeObjects.Contains(pooled))
+            {
+                activeObjects.Remove(pooled);
+            }
+        }
     }
 }
 

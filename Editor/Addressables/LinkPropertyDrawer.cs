@@ -22,7 +22,6 @@ namespace SwiftFramework.Core.Editor
                 }
             }
             drawer.Draw(position, property, label);
-
             EditorGUI.PropertyField(position, property, label, true);
         }
 

@@ -3,10 +3,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Core.Editor
 {
-
-
     [CustomPropertyDrawer(typeof(PriceLink), true)]
-    [CanEditMultipleObjects]
     public class PriceLinkDrawer : LinkPropertyDrawer<IPrice>
     {
         private InterfaceLinkDrawer drawer;
@@ -32,5 +29,4 @@ namespace SwiftFramework.Core.Editor
             drawer.Draw(new Rect(position.x + position.width * .45f, position.y, position.width * .55f, position.height), property, GUIContent.none);
         }
     }
-
 }

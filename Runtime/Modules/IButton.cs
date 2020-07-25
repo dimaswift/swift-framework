@@ -20,7 +20,7 @@ namespace SwiftFramework.Core
         
         public void AddListener(UnityAction action)
         {
-            Value.AddListener(action);
+            Value?.AddListener(action);
         }
     }
 

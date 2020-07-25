@@ -69,39 +69,46 @@ namespace SwiftFramework.Core
             
             if (downloadSheetOnLoad == false)
             {
+                Download();
                 promise.Resolve(GetCachedSheet());
                 return promise;
             }
             
-            App.Core.Net.Get(publishedGoogleSheetUrl, downloadTimeout).Then(body =>
-            {
-                if (string.IsNullOrEmpty(body) == false)
-                {
-                    try
-                    {
-                        if (File.Exists(CachedSheetPath))
-                        {
-                            File.Delete(CachedSheetPath);
-                        }
-                        File.WriteAllText(CachedSheetPath, body);
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogError($"Cannot write localization file: {exception.Message}");
-                    }
+            return Download();
+        }
 
-                    promise.Resolve(body.Split('\n'));
-                }
-                else
+        private IPromise<string[]> Download()
+        {
+            Promise<string[]> promise = Promise<string[]>.Create();
+            App.Core.Net.Get(publishedGoogleSheetUrl, downloadTimeout).Then(body =>
+                {
+                    if (string.IsNullOrEmpty(body) == false)
+                    {
+                        try
+                        {
+                            if (File.Exists(CachedSheetPath))
+                            {
+                                File.Delete(CachedSheetPath);
+                            }
+                            File.WriteAllText(CachedSheetPath, body);
+                        }
+                        catch (Exception exception)
+                        {
+                            Debug.LogError($"Cannot write localization file: {exception.Message}");
+                        }
+
+                        promise.Resolve(body.Split('\n'));
+                    }
+                    else
+                    {
+                        promise.Resolve(GetCachedSheet());
+                    }
+                })
+                .Catch(e =>
                 {
                     promise.Resolve(GetCachedSheet());
-                }
-            })
-                .Catch(e =>
-            {
-                promise.Resolve(GetCachedSheet());
-            });
-            
+                });
+
             return promise;
         }
     }

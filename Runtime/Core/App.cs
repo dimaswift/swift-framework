@@ -50,6 +50,11 @@ namespace SwiftFramework.Core
 
             awaitingActions[state].Add(action);
         }
+        
+        public static void ExecuteOnLoad(Action action)
+        {
+            WaitForState(AppState.ModulesInitialized, action);
+        }
 
         private static readonly Dictionary<AppState, List<Action>> awaitingActions =
             new Dictionary<AppState, List<Action>>();

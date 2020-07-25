@@ -262,7 +262,7 @@ namespace SwiftFramework.Core.Editor
         public void Draw(Rect position, SerializedProperty property, GUIContent label = null, bool overrideCreateMethod = false)
         {
             const float buttonWidth = 50;
-
+            
             Rect buttonRect = new Rect(position.x + position.width - buttonWidth * 2, position.y, buttonWidth, 18);
             Rect popupRect = position;
 

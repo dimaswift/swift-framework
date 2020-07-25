@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   description: SwiftFramework Core
   priority: 9999999
-  version: 1
-  displayVersion: 0.0.1
+  version: 2
+  displayVersion: 0.0.2
   canBeRemoved: 1
   canBeUpdated: 1
   defineSymbols:
@@ -37,5 +37,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 47ca29f268b33634d93911aeb3467508, type: 2}
   showInfo: 0
   showDependencies: 1
-  showOptions: 0
-  useAddressables: 0
+  showOptions: 1
+  useAddressables: 1

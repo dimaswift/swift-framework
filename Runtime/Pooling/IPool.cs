@@ -9,6 +9,7 @@
         IPromise WarmUpAsync(int capacity);
         void ReturnAll();
         void Dispose();
+        void Dispose(IPooled pooled);
     }
 }
 

@@ -39,6 +39,8 @@ namespace SwiftFramework.Core.Windows
             }
         }
 
+        [SerializeField] private RenderMode renderMode = RenderMode.ScreenSpaceOverlay;
+        [SerializeField] private float planeDistance = 10;
         [SerializeField] private CanvasType type = CanvasType.Window;
         [SerializeField] private RectTransform safeAreaRect = null;
 
@@ -47,6 +49,9 @@ namespace SwiftFramework.Core.Windows
 
         private void OnEnable()
         {
+            Canvas.renderMode = renderMode;
+            Canvas.worldCamera = Camera.main;
+            Canvas.planeDistance = planeDistance;
             ApplySafeArea();
         }
 

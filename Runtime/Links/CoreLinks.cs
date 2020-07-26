@@ -81,7 +81,7 @@ namespace SwiftFramework.Core
     [LinkFolder(Folders.Views)]
     public class ViewLink : LinkToPrefab<IView>
     {
-
+        public static readonly ViewLink Empty = CreateNull<ViewLink>();
     }
 
     [FlatHierarchy]

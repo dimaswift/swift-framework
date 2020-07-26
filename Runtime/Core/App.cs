@@ -12,7 +12,8 @@ namespace SwiftFramework.Core
         Loading = 1,
         CoreModulesInitialized = 2,
         AssetsPreloaded = 3,
-        ModulesInitialized = 4
+        ModulesInitialized = 4,
+        Disposed = 5
     }
 
     public sealed class App : IApp
@@ -85,7 +86,7 @@ namespace SwiftFramework.Core
                     // ignored
                 }
             }
-
+            SetState(AppState.Disposed);
             Destroy();
         }
 

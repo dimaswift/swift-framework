@@ -9,6 +9,7 @@ namespace SwiftFramework.Core
         BigNumber GetAmount();
         IPromise AddReward();
         SpriteLink Icon { get; }
+        ViewLink ViewLink { get; }
     }
 
     [Serializable]

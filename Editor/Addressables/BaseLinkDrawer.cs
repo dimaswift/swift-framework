@@ -110,7 +110,7 @@ namespace SwiftFramework.Core.Editor
             return Promise<string>.Rejected(null);
         }
 
-        private static string GetExtention(System.Type type)
+        private static string GetExtension(System.Type type)
         {
             if (typeof(MonoBehaviour).IsAssignableFrom(type))
             {
@@ -125,7 +125,7 @@ namespace SwiftFramework.Core.Editor
             LinkFolderAttribute folderAttr = linkType.GetCustomAttribute<LinkFolderAttribute>();
             string defaultFolder = folderAttr != null ? ResourcesAssetHelper.RootFolder + "/" + folderAttr.folder : ResourcesAssetHelper.RootFolder;
 
-            string ext = GetExtention(type);
+            string ext = GetExtension(type);
 
             if (Directory.Exists(defaultFolder) == false)
             {
@@ -312,6 +312,7 @@ namespace SwiftFramework.Core.Editor
                     EditorGUIUtility.PingObject(asset);
                 }
             }
+
             if ((address == Link.NULL || string.IsNullOrEmpty(address)) && CanCreate && overrideCreateMethod == false)
             {
                 popupRect.width -= buttonWidth;

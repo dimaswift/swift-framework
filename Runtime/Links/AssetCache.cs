@@ -531,7 +531,7 @@ namespace SwiftFramework.Core
                         }
                         else
                         {
-                            promise.Reject(o.OperationException);
+                            promise.Reject(o.OperationException); 
                         }
                     };
                 }

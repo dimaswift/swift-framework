@@ -7,6 +7,7 @@ namespace SwiftFramework.Sound
 {
     [DefaultModule]
     [Configurable(typeof(SoundManagerConfig))]
+    [DisallowCustomModuleBehaviours]
     internal class SoundManager : StatefulBehaviourModule<SoundManagerState>, ISoundManager
     {
         private SoundManagerConfig Config => GetModuleConfig<SoundManagerConfig>();

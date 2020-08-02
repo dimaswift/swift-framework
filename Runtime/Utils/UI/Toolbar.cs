@@ -21,20 +21,20 @@ namespace SwiftFramework.Utils.UI
                 tabsSet = GetComponent<ElementSet>();
             }
 
-            SetSelected(selectedIndex);
-          
             tabsSet.SetUp<ToolbarButton, ITab>(tabs, selectedButton => 
             {
                 int i = 0;       
                 foreach (ToolbarButton button in tabsSet.GetActiveElements<ToolbarButton>())
                 {
-                    if(button == selectedButton)
+                    if (button == selectedButton)
                     {
                         SetSelected(i);
                     }
                     i++;
                 }
             });
+            
+            SetSelected(selectedIndex);
         }
 
         public void SetSelected(int index)

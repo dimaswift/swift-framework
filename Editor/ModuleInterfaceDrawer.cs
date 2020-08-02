@@ -35,6 +35,11 @@ namespace SwiftFramework.Core.Editor
             position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
             
             EditorGUI.PropertyField(position, property.FindPropertyRelative("config"));
+
+            if (GUI.changed)
+            {
+                property.serializedObject.ApplyModifiedProperties();
+            }
         }
 
         private void Init(SerializedProperty property)

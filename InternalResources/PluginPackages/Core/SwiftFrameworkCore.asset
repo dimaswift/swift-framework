@@ -23,7 +23,7 @@ MonoBehaviour:
   - USE_ADDRESSABLES
   packageDependencies:
   - packageName: com.unity.addressables
-    version: 1.8.4
+    version: 1.13.1
     scopedRegistries: 
   dependencies: []
   modules:

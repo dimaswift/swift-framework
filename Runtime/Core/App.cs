@@ -512,20 +512,7 @@ namespace SwiftFramework.Core
         {
             if (cachedModule == null)
             {
-                foreach (KeyValuePair<ModuleLink, IModule> m in readyModules)
-                {
-                    if (m.Value is T value)
-                    {
-                        cachedModule = value;
-                        break;
-                    }
-                }
-
-                if (cachedModule == null)
-                {
-                    logger.LogError(
-                        $"Cannot get module <b>{typeof(T).Name}</b>! Not ready yet. Consider adding a dependency to calling module");
-                }
+                cachedModule = GetModule<T>();
             }
 
             return cachedModule;

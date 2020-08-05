@@ -24,16 +24,19 @@ namespace SwiftFramework.Utils.UI
 
         public void Click()
         {
-            App.Core.Coroutine.Begin(PressAnimationRoutine(), ref currentAnimation);
-            
             if (clickSound != null && clickSound.HasValue)
             {
                 soundManager.PlayOnce(clickSound, SoundType.SFX);
             }
-
-            clicked = true;
         }
 
+        public void Press()
+        {
+            App.Core.Coroutine.Begin(PressAnimationRoutine(), ref currentAnimation);
+            
+            clicked = true;
+        }
+        
         public void Release()
         {
             if (clicked == false)

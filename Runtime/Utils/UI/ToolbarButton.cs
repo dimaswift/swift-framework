@@ -27,7 +27,7 @@ namespace SwiftFramework.Utils.UI
         protected override void OnSetUp(ITab value)
         {
             nameText.Text = value.Name;
-            if(icon != null)
+            if (icon.HasValue)
             {
                 icon.Value.SetSprite(value.Icon);
             }

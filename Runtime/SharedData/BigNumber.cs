@@ -264,7 +264,7 @@ namespace SwiftFramework.Core
         }
     }
 
-    public static class BigNumberExtentions
+    public static class BigNumberExtensions
     {
         private static readonly Dictionary<BigInteger, string> cachedBigIntegers = new Dictionary<BigInteger, string>(100);
 

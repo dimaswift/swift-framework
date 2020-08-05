@@ -12,7 +12,9 @@ namespace SwiftFramework.Core.Windows
     {
         [SerializeField] private AppearAnimationHandler topBarAnimation = null;
         [SerializeField] [CheckInterface(typeof(ITopBar))] private GameObject topBarObject = null;
+        [SerializeField] private RectTransform tooltipCanvas = null;
         [SerializeField] private CanvasGroup transitionPanel = null;
+        [SerializeField] [LinkFilter(typeof(ITooltip))] private ViewLink tooltip = null;
         [SerializeField] private float transitionDuration = .25f;
         [SerializeField] private float animationDuration = .5f;
 
@@ -48,7 +50,28 @@ namespace SwiftFramework.Core.Windows
         public event Action<IWindow> OnWindowHidden = w => { };
         public event Action<IWindow> OnWindowWillBeHidden = w => { };
         public event Action<IWindow> OnWindowJustEnabled = w => { };
-
+        
+        public void ShowTooltip(string message, Vector3 screenPoint, float duration = 1, Color? color = null)
+        {
+            if (tooltipCanvas == null)
+            {
+                Debug.LogError("Tooltip canvas is missing on WindowsManager");
+                return;
+            }
+            
+            if (tooltip.HasValue == false)
+            {
+                Debug.LogError("No tooltip is specified in WindowsManager");
+                return;
+            }
+            
+            App.Views.CreateAsync<ITooltip>(tooltip).Done(tooltipInstance =>
+            {
+                tooltipInstance.Show(screenPoint, tooltipCanvas, message, duration, color ?? Color.white);
+            });
+            
+        }
+        
         public bool IsInTransition { get; private set; }
         
         private readonly LinkedList<Promise> currentChainedWindowQueue = new LinkedList<Promise>();
@@ -84,6 +107,7 @@ namespace SwiftFramework.Core.Windows
             {
                 rootCanvas.ApplySafeArea();
             }
+
 
             if (topBarObject != null)
             {
@@ -151,10 +175,7 @@ namespace SwiftFramework.Core.Windows
             window.RectTransform.sizeDelta = windowPrefab.RectTransform.sizeDelta;
             if (window.IsFullScreen)
             {
-                window.RectTransform.anchoredPosition = new Vector2(0, 0);
-                window.RectTransform.sizeDelta = new Vector2(0, 0);
-                window.RectTransform.anchorMax = new Vector2(1, 1);
-                window.RectTransform.anchorMin = new Vector2(0, 0);
+                window.RectTransform.FitParent();
             }
             window.SetHidden();
 
@@ -264,15 +285,15 @@ namespace SwiftFramework.Core.Windows
 
         public IPromise<T> ShowChained<T>(WindowLink windowLink = null) where T : IWindow
         {
-            return ShowChaninedWindow<T>(windowLink, w => { });
+            return ShowChainedWindow<T>(windowLink, w => { });
         }
 
         public IPromise<T> ShowChained<T, A>(A args, WindowLink windowLink = null) where T : IWindowWithArgs<A>
         {
-            return ShowChaninedWindow<T>(windowLink, w => w.SetArgs(args));
+            return ShowChainedWindow<T>(windowLink, w => w.SetArgs(args));
         }
 
-        private IPromise<T> ShowChaninedWindow<T>(WindowLink windowLink, Action<T> onShow) where T : IWindow
+        private IPromise<T> ShowChainedWindow<T>(WindowLink windowLink, Action<T> onShow) where T : IWindow
         {
             Promise<T> promise = Promise<T>.Create();
 

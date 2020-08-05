@@ -25,6 +25,14 @@ namespace SwiftFramework.Core
             return Regex.Replace(moduleName, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
         }
 
+        public static void FitParent(this RectTransform rectTransform)
+        {
+            rectTransform.anchoredPosition = new UnityEngine.Vector2(0, 0);
+            rectTransform.sizeDelta = new UnityEngine.Vector2(0, 0);
+            rectTransform.anchorMax = new UnityEngine.Vector2(1, 1);
+            rectTransform.anchorMin = new UnityEngine.Vector2(0, 0);
+        }
+
         public static string GetFullName(this GameObject gameObject)
         {
             string name = gameObject.name;
@@ -281,7 +289,7 @@ namespace SwiftFramework.Core
 
         private static readonly System.Random random = new System.Random(Environment.TickCount);
 
-        public static void Shuffle<T>(this List<T> list)
+        public static void Shuffle<T>(this IList<T> list)
         {
             int n = list.Count;
             while (n > 1)

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 namespace SwiftFramework.Utils.UI
 {
     [RequireComponent(typeof(BounceAnimation))]
-    public class ButtonClickBounce : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, IPointerExitHandler
+    public class ButtonClickBounce : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, IPointerExitHandler, IPointerClickHandler
     {
         private BounceAnimation bounce;
         private Button button;
@@ -26,7 +26,7 @@ namespace SwiftFramework.Utils.UI
             {
                 return;
             }
-            bounce?.Click();
+            bounce?.Press();
         }
 
         public void OnPointerUp(PointerEventData eventData)
@@ -45,6 +45,15 @@ namespace SwiftFramework.Utils.UI
                 return;
             }
             bounce?.Release();
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (button && button.interactable == false)
+            {
+                return;
+            }
+            bounce?.Click();
         }
     }
 }

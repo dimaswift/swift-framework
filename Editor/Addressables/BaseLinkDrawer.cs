@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 #if USE_ADDRESSABLES
@@ -8,10 +9,10 @@ using SwiftFramework.EditorUtils;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.IO;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core.Editor
 {
-
     internal class BaseLinkDrawer
     {
         public bool AllowSelectAndPing { get; set; } = true;
@@ -39,7 +40,7 @@ namespace SwiftFramework.Core.Editor
 #endif
 
 
-        public static int CompareName(string x, string y)
+        private static int CompareName(string x, string y)
         {
             if (x == "None")
             {
@@ -57,13 +58,13 @@ namespace SwiftFramework.Core.Editor
             {
                 return -1;
             }
-            var xn = Regex.Match(x, @"\d+$", RegexOptions.RightToLeft).Value;
-            var yn = Regex.Match(y, @"\d+$", RegexOptions.RightToLeft).Value;
-            if (xn != null && yn != null && int.TryParse(xn, out int n1) && int.TryParse(yn, out int n2))
+            string xn = Regex.Match(x, @"\d+$", RegexOptions.RightToLeft).Value;
+            string yn = Regex.Match(y, @"\d+$", RegexOptions.RightToLeft).Value;
+            if (int.TryParse(xn, out int n1) && int.TryParse(yn, out int n2))
             {
                 return n1.CompareTo(n2);
             }
-            return x.CompareTo(y);
+            return string.Compare(x, y, StringComparison.InvariantCulture);
         }
 #if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Links/Select Previous Link %q", priority = -100)]
@@ -78,25 +79,22 @@ namespace SwiftFramework.Core.Editor
         }
 
         protected readonly FieldInfo fieldInfo;
-        protected readonly System.Type type;
-        protected readonly bool forceFlatHierarchy;
+        protected readonly Type type;
+        private readonly bool forceFlatHierarchy;
 
-        public BaseLinkDrawer(System.Type type, FieldInfo fieldInfo, bool forceFlatHierarchy = false)
+        protected BaseLinkDrawer(Type type, FieldInfo fieldInfo, bool forceFlatHierarchy = false)
         {
             this.type = type;
             this.fieldInfo = fieldInfo;
             this.forceFlatHierarchy = forceFlatHierarchy;
         }
 #if USE_ADDRESSABLES
-        protected List<AddressableAssetEntry> assets = new List<AddressableAssetEntry>();
+        protected readonly List<AddressableAssetEntry> assets = new List<AddressableAssetEntry>();
 #else
-
-
-        protected List<ResourcesAssetEntry> assets = new List<ResourcesAssetEntry>();
+        protected readonly List<ResourcesAssetEntry> assets = new List<ResourcesAssetEntry>();
 #endif
 
-
-        protected string[] names = new string[0];
+        private string[] names = new string[0];
 
         protected virtual void Reload()
         {
@@ -110,7 +108,7 @@ namespace SwiftFramework.Core.Editor
             return Promise<string>.Rejected(null);
         }
 
-        private static string GetExtension(System.Type type)
+        private static string GetExtension(Type type)
         {
             if (typeof(MonoBehaviour).IsAssignableFrom(type))
             {
@@ -120,7 +118,7 @@ namespace SwiftFramework.Core.Editor
             return "asset";
         }
 
-        public static string CreateAsset(System.Type type, System.Type linkType)
+        protected static string CreateAsset(Type type, Type linkType)
         {
             LinkFolderAttribute folderAttr = linkType.GetCustomAttribute<LinkFolderAttribute>();
             string defaultFolder = folderAttr != null ? ResourcesAssetHelper.RootFolder + "/" + folderAttr.folder : ResourcesAssetHelper.RootFolder;
@@ -148,7 +146,7 @@ namespace SwiftFramework.Core.Editor
             }
             else
             {
-                var so = ScriptableObject.CreateInstance(type);
+                ScriptableObject so = ScriptableObject.CreateInstance(type);
                 AssetDatabase.CreateAsset(so, path);
             }
 
@@ -157,7 +155,7 @@ namespace SwiftFramework.Core.Editor
 #if USE_ADDRESSABLES
             AddrHelper.Reload();
             
-            var entry = AddrHelper.CreateOrModifyEntry(AssetDatabase.AssetPathToGUID(path));
+            AddressableAssetEntry entry = AddrHelper.CreateOrModifyEntry(AssetDatabase.AssetPathToGUID(path));
             address = entry.address;
 #else
             address = ResourcesAssetEntry.GetAddress(path);
@@ -168,18 +166,18 @@ namespace SwiftFramework.Core.Editor
 
         }
 
-        private string GetLinkAddress(SerializedProperty serializedProperty)
+        private static string GetLinkAddress(SerializedProperty serializedProperty)
         {
             return serializedProperty.FindPropertyRelative(Link.PathPropertyName).stringValue;
         }
 
-        public static string GetAddressName(string address, System.Type assetType, FieldInfo fieldInfo = null, bool forceFlatHierarchy = false)
+        private static string GetAddressName(string address, Type assetType, FieldInfo fieldInfo = null, bool forceFlatHierarchy = false)
         {
             string rootFolder = "";
 
             bool flatHierarchy = false;
 
-            System.Type fieldType = fieldInfo.GetChildValueType();
+            Type fieldType = fieldInfo.GetChildValueType();
 
             if (fieldType != null)
             {
@@ -221,7 +219,7 @@ namespace SwiftFramework.Core.Editor
                 return address;
             }
 
-            if (rootFolder != null && address.StartsWith(rootFolder))
+            if (address.StartsWith(rootFolder))
             {
                 address = address.Substring(rootFolder.Length, address.Length - rootFolder.Length).RemoveExtention();
             }

@@ -39,6 +39,8 @@ namespace SwiftFramework.Core
         event Action<IWindow> OnWindowHidden;
         event Action<IWindow> OnWindowWillBeHidden;
         event Action<IWindow> OnWindowJustEnabled;
+
+        void ShowTooltip(string message, Vector3 screenPoint, float duration = 1, Color? color = null);
     }
 
     public enum CanvasType
@@ -49,5 +51,6 @@ namespace SwiftFramework.Core
     public interface IRootCanvas
     {
         Canvas Canvas { get; }
+        float ScreenToWorldSpaceRatio { get; }
     }
 }

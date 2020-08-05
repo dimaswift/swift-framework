@@ -89,8 +89,9 @@ namespace SwiftFramework.Utils.UI
         public void SetUp<E, T>(IEnumerable<T> objects, Action<ElementFor<T>> onClick) where E : ElementFor<T>
         {
             SetUp<E, T>(objects, (o, e) => e.SetUp(o));
-            foreach (ElementFor<T> e in elements)
+            foreach (var element1 in elements)
             {
+                var e = (ElementFor<T>) element1;
                 e.OnClick -= onClick;
                 e.OnClick += onClick;
             }

@@ -8,6 +8,7 @@ namespace SwiftFramework.Core
         void SetSprite(SpriteLink sprite);
         void SetSprite(Sprite sprite);
         void SetAlpha(float alpha);
+        void SetColor(Color color);
     }
     
     [Serializable]

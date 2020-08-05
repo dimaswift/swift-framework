@@ -11,5 +11,4 @@ namespace SwiftFramework.Core.Windows
             GetComponentInParent<Window>()?.HandleCloseButtonClick();
         }
     }
-
 }

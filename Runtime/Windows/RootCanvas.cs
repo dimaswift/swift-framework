@@ -39,6 +39,8 @@ namespace SwiftFramework.Core.Windows
             }
         }
 
+        public float ScreenToWorldSpaceRatio { get; private set; }
+
         [SerializeField] private RenderMode renderMode = RenderMode.ScreenSpaceOverlay;
         [SerializeField] private float planeDistance = 10;
         [SerializeField] private CanvasType type = CanvasType.Window;
@@ -52,6 +54,23 @@ namespace SwiftFramework.Core.Windows
             Canvas.renderMode = renderMode;
             Canvas.worldCamera = Camera.main;
             Canvas.planeDistance = planeDistance;
+
+            if (Canvas.worldCamera != null)
+            {
+                if (Canvas.worldCamera.orthographic)
+                {
+                    Vector3 p1 = Canvas.worldCamera.ScreenToWorldPoint(Vector3.zero);
+                    Vector3 p2 = Canvas.worldCamera.ScreenToWorldPoint(new Vector3(Screen.width, 0));
+                    ScreenToWorldSpaceRatio = Screen.width / (Mathf.Abs(p1.x - p2.x));
+                }
+                else
+                {
+                    Ray ray1 = Canvas.worldCamera.ViewportPointToRay(Vector3.zero);
+                    Ray ray2 = Canvas.worldCamera.ViewportPointToRay(new Vector3(1, 0));
+                    ScreenToWorldSpaceRatio = (Screen.width / (Mathf.Abs(ray1.GetPoint(planeDistance).x - ray2.GetPoint(planeDistance).x)));
+                }
+            }
+
             ApplySafeArea();
         }
 
@@ -71,10 +90,12 @@ namespace SwiftFramework.Core.Windows
 
             Vector2 anchorMin = safeArea.position;
             Vector2 anchorMax = safeArea.position + safeArea.size;
-            anchorMin.x /= Canvas.pixelRect.width;
-            anchorMin.y /= Canvas.pixelRect.height;
-            anchorMax.x /= Canvas.pixelRect.width;
-            anchorMax.y /= Canvas.pixelRect.height;
+            Rect pixelRect = Canvas.pixelRect;
+            
+            anchorMin.x /= pixelRect.width;
+            anchorMin.y /= pixelRect.height;
+            anchorMax.x /= pixelRect.width;
+            anchorMax.y /= pixelRect.height;
 
             safeAreaRect.anchorMin = anchorMin;
             safeAreaRect.anchorMax = anchorMax;

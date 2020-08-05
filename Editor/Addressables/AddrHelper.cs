@@ -124,6 +124,7 @@ namespace SwiftFramework.Core.Editor
                     Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, null, true);
                     Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, null, true);
                 }
+                
             }
 
             AddressableAssetSettings.OnModificationGlobal -= AddressableAssetSettings_OnModificationGlobal;

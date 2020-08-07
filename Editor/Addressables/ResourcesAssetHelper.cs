@@ -1,5 +1,6 @@
 ﻿using SwiftFramework.EditorUtils;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -82,6 +83,72 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
+#if SWIFT_FRAMEWORK_INSTALLED
+        [MenuItem("SwiftFramework/Links/Generate Drawers")]
+#endif
+        private static void GenerateDrawers()
+        {
+            Dictionary<string, CodeCompileUnit> classes = new Dictionary<string, CodeCompileUnit>();
+
+            foreach (var item in Util.GetAllTypesWithAssemblyPath())
+            {
+                var type = item.type;
+
+                if (type.IsVisible == false)
+                {
+                    continue;
+                }
+
+                if (type.IsGenericType
+                    || type == typeof(Link)
+                    || type.BaseType == null
+                    || type.BaseType.GetGenericArguments().Length == 0
+                    || typeof(Link).IsAssignableFrom(type) == false)
+                {
+                    continue;
+                }
+
+                CodeTypeDeclaration drawerClass = new CodeTypeDeclaration($"{type.Name}Drawer");
+
+                drawerClass.BaseTypes.Add(new CodeTypeReference("LinkPropertyDrawer",
+                    new[] {new CodeTypeReference(type.BaseType.GetGenericArguments()[0])}));
+
+                drawerClass.CustomAttributes.Add(new CodeAttributeDeclaration(
+                    new CodeTypeReference("CustomPropertyDrawer"),
+                    new CodeAttributeArgument(new CodeTypeOfExpression(type))));
+
+                if (classes.TryGetValue(item.assemblyLocation, out CodeCompileUnit file) == false)
+                {
+                    file = new CodeCompileUnit();
+                    CodeNamespace namespaces = new CodeNamespace("SwiftFramework.Core.Editor");
+                    namespaces.Imports.Add(new CodeNamespaceImport("UnityEditor"));
+                    file.Namespaces.Add(namespaces);
+                    classes.Add(item.assemblyLocation, file);
+                }
+
+                file.Namespaces[0].Types.Add(drawerClass);
+            }
+
+            foreach (KeyValuePair<string, CodeCompileUnit> c in classes)
+            {
+                FileInfo file = new FileInfo(c.Key);
+                var dir = Path.Combine(file.Directory.FullName, "Editor");
+
+                if (dir.StartsWith(Application.dataPath.Replace('/', Path.DirectorySeparatorChar)) == false)
+                {
+                    continue;
+                }
+
+                if (Directory.Exists(dir) == false)
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                string filePath = $"{dir}/LinkDrawers.cs";
+
+                ScriptBuilder.SaveClassToDisc(c.Value, filePath, false);
+            }
+        }
 
         public static IEnumerable<ResourcesAssetEntry> GetPrefabsWithComponent(Type component)
         {

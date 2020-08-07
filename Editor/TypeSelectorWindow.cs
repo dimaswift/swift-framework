@@ -25,6 +25,23 @@ namespace SwiftFramework.EditorUtils
 
             return win.promise;
         }
+        
+        public static IPromise<Type> Open(Type interfaceType, string title)
+        {
+            TypeSelectorWindow win = GetWindow<TypeSelectorWindow>(true, title, true);
+
+            win.MoveToCenter();
+
+            win.types = new List<Type>(Util.GetAllTypes(t => 
+                t.IsGenericType == false && 
+                t.IsAbstract == false &&
+                interfaceType.IsAssignableFrom(t) &&
+                typeof(UnityEngine.Object).IsAssignableFrom(t)));;
+
+            win.promise = Promise<Type>.Create();
+
+            return win.promise;
+        }
 
         public void OnGUI()
         {

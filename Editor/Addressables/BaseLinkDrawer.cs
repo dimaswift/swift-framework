@@ -101,8 +101,8 @@ namespace SwiftFramework.Core.Editor
 
         }
 
-        protected virtual bool CanCreate => true;
-
+        protected virtual bool CanCreate => false;
+        
         protected virtual IPromise<string> OnCreate()
         {
             return Promise<string>.Rejected(null);
@@ -118,11 +118,16 @@ namespace SwiftFramework.Core.Editor
             return "asset";
         }
 
-        protected static string CreateAsset(Type type, Type linkType)
+        protected static string CreateAsset(Type type, Type linkType, FieldInfo fieldInfo)
         {
             LinkFolderAttribute folderAttr = linkType.GetCustomAttribute<LinkFolderAttribute>();
             string defaultFolder = folderAttr != null ? ResourcesAssetHelper.RootFolder + "/" + folderAttr.folder : ResourcesAssetHelper.RootFolder;
 
+            if (fieldInfo != null && fieldInfo.GetCustomAttribute<LinkFolderAttribute>() != null)
+            {
+                defaultFolder = ResourcesAssetHelper.RootFolder + "/" + fieldInfo.GetCustomAttribute<LinkFolderAttribute>().folder;
+            }
+            
             string ext = GetExtension(type);
 
             if (Directory.Exists(defaultFolder) == false)

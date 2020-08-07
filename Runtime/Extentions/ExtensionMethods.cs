@@ -467,6 +467,7 @@ namespace SwiftFramework.Core
             }
             return fieldInfo.FieldType;
         }
+        
         public static string ToTimerString(this float seconds)
         {
             TimeSpan timeLeft = TimeSpan.FromSeconds(seconds);

@@ -18,12 +18,14 @@ namespace SwiftFramework.Core.Editor
                 }
                 else
                 {
-                    drawer = new AssetLinkDrawer(typeof(T), fieldInfo);
+                    drawer = new AssetLinkDrawer(typeof(T), fieldInfo, false, AllowCreation);
                 }
             }
             drawer.Draw(position, property, label);
             EditorGUI.PropertyField(position, property, label, true);
         }
+
+        protected virtual bool AllowCreation => true;
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

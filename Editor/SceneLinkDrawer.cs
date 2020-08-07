@@ -25,9 +25,11 @@ namespace SwiftFramework.Core.Editor
 
     internal class SceneLinkDrawer : BaseLinkDrawer
     {
-        public SceneLinkDrawer(Type type, FieldInfo fieldInfo) : base(type, fieldInfo)
+        public SceneLinkDrawer(Type type, FieldInfo fieldInfo) : base(type, fieldInfo, false)
         {
         }
+
+        protected override bool CanCreate => false;
 
         protected override void OnAssetChanged(string previousAssetPath, string newAssetPath)
         {

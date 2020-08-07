@@ -425,50 +425,23 @@ namespace SwiftFramework.Core.Editor
                 file.Namespaces[0].Types.Add(drawerClass);
             }
 
-
-            foreach (var c in classes)
+            foreach (KeyValuePair<string, CodeCompileUnit> c in classes)
             {
                 FileInfo file = new FileInfo(c.Key);
-                var dir = file.Directory.FullName + "/Editor";
+                var dir = Path.Combine(file.Directory.FullName, "Editor");
+
+                if (dir.StartsWith(Application.dataPath.Replace('/', Path.DirectorySeparatorChar)) == false)
+                {
+                    continue;
+                }
 
                 if (Directory.Exists(dir) == false)
                 {
                     Directory.CreateDirectory(dir);
                 }
 
-                AssemblyDefinitionAsset assemblyDefinition =
-                    AssetDatabase.LoadAssetAtPath<AssemblyDefinitionAsset>(c.Key);
-
-                if (assemblyDefinition != null)
-                {
-                    string assemblyName = Path.GetFileNameWithoutExtension(file.Name) + ".Editor";
-                    string editorAssemblyPath = dir + "/" + assemblyName + ".asmdef";
-
-                    if (File.Exists(editorAssemblyPath) == false)
-                    {
-                        var json = string.Format(@"{{
-""name"": ""{0}"",
-""references"": [
-    ""SwiftFramework.Core"",
-    ""SwiftFramework.Core.Editor"",
-    ""{1}""
-],
-""includePlatforms"": [ ""Editor"" ],
-""excludePlatforms"": [],
-""allowUnsafeCode"": false,
-""overrideReferences"": false, 
-""precompiledReferences"": [],
-""autoReferenced"": true,
-""defineConstraints"": [],
-""versionDefines"": [],
-""noEngineReferences"": false
-}}", assemblyName, Path.GetFileNameWithoutExtension(file.Name));
-
-                        File.WriteAllText(editorAssemblyPath, json);
-                    }
-                }
-
                 string filePath = $"{dir}/LinkDrawers{file.Directory.Name}.cs";
+
                 ScriptBuilder.SaveClassToDisc(c.Value, filePath, false);
             }
         }

@@ -1,9 +1,11 @@
-﻿using UnityEditor;
+﻿using System;
+using UnityEditor;
 using UnityEngine;
 using System.Reflection;
 using SwiftFramework.Core;
 using System.Collections.Generic;
 using SwiftFramework.EditorUtils;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core.Editor
 {
@@ -19,6 +21,10 @@ namespace SwiftFramework.Core.Editor
         {
             Promise<string> promise = Promise<string>.Create();
 
+            Type interfaceToImplement = fieldInfo != null
+                ? fieldInfo.GetCustomAttribute<LinkFilterAttribute>()?.interfaceType
+                : null;
+            
             List<System.Type> typesToChoose = new List<System.Type>(Util.GetAllTypes(t => 
             t.IsGenericType == false && 
             t.IsAbstract == false && 
@@ -26,9 +32,14 @@ namespace SwiftFramework.Core.Editor
             type.IsAssignableFrom(t) &&
             typeof(Object).IsAssignableFrom(t)));
 
+            if (interfaceToImplement != null)
+            {
+                typesToChoose.RemoveAll(t => interfaceToImplement.IsAssignableFrom(t) == false);
+            }
+
             TypeSelectorWindow.Open(typesToChoose, $"Choose {type.Name} implementation").Done(selectedType =>
             {
-                promise.Resolve(CreateAsset(selectedType, fieldInfo.GetChildValueType()));
+                promise.Resolve(CreateAsset(selectedType, fieldInfo.GetChildValueType(), fieldInfo));
             });
 
             return promise; 

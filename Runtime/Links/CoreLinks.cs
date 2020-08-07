@@ -1,13 +1,5 @@
 ﻿using UnityEngine;
 using System;
-using UnityEngine.SceneManagement;
-
-#if USE_ADDRESSABLES
-
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.ResourceProviders;
-
-#endif
 
 namespace SwiftFramework.Core
 {
@@ -16,6 +8,13 @@ namespace SwiftFramework.Core
     {
 
     }
+    
+    [Serializable]
+    public class MonoBehaviourLink : LinkToPrefab<MonoBehaviour>
+    {
+
+    }
+
 
     [FlatHierarchy]
     [Serializable()]
@@ -50,12 +49,6 @@ namespace SwiftFramework.Core
 
     }
 
-    [Serializable()]
-    public class ScriptableObjectLink : LinkTo<ScriptableObject>
-    {
-
-    }
-    
     [FlatHierarchy]
     [Serializable()]
     public class BehaviourModuleLink : LinkToPrefab<BehaviourModule>
@@ -84,66 +77,9 @@ namespace SwiftFramework.Core
         public static readonly ViewLink Empty = CreateNull<ViewLink>();
     }
 
-    [FlatHierarchy]
-    [Serializable()]
-    public class SceneLink : Link
+    [Serializable]
+    public class ScriptableLink : LinkToScriptable<ScriptableObject>
     {
-#if USE_ADDRESSABLES
-        [NonSerialized] private SceneInstance sceneInstance = default;
-#else
-        [NonSerialized] private Scene scene = default;
-#endif
-        public override string ToString()
-        {
-            return System.IO.Path.GetFileNameWithoutExtension(GetPath());
-        }
-
-        public string GetScenePath()
-        {
-            return ToString();
-        }
-
-        public IPromise Unload()
-        {
-#if USE_ADDRESSABLES
-            return Addressables.UnloadSceneAsync(sceneInstance).GetPromiseWithoutResult();
-#else
-            return SceneManager.UnloadSceneAsync(scene).GetPromise();
-#endif
-        }
-
-        public IPromise<bool> Load(LoadSceneMode mode)
-        {
-            Promise<bool> promise = Promise<bool>.Create();
-#if USE_ADDRESSABLES
-            Addressables.LoadSceneAsync(Path, mode, true).GetPromise().Then(scene =>
-            {
-                sceneInstance = scene;
-                promise.Resolve(true);
-            })
-            .Catch(e => promise.Resolve(false));
-#else
-
-            SceneManager.LoadSceneAsync("Resources/" + Path, mode).GetPromise().Then(() => promise.Resolve(true)).Catch(e => promise.Resolve(false));
-
-#endif
-            return promise;
-        }
-
-        public override bool HasValue
-        {
-            get
-            {
-                if (GetPath() == NULL || string.IsNullOrEmpty(GetPath()))
-                {
-                    return false;
-                }
-                return true;
-            }
-        }
-        public override IPromise Preload()
-        {
-            return Load(LoadSceneMode.Additive).Then();
-        }
+        
     }
 }

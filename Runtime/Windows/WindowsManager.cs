@@ -171,6 +171,7 @@ namespace SwiftFramework.Core.Windows
 
             window.transform.SetParent(rootCanvas.RectTransform);
             window.transform.localScale = Vector3.one;
+            window.transform.localRotation = Quaternion.identity;
             window.RectTransform.anchoredPosition = windowPrefab.RectTransform.anchoredPosition;
             window.RectTransform.sizeDelta = windowPrefab.RectTransform.sizeDelta;
             if (window.IsFullScreen)

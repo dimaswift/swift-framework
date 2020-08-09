@@ -45,7 +45,7 @@ namespace SwiftFramework.Core
             }
             return ((Link)obj).GetHashCode() == GetHashCode();
         }
-
+        
         public virtual void Reset()
         {
             cachedHash = 0;
@@ -53,11 +53,19 @@ namespace SwiftFramework.Core
 
         public override int GetHashCode()
         {
-            if(cachedHash == 0)
+            if (cachedHash == 0)
             {
+#if UNITY_EDITOR
+                App.OnDomainReloaded += AppOnOnDomainReloaded;
+#endif
                 cachedHash = Path.GetHashCode();
             }
             return cachedHash;
+        }
+
+        private void AppOnOnDomainReloaded()
+        {
+            Reset();
         }
 
         public static T Create<T>(string path) where T : Link, new()

@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
+using Vector3 = UnityEngine.Vector3;
 
 namespace SwiftFramework.Core
 {
@@ -23,6 +24,23 @@ namespace SwiftFramework.Core
             }
             string moduleName = type.IsInterface && type.Name.StartsWith("I") ? type.Name.Remove(0, 1) : type.Name;
             return Regex.Replace(moduleName, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
+        }
+        
+        public static Bounds GetChildRendererBounds(this GameObject go)
+        {
+            Renderer[] renderers = go.GetComponentsInChildren<Renderer>();
+
+            if (renderers.Length > 0)
+            {
+                Bounds bounds = renderers[0].bounds;
+                for (int i = 1, ni = renderers.Length; i < ni; i++)
+                {
+                    bounds.Encapsulate(renderers[i].bounds);
+                }
+
+                return bounds;
+            }
+            return new Bounds(Vector3.zero, go.transform.localScale);
         }
 
         public static void FitParent(this RectTransform rectTransform)

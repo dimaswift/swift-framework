@@ -18,10 +18,13 @@ namespace SwiftFramework.Core
 
     public sealed class App : IApp
     {
+        internal static event Action OnDomainReloaded = () => { };
+        
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()
         {
             unloadPending = true;
+            OnDomainReloaded();
         }
         
         public static bool Initialized => initPromise.CurrentState == PromiseState.Resolved;

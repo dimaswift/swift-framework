@@ -71,6 +71,15 @@ namespace SwiftFramework.Core
             }
         }
 
+        public override void Reset()
+        {
+            base.Reset();
+            loaded = false;
+            cachedAsset = null;
+            loadHandle = null;
+            loadPromise = null;
+        }
+
         public virtual void Load(Action<T> result, Action<Exception> fail = null)
         {
             if (loaded)
@@ -79,6 +88,20 @@ namespace SwiftFramework.Core
                 return;
             }
             Load().Then(r => result(r)).Catch(e => fail?.Invoke(e));
+        }
+
+        public IPromise<TScriptable> LoadOrCreate<TScriptable>() where TScriptable : ScriptableObject, T
+        {
+            Promise<TScriptable> result = Promise<TScriptable>.Create();
+
+            Load().Then(value => result.Resolve(value as TScriptable), e =>
+            {
+                TScriptable instance = ScriptableObject.CreateInstance<TScriptable>();
+                instance.hideFlags = HideFlags.DontSave;
+                result.Resolve(instance);
+            });
+            
+            return result;
         }
 
         public virtual IPromise<T> Load()
@@ -180,10 +203,7 @@ namespace SwiftFramework.Core
             Resources.UnloadAsset(loadHandle.asset);
 #endif
 
-            loadPromise = null;
-            cachedAsset = null;
-            loaded = false;
-            loadHandle = null;
+            Reset();
         }
 
         public override IPromise Preload()

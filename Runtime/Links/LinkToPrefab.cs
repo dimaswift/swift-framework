@@ -173,7 +173,13 @@ namespace SwiftFramework.Core
             Resources.UnloadAsset(loadHandle.asset);
 
 #endif
+            Reset();
 
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
             loadPromise = null;
             cachedAsset = null;
             cachedGameObject = null;

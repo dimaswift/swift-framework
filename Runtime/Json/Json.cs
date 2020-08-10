@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
+using Newtonsoft.Json.Converters;
 using UnityEngine;
 
 namespace SwiftFramework.Core
@@ -33,7 +34,6 @@ namespace SwiftFramework.Core
                 }
 
                 return base.CreateObjectContract(objectType);
-                
             }
 
 
@@ -63,7 +63,8 @@ namespace SwiftFramework.Core
             ContractResolver = new CustomContractResolver(),
             Error = HandleDeserializationError,
             MissingMemberHandling = MissingMemberHandling.Ignore,
-            NullValueHandling = NullValueHandling.Ignore
+            NullValueHandling = NullValueHandling.Ignore,
+            Converters = new List<JsonConverter>(),
         };
 
         public static string Compress(string json)
@@ -116,6 +117,9 @@ namespace SwiftFramework.Core
             return JsonConvert.SerializeObject(data, formatting, serializerSettings);
         }
 
+        public static void AddConverter(JsonConverter converter)
+        {
+            serializerSettings.Converters.Add(converter);
+        }
     }
-
 }

@@ -23,7 +23,7 @@ namespace SwiftFramework.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()
         {
-            unloadPending = true;
+            unloadPending = Core != null;
             OnDomainReloaded();
         }
         
@@ -33,7 +33,7 @@ namespace SwiftFramework.Core
 
         public static long Now => Core.Clock.Now.Value;
 
-        public static event ValueHanlder<long> OnClockTick
+        public static event ValueHanlder<long> OnClockTick 
         {
             add => Core.Clock.Now.OnValueChanged += value;
             remove => Core.Clock.Now.OnValueChanged -= value;
@@ -41,6 +41,16 @@ namespace SwiftFramework.Core
 
         public static void WaitForState(AppState state, Action action)
         {
+            if (unloadPending)
+            {
+                if (awaitingActionsAfterUnload.ContainsKey(state) == false)
+                {
+                    awaitingActionsAfterUnload.Add(state, new List<Action>());
+                }
+                awaitingActionsAfterUnload[state].Add(action);
+                return;
+            }
+            
             if ((int) State >= (int) state)
             {
                 action();
@@ -61,6 +71,9 @@ namespace SwiftFramework.Core
         }
 
         private static readonly Dictionary<AppState, List<Action>> awaitingActions =
+            new Dictionary<AppState, List<Action>>();
+        
+        private static readonly Dictionary<AppState, List<Action>> awaitingActionsAfterUnload =
             new Dictionary<AppState, List<Action>>();
 
         private static AppState State { get; set; }
@@ -89,7 +102,9 @@ namespace SwiftFramework.Core
                     // ignored
                 }
             }
+            
             SetState(AppState.Disposed);
+            awaitingActions.Clear();
             Destroy();
         }
 
@@ -99,6 +114,12 @@ namespace SwiftFramework.Core
             {
                 Core.Unload();
                 unloadPending = false;
+                
+                foreach (KeyValuePair<AppState,List<Action>> pair in awaitingActionsAfterUnload)
+                {
+                    awaitingActions.Add(pair.Key, pair.Value);
+                }
+                awaitingActionsAfterUnload.Clear();
             }
 
             if (Core == null)

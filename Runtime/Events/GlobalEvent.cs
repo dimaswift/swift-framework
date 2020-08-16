@@ -8,20 +8,14 @@ namespace SwiftFramework.Core
     [PrewarmAsset]
     public class GlobalEvent : ScriptableObject
     {
-        public EventArguments DefaultArguments => defaultArguments.Value;
-
         [SerializeField] private EventArgumentsLink defaultArguments = Link.CreateNull<EventArgumentsLink>();
 
-        [NonSerialized] private readonly List<GlobalEventHandler> listeners = new List<GlobalEventHandler>();
-
-        public void Invoke()
-        {
-            Invoke(defaultArguments.Value);
-        }
-
+        [NonSerialized] private readonly HashSet<GlobalEventWithArgsHandler> listenersWithArgs = new HashSet<GlobalEventWithArgsHandler>();
+        [NonSerialized] private readonly HashSet<GlobalEventHandler> listeners = new HashSet<GlobalEventHandler>();
+        
         public void Invoke(EventArguments arguments)
         {
-            foreach (GlobalEventHandler eventListener in listeners)
+            foreach (GlobalEventWithArgsHandler eventListener in listenersWithArgs)
             {
                 try
                 {
@@ -29,11 +23,35 @@ namespace SwiftFramework.Core
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Exeption thrown while trying to invoke {name} event on {eventListener}:\n {e.Message}");
+                    Debug.LogError($"Exception thrown while trying to invoke {name} event on {eventListener}:\n {e.Message}");
+                }
+            }
+        }
+        
+        public void Invoke()
+        {
+            foreach (GlobalEventHandler eventListener in listeners)
+            {
+                try
+                {
+                    eventListener?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Exception thrown while trying to invoke {name} event on {eventListener}:\n {e.Message}");
                 }
             }
         }
 
+        public void AddListener(GlobalEventWithArgsHandler eventHandler)
+        {
+            if (listenersWithArgs.Contains(eventHandler))
+            {
+                return;
+            }
+            listenersWithArgs.Add(eventHandler);
+        }
+        
         public void AddListener(GlobalEventHandler eventHandler)
         {
             if (listeners.Contains(eventHandler))
@@ -42,18 +60,25 @@ namespace SwiftFramework.Core
             }
             listeners.Add(eventHandler);
         }
-
+        
         public bool RemoveListener(GlobalEventHandler eventHandler)
         {
             return listeners.Remove(eventHandler);
+        }
+        
+        public bool RemoveListener(GlobalEventWithArgsHandler eventHandler)
+        {
+            return listenersWithArgs.Remove(eventHandler);
         }
 
         public void RemoveAllListeners()
         {
             listeners.Clear();
+            listenersWithArgs.Clear();
         }
     }
 
-    public delegate void GlobalEventHandler(EventArguments arguments);
+    public delegate void GlobalEventWithArgsHandler(EventArguments arguments);
+    public delegate void GlobalEventHandler();
 
 }

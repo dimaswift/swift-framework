@@ -25,6 +25,11 @@ namespace SwiftFramework.Core
             string moduleName = type.IsInterface && type.Name.StartsWith("I") ? type.Name.Remove(0, 1) : type.Name;
             return Regex.Replace(moduleName, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
         }
+
+        public static Vector3 SetZ(this Vector3 vector3, float z)
+        {
+            return new Vector3(vector3.x, vector3.y, z);
+        }
         
         public static Bounds GetChildRendererBounds(this GameObject go)
         {

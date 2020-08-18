@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace SwiftFramework.Core
 {
@@ -8,26 +9,52 @@ namespace SwiftFramework.Core
     {
         public void Invoke()
         {
+            if (!Value)
+            {
+                Debug.LogError($"Cannot invoke event: {GetPath()}");
+                return;
+            }
             Value.Invoke();
         }
 
+        
         public void Invoke(EventArguments arguments)
         {
+            if (!Value)
+            {
+                Debug.LogError($"Cannot invoke event: {GetPath()}");
+                return;
+            }
             Value.Invoke(arguments);
         }
 
         public void AddListener(GlobalEventHandler eventHandler)
         {
+            if (!Value)
+            {
+                Debug.LogError($"Cannot add listener to event: {GetPath()}");
+                return;
+            }
             Value.AddListener(eventHandler);
         }
 
         public bool RemoveListener(GlobalEventHandler eventHandler)
         {
+            if (!Value)
+            {
+                Debug.LogError($"Cannot remove listener to event: {GetPath()}");
+                return false;
+            }
             return Value.RemoveListener(eventHandler);
         }
 
         public void RemoveAllListeners()
         {
+            if (!Value)
+            {
+                Debug.LogError($"Cannot remove all listeners: {GetPath()}");
+                return;
+            }
             Value.RemoveAllListeners();
         }
     }

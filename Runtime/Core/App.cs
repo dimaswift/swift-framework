@@ -197,7 +197,10 @@ namespace SwiftFramework.Core
                         Promise.All(coreModules).Always(() =>
                         {
                             SetState(AppState.CoreModulesInitialized);
-                            InitModules().Then(() => { SetState(AppState.ModulesInitialized); })
+                            InitModules().Then(() =>
+                                {
+                                    SetState(AppState.ModulesInitialized);
+                                })
                                 .Catch(logger.LogException);
                         });
                     });

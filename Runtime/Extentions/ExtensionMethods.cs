@@ -48,6 +48,16 @@ namespace SwiftFramework.Core
             return new Bounds(Vector3.zero, go.transform.localScale);
         }
 
+        public static string Paint(this string text, Color color)
+        {
+            return $"<color=#{ColorUtility.ToHtmlStringRGBA(color)}>{text}</color>";
+        }
+        
+        public static string Bold(this string text)
+        {
+            return $"<b>{text}</b>";
+        }
+        
         public static void FitParent(this RectTransform rectTransform)
         {
             rectTransform.anchoredPosition = new UnityEngine.Vector2(0, 0);

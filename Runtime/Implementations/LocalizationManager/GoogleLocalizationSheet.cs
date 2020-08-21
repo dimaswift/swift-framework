@@ -15,7 +15,7 @@ namespace SwiftFramework.Core
         
         [SerializeField][HideInInspector] private string[] downloadedSheet = {};
 
-        private string CachedSheetPath => name + "_sheet." + sheetExtension.ToString().ToLower();
+        private string CachedSheetPath => Application.persistentDataPath + "/" + name + "_sheet." + sheetExtension.ToString().ToLower();
 
         public override char Separator => sheetExtension == SheetExtension.CSV ? ',' : '\t';
         
@@ -73,7 +73,7 @@ namespace SwiftFramework.Core
                 promise.Resolve(GetCachedSheet());
                 return promise;
             }
-            
+
             return Download();
         }
 

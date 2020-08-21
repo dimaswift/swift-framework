@@ -35,7 +35,11 @@ namespace SwiftFramework.Core.Editor
             position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
             
             EditorGUI.PropertyField(position, property.FindPropertyRelative("config"));
+            
+            position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
+            EditorGUI.PropertyField(position, property.FindPropertyRelative("initializeOnLoad"));
+            
             if (GUI.changed)
             {
                 property.serializedObject.ApplyModifiedProperties();
@@ -71,7 +75,7 @@ namespace SwiftFramework.Core.Editor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         { 
             Init(property);
-            return (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing) * 2 +
+            return (EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing) * 3 +
                    (implementationDrawer.TotalPropertyHeight + interfaceDrawer.TotalPropertyHeight + configDrawer.TotalPropertyHeight);
         }
 

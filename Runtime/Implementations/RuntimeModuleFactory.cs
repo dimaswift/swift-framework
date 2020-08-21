@@ -146,7 +146,6 @@ namespace SwiftFramework.Core
                 }
                 if (isConfigurable)
                 {
-                    Debug.Log($"{module}"); 
                     module.SetConfig(configLink);
                 }
                 return module.GetComponent<IModule>();

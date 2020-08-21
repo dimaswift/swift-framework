@@ -16,6 +16,7 @@ namespace SwiftFramework.Core.Editor
             ModuleLink link = new ModuleLink()
             {
                 InterfaceType = module.interfaceType.Type,
+                InitializeOnLoad = module.initializeOnLoad
             };
             
             link.SetImplementation(module.implementationType.TypeString);

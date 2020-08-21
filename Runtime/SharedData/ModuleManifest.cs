@@ -19,6 +19,10 @@ namespace SwiftFramework.Core
 
                 return ModuleLoadType.OnDemand;
             }
+            set
+            {
+                options.initializeOnLoad = value == ModuleLoadType.OnInitialize;
+            }
         }
 
         public ModuleState State

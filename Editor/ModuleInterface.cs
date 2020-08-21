@@ -11,5 +11,6 @@ namespace SwiftFramework.Core.Editor
         public SerializedType implementationType;
         public GameObject behaviour;
         public ScriptableObject config;
+        public bool initializeOnLoad = true;
     }
 }

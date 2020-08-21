@@ -243,6 +243,8 @@ namespace SwiftFramework.Core.Editor
                 onAssetCreated?.Invoke(path);
             }
 
+            manifest.LoadType = link.InitializeOnLoad ? ModuleLoadType.OnInitialize : ModuleLoadType.OnDemand;
+            
             manifest.State = ModuleState.Enabled;
             
             manifest.Link = link.DeepCopy();

@@ -55,10 +55,17 @@ namespace SwiftFramework.Core
         [SerializeField] private SerializedType interfaceType;
         [SerializeField] private BehaviourModuleLink behaviourLink;
         [SerializeField] private ModuleConfigLink configLink;
+        [SerializeField] private bool initializeOnLoad = true;
         
         [NonSerialized] private IModule module;
         private static readonly RuntimeModuleFactory runtimeModuleFactory = new RuntimeModuleFactory();
 
+        public bool InitializeOnLoad
+        {
+            get => initializeOnLoad;
+            set => initializeOnLoad = value;
+        }
+        
         public bool HasImplementation => implementationType.IsDefined;
 
         public bool HasInterface => interfaceType.IsDefined;

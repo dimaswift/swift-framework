@@ -8,6 +8,14 @@ namespace SwiftFramework.Core
         public StatefulEvent(T defaultValue = default)
         {
             Value = defaultValue;
+            
+            App.OnDomainReloaded += OnDomainReloaded;
+        }
+
+        private void OnDomainReloaded()
+        {
+            OnValueChanged = v => { };
+            OnValueChangedDelta = (oldValue, newValue) => { };
         }
 
         public T Value { get; private set; } = default;

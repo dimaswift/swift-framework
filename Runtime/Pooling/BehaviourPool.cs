@@ -98,7 +98,7 @@ namespace SwiftFramework.Core.Pooling
         {
             while(instances.Count > 0)
             {
-                UnityEngine.Object.Destroy(instances.Pop());
+                UnityEngine.Object.Destroy(instances.Pop().gameObject);
             }
             activeObjects.Clear();
         }

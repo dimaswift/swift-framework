@@ -54,7 +54,7 @@ namespace SwiftFramework.Core.Windows
             Canvas.renderMode = renderMode;
             Canvas.worldCamera = Camera.main;
             Canvas.planeDistance = planeDistance;
-
+            Canvas.sortingLayerName = "UI";
             if (Canvas.worldCamera != null)
             {
                 if (Canvas.worldCamera.orthographic)

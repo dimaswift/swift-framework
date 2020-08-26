@@ -45,6 +45,12 @@ namespace SwiftFramework.Core
                 cachedAsset = cachedGameObject?.GetComponent<T>();
 
                 Initialize(cachedGameObject);
+                
+#if UNITY_EDITOR
+
+                App.OnDomainReloaded += () => cachedGameObject = null;
+                
+#endif
 
                 return cachedAsset;
             }

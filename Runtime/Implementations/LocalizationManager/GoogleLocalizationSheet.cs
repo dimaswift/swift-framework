@@ -44,9 +44,14 @@ namespace SwiftFramework.Core
                     }
                     else
                     {
+                        int oldRowsAmount = downloadedSheet.Length;
                         downloadedSheet = request.downloadHandler.text.Split('\n');
                         UnityEditor.EditorUtility.SetDirty(this);
                         Debug.Log($"<color=green>GoogleLocalizationSheet: Downloaded {downloadedSheet.Length} rows.</color>");
+                        if (downloadedSheet.Length > oldRowsAmount)
+                        {
+                            Debug.Log($"<color=green>Added {downloadedSheet.Length - oldRowsAmount} entries.</color>");
+                        }
                     }
                 }
             };

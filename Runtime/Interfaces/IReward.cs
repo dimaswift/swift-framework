@@ -1,4 +1,6 @@
 ﻿using System;
+using UnityEngine;
+
 
 namespace SwiftFramework.Core
 {
@@ -7,7 +9,7 @@ namespace SwiftFramework.Core
         bool IsAvailable();
         string GetDescription();
         BigNumber GetAmount();
-        IPromise AddReward();
+        IPromise AddReward(Vector3 sourcePosition = default);
         SpriteLink Icon { get; }
         ViewLink ViewLink { get; }
     }

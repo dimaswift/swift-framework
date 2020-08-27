@@ -54,7 +54,26 @@ namespace SwiftFramework.Core.Editor
 
         protected override IEnumerable<Type> GetInterfaces(SerializedProperty property)
         {
-            InterfaceComponentField filed = Util.GetTargetObjectOfProperty(property) as InterfaceComponentField;
+            InterfaceComponentField filed;
+            if (property.isArray)
+            {
+                if (property.arraySize == 0)
+                {
+                    yield break;
+                }   
+                filed = Util.GetTargetObjectOfProperty(property.GetArrayElementAtIndex(0)) as InterfaceComponentField;
+            }
+            else
+            {
+                filed = Util.GetTargetObjectOfProperty(property) as InterfaceComponentField;
+            }
+
+            if (filed == null)
+            {
+                yield break;
+            }
+            
+            
             yield return filed.InterfaceType;
         }
 

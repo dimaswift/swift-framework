@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace SwiftFramework.Core
 {
@@ -11,12 +12,17 @@ namespace SwiftFramework.Core
             App.Core.Storage.RegisterState(() => state, Link);
             App.Core.Storage.OnBeforeSave += OnSave;
             state = App.Core.Storage.LoadOrCreateNew(Link, GetDefaultState);
+#if UNITY_EDITOR
+            App.OnDomainReloaded += ResetState;
+#endif
             OnLoaded(state);
         }
-
+        
         protected virtual TState GetDefaultState() => new TState();
         protected virtual void OnSave() { }
         protected virtual void OnLoaded(TState state) { }
+        
+        protected virtual void ResetState() {}
 
     }
 }

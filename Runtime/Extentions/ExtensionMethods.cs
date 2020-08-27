@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
 using Vector3 = UnityEngine.Vector3;
 
 namespace SwiftFramework.Core
@@ -47,7 +48,26 @@ namespace SwiftFramework.Core
             }
             return new Bounds(Vector3.zero, go.transform.localScale);
         }
+        
+#if UNITY_EDITOR
+        public static T[] LoadAssetsFromAssetDatabase<T>(this Object o, string folder) where T : Object
+        {
+            string[] assets = UnityEditor.AssetDatabase.FindAssets($"t:{typeof(T).Name}", new[] {folder});
+            List<T> result = new List<T>();
+            foreach (string guild in assets)
+            {
+                T asset =
+                    UnityEditor.AssetDatabase.LoadAssetAtPath<T>(UnityEditor.AssetDatabase.GUIDToAssetPath(guild));
+                if (asset != null)
+                {
+                    result.Add(asset);
+                }
+            }
 
+            return result.ToArray();
+        }
+#endif
+        
         public static string Paint(this string text, Color color)
         {
             return $"<color=#{ColorUtility.ToHtmlStringRGBA(color)}>{text}</color>";

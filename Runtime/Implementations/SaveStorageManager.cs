@@ -48,6 +48,19 @@ namespace SwiftFramework.Core
         public event Action OnAfterLoad = () => { };
         public event Action OnRawSaveLoaded = () => { };
 
+        
+#if UNITY_EDITOR
+        [UnityEditor.MenuItem("SwiftFramework/Delete Save")]
+        private static void DeleteSave()
+        {
+            if (File.Exists(EditorSavePath))
+            {
+                UnityEditor.AssetDatabase.DeleteAsset("Assets/save.json");
+                UnityEditor.AssetDatabase.Refresh();
+            }
+        }
+#endif
+        
         protected override IPromise GetInitPromise()
         {
             saveId = DEFAULT_SAVE_ID;

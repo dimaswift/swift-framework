@@ -33,7 +33,7 @@ namespace SwiftFramework.Core
 
         public static long Now => Core.Clock.Now.Value;
 
-        public static event ValueHanlder<long> OnClockTick 
+        public static event ValueHandler<long> OnClockTick 
         {
             add => Core.Clock.Now.OnValueChanged += value;
             remove => Core.Clock.Now.OnValueChanged -= value;
@@ -102,7 +102,7 @@ namespace SwiftFramework.Core
                     // ignored
                 }
             }
-            
+
             SetState(AppState.Disposed);
             awaitingActions.Clear();
             Destroy();
@@ -114,12 +114,14 @@ namespace SwiftFramework.Core
             {
                 Core.Unload();
                 unloadPending = false;
+                OnDomainReloaded = () => { };
                 
                 foreach (KeyValuePair<AppState,List<Action>> pair in awaitingActionsAfterUnload)
                 {
                     awaitingActions.Add(pair.Key, pair.Value);
                 }
                 awaitingActionsAfterUnload.Clear();
+                Core = null;
             }
 
             if (Core == null)
@@ -590,6 +592,9 @@ namespace SwiftFramework.Core
             Pool.DisposeAllPools();
             Core = null;
             initPromise = Promise.Create();
+            readyModules.Clear();
+            createdModules.Clear();
+            readyModulesDict.Clear();
         }
     }
 }

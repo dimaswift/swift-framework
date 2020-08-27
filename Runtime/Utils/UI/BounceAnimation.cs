@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using SwiftFramework.Core;
+using SwiftFramework.Core.SharedData;
 using UnityEngine.UI;
 
 namespace SwiftFramework.Utils.UI
@@ -20,6 +21,10 @@ namespace SwiftFramework.Utils.UI
         {
             App.ExecuteOnLoad(() => soundManager = App.Core.GetModule<ISoundManager>());
             startScale = transform.localScale;
+            if (startScale.sqrMagnitude == 0)
+            {
+                startScale = Vector3.one;
+            }
         }
 
         public void Click()

@@ -154,19 +154,7 @@ namespace SwiftFramework.Core.Windows
 
             Window window = Instantiate(windowPrefab);
             window.name = windowPrefab.name;
-
-            try
-            {
-                window.Init(this);
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-                Debug.LogError($"Window <b>{window.name}</b> not initialized! Exception was thrown. Ignoring...");
-                window.gameObject.SetActive(false);
-                return;
-            }
-
+            window.Init(this);
             RootCanvas rootCanvas = FindCanvas(window.CanvasType);
 
             window.transform.SetParent(rootCanvas.RectTransform);

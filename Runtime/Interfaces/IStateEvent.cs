@@ -20,9 +20,9 @@ namespace SwiftFramework.Core
 
         public T Value { get; private set; } = default;
 
-        public event ValueHanlder<T> OnValueChanged = v => { };
+        public event ValueHandler<T> OnValueChanged = v => { };
 
-        public event ValueDeltaHadnler<T> OnValueChangedDelta = (oldValue, newValue) => { };
+        public event ValueDeltaHandler<T> OnValueChangedDelta = (oldValue, newValue) => { };
 
         public override bool Equals(object obj)
         {
@@ -58,11 +58,11 @@ namespace SwiftFramework.Core
 
     public interface IStatefulEvent<T>
     {
-        event ValueHanlder<T> OnValueChanged;
-        event ValueDeltaHadnler<T> OnValueChangedDelta;
+        event ValueHandler<T> OnValueChanged;
+        event ValueDeltaHandler<T> OnValueChangedDelta;
         T Value { get; }
     }
 
-    public delegate void ValueDeltaHadnler<T>(T oldValue, T newValue);
-    public delegate void ValueHanlder<T>(T value);
+    public delegate void ValueDeltaHandler<T>(T oldValue, T newValue);
+    public delegate void ValueHandler<T>(T value);
 }

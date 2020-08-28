@@ -127,15 +127,10 @@ namespace SwiftFramework.Core.Editor
                 
             }
 
-            AddressableAssetSettings.OnModificationGlobal -= AddressableAssetSettings_OnModificationGlobal;
-            AddressableAssetSettings.OnModificationGlobal += AddressableAssetSettings_OnModificationGlobal;
-            Reload();
-        }
-
-        private static void AddressableAssetSettings_OnModificationGlobal(AddressableAssetSettings arg1,
-            AddressableAssetSettings.ModificationEvent arg2, object arg3)
-        {
-            Reload();
+            if (movedAssets.Length > 0 || deletedAssets.Length > 0 || movedFromAssetPaths.Length > 0)
+            {
+                Reload();
+            }
         }
 
         public static AddressableAssetEntry FindEntry(string key)

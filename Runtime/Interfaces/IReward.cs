@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace SwiftFramework.Core
 {
+    [PrewarmAsset]
     public interface IReward
     {
         bool IsAvailable();

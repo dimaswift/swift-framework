@@ -27,7 +27,44 @@ namespace SwiftFramework.Core
     [LinkFolder(Folders.Sounds)]
     public class AudioClipLink : LinkTo<AudioClip>
     {
+        private ISoundManager soundManager;
+        
+        public void PlayOnce(SoundType type, float volume = 1)
+        {
+            if (CanPlay())
+            {
+                soundManager.PlayOnce(this, type, volume);
+            }
+        }
 
+        private bool CanPlay()
+        {
+            if (IsEmpty)
+            {
+                return false;
+            }
+            
+            if (soundManager == null)
+            {
+                soundManager = App.Core.GetModule<ISoundManager>();
+
+                if (soundManager == null)
+                {
+                    Debug.LogError($"ISoundManager module not found. Cannot play audio clip: {GetPath().Bold()}");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        
+        public void PlayLoop(SoundType type, float volume = 1)
+        {
+            if (CanPlay())
+            {
+                soundManager.PlayLoop(this, type, volume);
+            }
+        }
     }
 
     [Serializable()]

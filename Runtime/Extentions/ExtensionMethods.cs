@@ -32,22 +32,73 @@ namespace SwiftFramework.Core
             return new Vector3(vector3.x, vector3.y, z);
         }
         
-        public static Bounds GetChildRendererBounds(this GameObject go)
+        public static Bounds GetChildRendererBounds(this GameObject go, bool includeCollider = false, bool includeTriggers = false, Type mustHaveType = null)
         {
-            Renderer[] renderers = go.GetComponentsInChildren<Renderer>();
+            List<Renderer> renderers = new List<Renderer>(go.GetComponentsInChildren<Renderer>());
+            
+            bool IsInvalidType(Component component)
+            {
+                if (mustHaveType == null)
+                {
+                    return false;
+                }
 
-            if (renderers.Length > 0)
+                return component.GetComponent(mustHaveType) == null;
+            }
+            
+            renderers.RemoveAll(IsInvalidType);
+            
+            if (renderers.Count > 0)
             {
                 Bounds bounds = renderers[0].bounds;
-                for (int i = 1, ni = renderers.Length; i < ni; i++)
+                for (int i = 1, ni = renderers.Count; i < ni; i++)
                 {
                     bounds.Encapsulate(renderers[i].bounds);
+                }
+
+                if (includeCollider)
+                {
+                    bool IsValid(bool trigger, Component collider)
+                    {
+                        if (includeTriggers == false && trigger)
+                        {
+                            return false;
+                        }
+
+                        if (IsInvalidType(collider))
+                        {
+                            return false;
+                        }
+
+                        return true;
+
+                    }
+                    
+                    foreach (Collider2D collider2D in go.GetComponentsInChildren<Collider2D>())
+                    {
+                        if (IsValid(collider2D.isTrigger, collider2D) == false)
+                        {
+                            continue;
+                        }
+                        bounds.Encapsulate(collider2D.bounds);
+                    }
+                    
+                    foreach (Collider collider in go.GetComponentsInChildren<Collider>())
+                    {
+                        if (IsValid(collider.isTrigger, collider) == false)
+                        {
+                            continue;
+                        }
+                        bounds.Encapsulate(collider.bounds);
+                    }
                 }
 
                 return bounds;
             }
             return new Bounds(Vector3.zero, go.transform.localScale);
         }
+        
+        
         
 #if UNITY_EDITOR
         public static T[] LoadAssetsFromAssetDatabase<T>(this Object o, string folder) where T : Object

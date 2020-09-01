@@ -65,6 +65,8 @@ namespace SwiftFramework.Core
             {
                 yield break;
             }
+
+            string rootFolder = GetRootFolder();
             
             foreach (string guid in UnityEditor.AssetDatabase.FindAssets($"t:GameObject", new [] { folder }))
             {
@@ -73,7 +75,7 @@ namespace SwiftFramework.Core
                 if (prefab.GetComponent<TAsset>() != null)
                 {
                     path = path.RemoveExtention();
-                    yield return Create<TLink>(path.Substring(folder.Length + 1, path.Length - (folder.Length + 1)));
+                    yield return Create<TLink>(path.Substring(rootFolder.Length + 1, path.Length - (rootFolder.Length + 1)));
                 }
             }
 #else

@@ -1,13 +1,97 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
 using System.Runtime.Serialization;
+using SwiftFramework.Helpers;
+using Object = UnityEngine.Object;
 
 namespace SwiftFramework.Core
 {
     [Serializable]
     public class Link : ILink, ISerializationCallbackReceiver
     {
+
+        public static IEnumerable<TLink> PopulateLinkList<TLink, TAsset>(bool promptFolderSelection = true, string defaultFolder = "") where TAsset : Object where TLink : Link, new()
+        {
+#if UNITY_EDITOR
+            string folder = GetFolder(promptFolderSelection, defaultFolder);
+
+            if (string.IsNullOrEmpty(folder))
+            {
+                yield break;
+            }
+
+            foreach (string guid in UnityEditor.AssetDatabase.FindAssets($"t:{typeof(TAsset).Name}", new [] { folder }))
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                TAsset asset = UnityEditor.AssetDatabase.LoadAssetAtPath<TAsset>(path);
+                yield return Create<TLink>(folder.Remove(0, GetRootFolder().Length + 1) + "/" + asset.name);
+            }
+            
+#else
+
+            yield break;
+
+#endif
+            
+        }
+
+        private static string GetFolder(bool promptFolderSelection = true, string defaultFolder = "")
+        {
+            string folder = GetRootFolder();
+
+            if (promptFolderSelection)
+            {
+                folder = UnityEditor.EditorUtility.OpenFolderPanel("Choose folder to populate link list",
+                    $"Assets/{GetRootFolder()}/{defaultFolder}", $"");
+            }
+
+            if (string.IsNullOrEmpty(folder))
+            {
+                return null;
+            }
+
+            return PathUtils.ToRelativePath(folder);
+        }
+        
+        public static IEnumerable<TLink> PopulatePrefabLinkList<TLink, TAsset>(bool promptFolderSelection = true, string defaultFolder = "") where TLink : Link, new()
+        {
+#if UNITY_EDITOR
+
+            string folder = GetFolder(promptFolderSelection, defaultFolder);
+
+            if (string.IsNullOrEmpty(folder))
+            {
+                yield break;
+            }
+            
+            foreach (string guid in UnityEditor.AssetDatabase.FindAssets($"t:GameObject", new [] { folder }))
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab.GetComponent<TAsset>() != null)
+                {
+                    path = path.RemoveExtention();
+                    yield return Create<TLink>(path.Substring(folder.Length + 1, path.Length - (folder.Length + 1)));
+                }
+            }
+#else
+
+            yield break;
+
+#endif
+        }
+        
+        private static string GetRootFolder()
+        {
+#if USE_ADDRESSABLES
+            return "Assets/Addressables";
+#else
+            return "Assets/Resources";
+#endif
+        }
+
         private const string GENERATED = "generated_";
 
         public const string PathPropertyName = nameof(Path);

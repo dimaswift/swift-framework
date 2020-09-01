@@ -18,7 +18,7 @@ namespace SwiftFramework.Core
 
     public sealed class App : IApp
     {
-        internal static event Action OnDomainReloaded = () => { };
+        public static event Action OnDomainReloaded = () => { };
         
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()

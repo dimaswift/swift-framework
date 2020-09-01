@@ -10,7 +10,7 @@ namespace SwiftFramework.Core
         [SerializeField] [CheckInterface(InterfaceSearch.Scene, typeof(ILoadingScreen))]
         private GameObject loadingScreenWrapper = null;
 
-        protected virtual int TargetFrameRate { get; } = 60;
+        protected virtual int TargetFrameRate { get; } = 90;
         protected virtual int SleepTimeout { get; } = UnityEngine.SleepTimeout.NeverSleep;
         private ILoadingScreen loadingScreen;
 

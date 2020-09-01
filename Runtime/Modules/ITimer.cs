@@ -12,6 +12,7 @@ namespace SwiftFramework.Core
         IPromise WaitForAll(IEnumerable<Action> actions);
         IPromise WaitForUnscaled(float seconds);
         IPromise WaitForNextFrame();
+        IPromise WaitForFixedUpdate();
         IPromise WaitUntil(Func<bool> condition);
         IPromise Evaluate(float duration, Action<float> callback);
         bool Cancel(IPromise promise);

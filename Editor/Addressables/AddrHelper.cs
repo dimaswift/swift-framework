@@ -1,18 +1,14 @@
 ﻿#if USE_ADDRESSABLES
 
-using SwiftFramework.Core.Editor;
 using SwiftFramework.EditorUtils;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Security.Cryptography;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEditorInternal;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -32,6 +28,19 @@ namespace SwiftFramework.Core.Editor
         internal const string ROOT_FOLDER = "Assets/Addressables";
 
         private static readonly string[] rootFolders = {ROOT_FOLDER};
+
+        public static bool ReloadOnPostProcess { get; set; }
+        
+        private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets,
+            string[] movedFromAssetPaths)
+        {
+            if (ReloadOnPostProcess)
+            {
+                EditorApplication.delayCall += Reload;
+                ReloadOnPostProcess = false;
+            }
+        }
+
 
         private static AddressableAssetSettings Settings
         {
@@ -72,6 +81,11 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
+        static AddrHelper()
+        {
+            Reload();
+        }
+        
         public static IEnumerable<AddressableAssetEntry> GetPrefabsWithComponent(Type component)
         {
             foreach (AddressableAssetEntry entry in assets)
@@ -108,28 +122,18 @@ namespace SwiftFramework.Core.Editor
             }
         }
 
-        private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets,
-            string[] movedAssets, string[] movedFromAssetPaths)
+        public static void ProcessMove(string path)
         {
-            foreach (string path in movedAssets)
+            string guid = AssetDatabase.AssetPathToGUID(path);
+            AddressableAssetEntry entry = Settings.FindAssetEntry(guid);
+            if (entry != null)
             {
-                string guid = AssetDatabase.AssetPathToGUID(path);
-                AddressableAssetEntry entry = Settings.FindAssetEntry(guid);
-                if (entry != null)
-                {
-                    Settings.RemoveAssetEntry(guid);
-                    entry = Settings.CreateOrMoveEntry(guid, Settings.DefaultGroup);
-                    entry.SetAddress(NormalizeAddress(path));
-                    Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
-                    Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, null, true);
-                    Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, null, true);
-                }
-                
-            }
-
-            if (movedAssets.Length > 0 || deletedAssets.Length > 0 || movedFromAssetPaths.Length > 0)
-            {
-                Reload();
+                Settings.RemoveAssetEntry(guid);
+                entry = Settings.CreateOrMoveEntry(guid, Settings.DefaultGroup);
+                entry.SetAddress(NormalizeAddress(path));
+                Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, null, true);
+                Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, null, true);
+                Settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, null, true);
             }
         }
 

@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using SwiftFramework.Core;
 using SwiftFramework.Core.Editor;
+using SwiftFramework.Helpers;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
@@ -53,7 +54,7 @@ namespace SwiftFramework.EditorUtils
 
                 var manifestClassName = manifest.Namespaces[0].Types[0].Name;
 
-                var manifestPath = Util.ToRelativePath(folder + "/Resources/Configs/" + manifestClassName + ".asset");
+                var manifestPath = PathUtils.ToRelativePath(folder + "/Resources/Configs/" + manifestClassName + ".asset");
 
                 Util.CreateAssetAfterScriptReload(manifestClassName, manifestPath);
 

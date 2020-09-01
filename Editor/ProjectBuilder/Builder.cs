@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using SwiftFramework.Core;
+using SwiftFramework.Helpers;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -147,7 +148,7 @@ namespace SwiftFramework.EditorUtils
             {
                 var defaultIconPath =
                     $"{EditorUtility.OpenFilePanelWithFilters("Select Your Default Icon", "Assets", new string[] {"Texture", "png", "Texture", "jpeg", "Texture", "jpg"})}";
-                defaultIconToOverwrite = AssetDatabase.LoadAssetAtPath<Texture2D>(Util.ToRelativePath(defaultIconPath));
+                defaultIconToOverwrite = AssetDatabase.LoadAssetAtPath<Texture2D>(PathUtils.ToRelativePath(defaultIconPath));
                 if (defaultIconToOverwrite != null)
                 {
                     foreach (Builder builder in Util.GetAssets<Builder>())

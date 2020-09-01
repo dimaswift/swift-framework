@@ -11,6 +11,7 @@ using JetBrains.Annotations;
 using Newtonsoft.Json.Linq;
 using SwiftFramework.Core;
 using SwiftFramework.Core.Editor;
+using SwiftFramework.Helpers;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditorInternal;
@@ -182,7 +183,7 @@ namespace SwiftFramework.EditorUtils
             get
             {
                 string path = AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(instance));
-                return ToRelativePath(new FileInfo(path).Directory?.Parent?.Parent?.FullName);
+                return PathUtils.ToRelativePath(new FileInfo(path).Directory?.Parent?.Parent?.FullName);
             }
         }
 
@@ -297,20 +298,6 @@ namespace SwiftFramework.EditorUtils
             return null;
         }
 
-        public static string ToRelativePath(string absolutePath)
-        {
-            if (string.IsNullOrEmpty(absolutePath))
-            {
-                return "";
-            }
-
-            if (Path.GetFullPath(absolutePath).StartsWith(Path.GetFullPath(Application.dataPath)))
-            {
-                return "Assets" + absolutePath.Substring(Application.dataPath.Length);
-            }
-
-            return absolutePath;
-        }
 
         private static string ToAbsolutePath(string relativePath)
         {
@@ -419,7 +406,7 @@ namespace SwiftFramework.EditorUtils
 
             string configPath = EditorUtility.OpenFilePanel("Choose config", folder, "asset");
 
-            return string.IsNullOrEmpty(configPath) ? null : AssetDatabase.LoadAssetAtPath(ToRelativePath(configPath), type);
+            return string.IsNullOrEmpty(configPath) ? null : AssetDatabase.LoadAssetAtPath(PathUtils.ToRelativePath(configPath), type);
         }
 
 

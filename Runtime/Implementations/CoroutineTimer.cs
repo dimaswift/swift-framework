@@ -107,6 +107,18 @@ namespace SwiftFramework.Core
             return StartNew(WaitForNextFrameCoroutine(promise), promise);
         }
 
+        public IPromise WaitForFixedUpdate()
+        {
+            Promise promise = Promise.Create();
+            return StartNew(WaitForFixedUpdateCoroutine(promise), promise);
+        }
+        
+        private IEnumerator WaitForFixedUpdateCoroutine(Promise promise)
+        {
+            yield return new WaitForFixedUpdate();
+            promise.Resolve();
+        }
+        
         private IEnumerator WaitForNextFrameCoroutine(Promise promise)
         {
             yield return new WaitForEndOfFrame();

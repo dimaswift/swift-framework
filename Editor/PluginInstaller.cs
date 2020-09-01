@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
+using SwiftFramework.Helpers;
 using UnityEditor.Compilation;
 using UnityEditor.VersionControl;
 using Object = UnityEngine.Object;
@@ -618,7 +619,7 @@ namespace SwiftFramework.Core.Editor
 
             if (unityPackage != null)
             {
-                AssetDatabase.ImportPackage(Util.ToRelativePath(unityPackage), false);
+                AssetDatabase.ImportPackage(PathUtils.ToRelativePath(unityPackage), false);
                 return true;
             }
 

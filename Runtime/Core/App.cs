@@ -162,6 +162,9 @@ namespace SwiftFramework.Core
 
         private readonly Dictionary<ModuleLink, IModule> readyModules = new Dictionary<ModuleLink, IModule>();
         private readonly Dictionary<Type, IModule> readyModulesDict = new Dictionary<Type, IModule>();
+        
+        private readonly Dictionary<Type, List<Action<IModule>>> waitingForModuleActions = new Dictionary<Type, List<Action<IModule>>>();
+        
         private bool initializingStarted = false;
         private bool debugMode;
 
@@ -297,6 +300,24 @@ namespace SwiftFramework.Core
             return initPromise;
         }
 
+        public void WaitForModule<T>(Action<IModule> action) where T : class, IModule
+        {
+            T module = GetModule<T>();
+            if (module != null)
+            {
+                action(module);
+                return;
+            }
+            
+            if (waitingForModuleActions.TryGetValue(typeof(T), out List<Action<IModule>> actions) == false)
+            {
+                actions = new List<Action<IModule>>();
+                waitingForModuleActions.Add(typeof(T), actions);
+            }
+            
+            actions.Add(action);
+        }
+
         public T GetModule<T>(ModuleLink moduleLink) where T : class, IModule
         {
             if (readyModules.TryGetValue(moduleLink, out IModule module))
@@ -388,6 +409,25 @@ namespace SwiftFramework.Core
             }
             
             Promise<IModule> result = Promise<IModule>.Create();
+            
+            result.Done(m =>
+            {
+                if (waitingForModuleActions.TryGetValue(moduleLink.InterfaceType, out List<Action<IModule>> actions))
+                {
+                    foreach (var action in actions)
+                    {
+                        try
+                        {
+                            action(m);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError(e.Message);
+                        }
+                    }
+                    waitingForModuleActions.Remove(moduleLink.InterfaceType);
+                }
+            });
 
             if (IsCreated(moduleLink, out IPromise<IModule> i))
             {

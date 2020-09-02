@@ -83,7 +83,7 @@ namespace SwiftFramework.Core.Editor
 
         static AddrHelper()
         {
-            Reload();
+            EditorApplication.delayCall += Reload;
         }
         
         public static IEnumerable<AddressableAssetEntry> GetPrefabsWithComponent(Type component)
@@ -159,11 +159,6 @@ namespace SwiftFramework.Core.Editor
                 .RemoveExtention();
         }
 
-        [UnityEditor.Callbacks.DidReloadScripts]
-        private static void OnScriptsReloaded()
-        {
-            Reload();
-        }
 #if SWIFT_FRAMEWORK_INSTALLED
         [MenuItem("SwiftFramework/Links/Reload")]
 #endif

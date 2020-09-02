@@ -14,6 +14,9 @@ namespace SwiftFramework.Core
         ITimer Timer { get; }
         IWindowsManager Windows { get; }
         IPromise<IModule> CreateModule(ModuleLink moduleLink);
+
+        void WaitForModule<T>(Action<IModule> action) where T : class, IModule;
+        
         T GetModule<T>(ModuleLink moduleLink) where T : class, IModule;
         T GetCachedModule<T>(ref T cachedModule) where T : class, IModule;
         T GetModule<T>() where T : class, IModule;

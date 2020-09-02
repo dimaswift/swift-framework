@@ -1,4 +1,5 @@
-﻿using SwiftFramework.Core;
+﻿using System;
+using SwiftFramework.Core;
 using UnityEngine;
 
 namespace SwiftFramework.Utils.UI

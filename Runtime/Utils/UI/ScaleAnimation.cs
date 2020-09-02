@@ -15,6 +15,10 @@ namespace SwiftFramework.Utils.UI
         public IPromise Animate()
         {
             Promise promise = Promise.Create();
+            if (gameObject.activeSelf == false)
+            {
+                gameObject.SetActive(true);
+            }
             StartCoroutine(AnimationRoutine(promise));
             return promise;
         }

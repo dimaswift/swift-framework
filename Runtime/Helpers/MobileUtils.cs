@@ -1,5 +1,6 @@
 ﻿using SwiftFramework.Core;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace SwiftFramework.Helpers
 {
@@ -30,6 +31,19 @@ namespace SwiftFramework.Helpers
             Promise<string> timeout = Promise<string>.Create();
             App.Core.Timer.WaitForUnscaled(5).Done(() => timeout.Resolve(SystemInfo.deviceUniqueIdentifier));
             return Promise<string>.Race(result, timeout);
+        }
+
+        public static bool IsTouchingUI()
+        {
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                int id = Input.GetTouch(i).fingerId;
+                if (EventSystem.current.IsPointerOverGameObject(id))
+                {
+                    return true;
+                }
+            }
+            return EventSystem.current.IsPointerOverGameObject();
         }
     }
 }

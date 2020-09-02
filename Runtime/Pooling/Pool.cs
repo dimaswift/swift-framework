@@ -134,8 +134,10 @@ namespace SwiftFramework.Core.Pooling
 
         public void Return(IPooled pooledObject)
         {
-            poolStack.Push(pooledObject);
-            activeItems.Remove(pooledObject);
+            if (activeItems.Remove(pooledObject))
+            {
+                poolStack.Push(pooledObject);
+            }
         }
 
         public void ReturnAll()

@@ -41,11 +41,14 @@ namespace SwiftFramework.Core
         {
             string folder = GetRootFolder();
 
+#if UNITY_EDITOR
+            
             if (promptFolderSelection)
             {
                 folder = UnityEditor.EditorUtility.OpenFolderPanel("Choose folder to populate link list",
                     $"Assets/{GetRootFolder()}/{defaultFolder}", $"");
             }
+#endif
 
             if (string.IsNullOrEmpty(folder))
             {

@@ -310,7 +310,7 @@ namespace SwiftFramework.Core.Editor
                     ModuleInstaller.Install(AssetDatabase.LoadAssetAtPath<ModuleInstallInfo>(id).GenerateLink());
                     break;
             }
-            Refresh();
+            EditorApplication.delayCall += Refresh;
         }
         
         private void UpdatePlugin(PluginInfo plugin, PluginData data)
@@ -396,11 +396,8 @@ namespace SwiftFramework.Core.Editor
             }
             else
             {
-                Refresh();
+                EditorApplication.delayCall += Refresh;
             }
-            
-            
-            
         }
 
         private static void InstallModules()
@@ -424,7 +421,7 @@ namespace SwiftFramework.Core.Editor
         private static void FinishUninstalling(bool compiled)
         {
             PluginsManifest.Instance.FinishUninstall();
-            Refresh();
+            EditorApplication.delayCall += Refresh;
         }
 
         private static bool CopyFiles()

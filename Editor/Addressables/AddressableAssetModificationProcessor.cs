@@ -3,6 +3,7 @@ using UnityEditor;
 
 namespace SwiftFramework.Core.Editor
 {
+    #if USE_ADDRESSABLES
     public class AddressableAssetModificationProcessor : UnityEditor.AssetModificationProcessor
     {
         static void OnWillCreateAsset(string assetName)
@@ -28,4 +29,5 @@ namespace SwiftFramework.Core.Editor
             return AssetMoveResult.DidMove;
         }
     }
+#endif
 }

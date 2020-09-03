@@ -9,6 +9,11 @@ namespace SwiftFramework.Core
     {
         public void Invoke()
         {
+            if (IsEmpty)
+            {
+                return;
+            }
+            
             if (!Value)
             {
                 Debug.LogError($"Cannot invoke event: {GetPath()}");
@@ -20,6 +25,11 @@ namespace SwiftFramework.Core
         
         public void Invoke(EventArguments arguments)
         {
+            if (IsEmpty)
+            {
+                return;
+            }
+            
             if (!Value)
             {
                 Debug.LogError($"Cannot invoke event: {GetPath()}");
@@ -30,6 +40,11 @@ namespace SwiftFramework.Core
 
         public void AddListener(GlobalEventHandler eventHandler)
         {
+            if (IsEmpty)
+            {
+                return;
+            }
+            
             if (!Value)
             {
                 Debug.LogError($"Cannot add listener to event: {GetPath()}");
@@ -40,6 +55,11 @@ namespace SwiftFramework.Core
 
         public bool RemoveListener(GlobalEventHandler eventHandler)
         {
+            if (IsEmpty)
+            {
+                return false;
+            }
+            
             if (!Value)
             {
                 Debug.LogError($"Cannot remove listener to event: {GetPath()}");
@@ -50,6 +70,11 @@ namespace SwiftFramework.Core
 
         public void RemoveAllListeners()
         {
+            if (IsEmpty)
+            {
+                return;
+            }
+            
             if (!Value)
             {
                 Debug.LogError($"Cannot remove all listeners: {GetPath()}");
@@ -103,6 +128,6 @@ namespace SwiftFramework.Core
     [Serializable]
     public class EventArgumentsLink : LinkTo<EventArguments>
     {
-
+        
     }
 }

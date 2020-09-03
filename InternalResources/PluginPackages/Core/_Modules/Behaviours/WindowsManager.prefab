@@ -496,7 +496,7 @@ MonoBehaviour:
   tooltipCanvas: {fileID: 6762124599450803035}
   transitionPanel: {fileID: 2463012937482140202}
   tooltip:
-    Path: Views/UI/Tooltip
+    Path: null
   transitionDuration: 0.25
   animationDuration: 0.2
 --- !u!1 &8215549996999047225

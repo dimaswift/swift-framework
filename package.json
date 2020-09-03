@@ -1,8 +1,8 @@
 {
   "name": "com.dimaswift.swiftframework",
   "displayName": "Swift Framework",
-  "version": "0.0.3",
-  "unity": "2019.3",
+  "version": "0.2.13",
+  "unity": "2019.4",
   "keywords": [
     "Tools",
     "Framework"

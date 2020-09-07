@@ -25,6 +25,8 @@ namespace SwiftFramework.Core
             }
         }
 
+        public bool CreateOnAppLoad => options.createOnAppLoaded;
+
         public ModuleState State
         {
             get => options.state;
@@ -41,15 +43,18 @@ namespace SwiftFramework.Core
         public Type ImplementationType => module.ImplementationType;
 
         [SerializeField] private ModuleLink module = null;
+      
         [SerializeField] private Options options = new Options()
         {
             initializeOnLoad = true,
+            createOnAppLoaded = false,
             state = ModuleState.Enabled
         };
         
         [Serializable]
         public struct Options
         {
+            public bool createOnAppLoaded;
             public bool initializeOnLoad;
             public ModuleState state;
         }

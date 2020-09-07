@@ -56,7 +56,7 @@ namespace SwiftFramework.Core
         [SerializeField] private BehaviourModuleLink behaviourLink;
         [SerializeField] private ModuleConfigLink configLink;
         [SerializeField] private bool initializeOnLoad = true;
-        
+        [SerializeField] private bool createAfterAppLoaded = true;
         [NonSerialized] private IModule module;
         private static readonly RuntimeModuleFactory runtimeModuleFactory = new RuntimeModuleFactory();
 
@@ -64,6 +64,12 @@ namespace SwiftFramework.Core
         {
             get => initializeOnLoad;
             set => initializeOnLoad = value;
+        }
+        
+        public bool CreateAfterAppLoaded
+        {
+            get => createAfterAppLoaded;
+            set => createAfterAppLoaded = value;
         }
         
         public bool HasImplementation => implementationType.IsDefined;

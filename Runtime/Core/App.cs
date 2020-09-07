@@ -204,6 +204,15 @@ namespace SwiftFramework.Core
                             SetState(AppState.CoreModulesInitialized);
                             InitModules().Then(() =>
                                 {
+
+                                    foreach (ModuleLink moduleLink in moduleFactory.GetDefinedModules(ModuleLoadType.OnDemand))
+                                    {
+                                        if (moduleLink.CreateAfterAppLoaded && createdModules.ContainsKey(moduleLink) == false)
+                                        { 
+                                            CreateModule(moduleLink);
+                                        }
+                                    }
+
                                     SetState(AppState.ModulesInitialized);
                                 })
                                 .Catch(logger.LogException);

@@ -17,17 +17,17 @@ namespace SwiftFramework.Core
         IPromise<R> Show<T, A, R>(A args, WindowLink link = null) where T : IWindowWithArgsAndResult<A, R>;
         void Hide<T>(WindowLink link = null) where T : IWindow;
         IPromise<T> GetWindow<T>(WindowLink link = null) where T : IWindow;
-        IWindow GetBottomWindow();
-        IWindow GetTopWindow();
-        IEnumerable<IWindow> GetWindowStack();
-        void HideTopFullScreenWindow();
-        void HideAll();
-        IPromise SetStack(params WindowLink[] windows);
-        IPromise SetStack(IEnumerable<IWindow> windows);
-        IPromise SetStack<W1>() where W1 : IWindow;
-        IPromise SetStack<W1, W2>() where W1 : IWindow where W2 : IWindow;
-        IPromise SetStack<W1, W2, W3>() where W1 : IWindow where W2 : IWindow where W3 : IWindow;
-        IPromise SetStack<W1, W2, W3, W4>() where W1 : IWindow where W2 : IWindow where W3 : IWindow where W4 : IWindow;
+        IWindow GetBottomWindow(CanvasType type = CanvasType.Window);
+        IWindow GetTopWindow(CanvasType type = CanvasType.Window);
+        IEnumerable<IWindow> GetWindowStack(CanvasType type = CanvasType.Window);
+        void HideTopFullScreenWindow(CanvasType type = CanvasType.Window);
+        void HideAll(CanvasType type = CanvasType.Window);
+        IPromise SetStack( CanvasType type = CanvasType.Window, params WindowLink[] windows);
+        IPromise SetStack(IEnumerable<IWindow> windows, CanvasType type = CanvasType.Window);
+        IPromise SetStack<W1>(CanvasType type = CanvasType.Window) where W1 : IWindow;
+        IPromise SetStack<W1, W2>(CanvasType type = CanvasType.Window) where W1 : IWindow where W2 : IWindow;
+        IPromise SetStack<W1, W2, W3>(CanvasType type = CanvasType.Window) where W1 : IWindow where W2 : IWindow where W3 : IWindow;
+        IPromise SetStack<W1, W2, W3, W4>(CanvasType type = CanvasType.Window) where W1 : IWindow where W2 : IWindow where W3 : IWindow where W4 : IWindow;
         bool IsShowingAnimation();
         void SetTopBarShown(bool visible);
         ITopBar GetTopBar();
@@ -45,7 +45,7 @@ namespace SwiftFramework.Core
 
     public enum CanvasType
     {
-        Window = 0, HUD = 1 
+        HUD = 0, Window = 1, Overlay = 2
     }
 
     public interface IRootCanvas

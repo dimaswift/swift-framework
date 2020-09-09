@@ -37,7 +37,7 @@ namespace SwiftFramework.Core
             
         }
 
-        private static string GetFolder(bool promptFolderSelection = true, string defaultFolder = "")
+        private static string GetFolder(bool promptFolderSelection, string defaultFolder)
         {
             string folder = GetRootFolder();
 
@@ -46,7 +46,7 @@ namespace SwiftFramework.Core
             if (promptFolderSelection)
             {
                 folder = UnityEditor.EditorUtility.OpenFolderPanel("Choose folder to populate link list",
-                    $"Assets/{GetRootFolder()}/{defaultFolder}", $"");
+                    defaultFolder, "");
             }
 #endif
 
@@ -58,9 +58,11 @@ namespace SwiftFramework.Core
             return PathUtils.ToRelativePath(folder);
         }
         
-        public static IEnumerable<TLink> PopulatePrefabLinkList<TLink, TAsset>(bool promptFolderSelection = true, string defaultFolder = "") where TLink : Link, new()
+        public static IEnumerable<TLink> PopulatePrefabLinkList<TLink, TAsset>(bool promptFolderSelection = true, string prefsKey = null) where TLink : Link, new()
         {
 #if UNITY_EDITOR
+
+            string defaultFolder = UnityEditor.EditorPrefs.GetString(prefsKey, GetRootFolder());
 
             string folder = GetFolder(promptFolderSelection, defaultFolder);
 
@@ -69,6 +71,11 @@ namespace SwiftFramework.Core
                 yield break;
             }
 
+            if (prefsKey != null)
+            {
+                UnityEditor.EditorPrefs.SetString(prefsKey, folder);
+            }
+            
             string rootFolder = GetRootFolder();
             
             foreach (string guid in UnityEditor.AssetDatabase.FindAssets($"t:GameObject", new [] { folder }))
@@ -88,7 +95,7 @@ namespace SwiftFramework.Core
 #endif
         }
         
-        private static string GetRootFolder()
+        public static string GetRootFolder()
         {
 #if USE_ADDRESSABLES
             return "Assets/Addressables";

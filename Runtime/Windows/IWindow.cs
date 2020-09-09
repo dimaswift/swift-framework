@@ -12,6 +12,7 @@ namespace SwiftFramework.Core
         bool IsShown { get; }
         RectTransform RectTransform { get; }
         IPromise HidePromise { get; }
+        CanvasType CanvasType { get; }
     }
 
 }

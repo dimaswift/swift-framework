@@ -18,7 +18,7 @@ namespace SwiftFramework.Core.Windows
         [SerializeField] private float transitionDuration = .25f;
         [SerializeField] private float animationDuration = .5f;
 
-        private readonly Stack<Window> windowStack = new Stack<Window>();
+        private readonly Dictionary<CanvasType, Stack<Window>> layers = new Dictionary<CanvasType, Stack<Window>>();
 
         private readonly Dictionary<Type, Window> singletonWindowInstances = new Dictionary<Type, Window>();
         private readonly Dictionary<WindowLink, Window> windowInstances = new Dictionary<WindowLink, Window>();
@@ -81,12 +81,15 @@ namespace SwiftFramework.Core.Windows
             return showRoutine != null || hideRoutine != null;
         }
 
-        public IWindow GetBottomWindow()
+        private Stack<Window> GetStack(CanvasType type) => layers[type];
+
+        public IWindow GetBottomWindow(CanvasType type = CanvasType.Window)
         {
             int i = 0;
-            foreach (var window in windowStack)
+            var stack = GetStack(type);
+            foreach (var window in GetStack(type))
             {
-                if (i == windowStack.Count - 1)
+                if (i == stack.Count - 1)
                 {
                     return window;
                 }
@@ -95,9 +98,9 @@ namespace SwiftFramework.Core.Windows
             return default;
         }
 
-        public IWindow GetTopWindow()
+        public IWindow GetTopWindow(CanvasType type = CanvasType.Window)
         {
-            return windowStack.Count > 0 ? windowStack.Peek() : default;
+            return GetStack(type).Count > 0 ? GetStack(type).Peek() : default;
         }
 
         protected override IPromise GetInitPromise()
@@ -108,6 +111,10 @@ namespace SwiftFramework.Core.Windows
                 rootCanvas.ApplySafeArea();
             }
 
+            foreach (object value in Enum.GetValues(typeof(CanvasType)))
+            {
+                layers.Add((CanvasType)value, new Stack<Window>());
+            }
 
             if (topBarObject != null)
             {
@@ -181,35 +188,37 @@ namespace SwiftFramework.Core.Windows
             
         }
 
-        public IEnumerable<IWindow> GetWindowStack()
+        public IEnumerable<IWindow> GetWindowStack(CanvasType type = CanvasType.Window)
         {
-            foreach (var window in windowStack)
+            foreach (var window in GetStack(type))
             {
                 yield return window;
             }
         }
 
-        public void HideTopFullScreenWindow()
+        public void HideTopFullScreenWindow(CanvasType type)
         {
+            var stack = GetStack(type);
+            
             actionQueue.Enqueue(() =>
             {
                 windowBuffer.Clear();
 
-                while (windowStack.Count > 0 && windowStack.Peek().IsFullScreen == false)
+                while (stack.Count > 0 && stack.Peek().IsFullScreen == false)
                 {
-                    windowBuffer.Add(windowStack.Pop());
+                    windowBuffer.Add(GetStack(type).Pop());
                 }
 
-                if (windowStack.Count == 0)
+                if (stack.Count == 0)
                 {
                     Hide(windowBuffer);
                     return;
                 }
 
-                Window topFullScreenWin = windowStack.Pop();
+                Window topFullScreenWin = stack.Pop();
                 windowBuffer.Add(topFullScreenWin);
 
-                if (windowStack.Count == 0)
+                if (stack.Count == 0)
                 {
                     Hide(windowBuffer);
                     return;
@@ -219,14 +228,14 @@ namespace SwiftFramework.Core.Windows
 
                 windowBuffer.Clear();
 
-                while (windowStack.Count > 0 && windowStack.Peek().IsFullScreen == false)
+                while (stack.Count > 0 && stack.Peek().IsFullScreen == false)
                 {
-                    windowBuffer.Add(windowStack.Pop());
+                    windowBuffer.Add(stack.Pop());
                 }
 
-                if (windowStack.Count > 0)
+                if (stack.Count > 0)
                 {
-                    var win = windowStack.Pop();
+                    var win = stack.Pop();
                     windowBuffer.Add(win);
                 }
 
@@ -234,7 +243,7 @@ namespace SwiftFramework.Core.Windows
 
                 foreach (var win in windowBuffer)
                 {
-                    windowStack.Push(win);
+                    stack.Push(win);
                 }
 
                 Show(windowBuffer);
@@ -397,20 +406,20 @@ namespace SwiftFramework.Core.Windows
             ProcessActionQueue();
         }
 
-        public void HideAll()
+        public void HideAll(CanvasType type = CanvasType.Window)
         {
             actionQueue.Enqueue(() =>
             {
                 windowBuffer.Clear();
 
-                foreach (var win in singletonWindowInstances)
+                foreach (var win in GetStack(type))
                 {
-                    if (win.Value.IsShown)
+                    if (win.IsShown)
                     {
-                        windowBuffer.Add(win.Value);
+                        windowBuffer.Add(win);
                     }
                 }
-                windowStack.Clear();
+                GetStack(type).Clear();
 
                 Hide(windowBuffer);
             });
@@ -418,18 +427,19 @@ namespace SwiftFramework.Core.Windows
             ProcessActionQueue();
         }
 
-        public IPromise SetStack(IEnumerable<IWindow> windows)
+        public IPromise SetStack(IEnumerable<IWindow> windows, CanvasType type = CanvasType.Window)
         {
             Promise promise = Promise.Create();
 
             actionQueue.Enqueue(() =>
             {
-                windowStack.Clear();
+                var stack = GetStack(type);
+                stack.Clear();
                 foreach (var win in windows)
                 {
-                    windowStack.Push(win as Window);
+                    stack.Push(win as Window);
                 }
-                ShowCurrentStack();
+                ShowCurrentStack(type);
                 promise.Resolve();
             });
 
@@ -437,7 +447,7 @@ namespace SwiftFramework.Core.Windows
             return promise;
         }
 
-        public IPromise SetStack<W1>() where W1 : IWindow
+        public IPromise SetStack<W1>(CanvasType type = CanvasType.Window) where W1 : IWindow
         {
             Promise promise = Promise.Create();
 
@@ -445,9 +455,9 @@ namespace SwiftFramework.Core.Windows
             {
                 GetWindow<W1>().Done(w =>
                 {
-                    windowStack.Clear();
-                    windowStack.Push(w as Window);
-                    ShowCurrentStack();
+                    GetStack(type).Clear();
+                    GetStack(type).Push(w as Window);
+                    ShowCurrentStack(type);
                     promise.Resolve();
                 });
             });
@@ -457,7 +467,7 @@ namespace SwiftFramework.Core.Windows
             return promise;
         }
 
-        public IPromise SetStack<W1, W2>()
+        public IPromise SetStack<W1, W2>(CanvasType type = CanvasType.Window)
             where W1 : IWindow
             where W2 : IWindow
         {
@@ -477,12 +487,12 @@ namespace SwiftFramework.Core.Windows
                 });
                 Promise.All(p1, p2).Then(() =>
                 {
-                    windowStack.Clear();
+                    GetStack(type).Clear();
 
-                    windowStack.Push(w1 as Window);
-                    windowStack.Push(w2 as Window);
+                    GetStack(type).Push(w1 as Window);
+                    GetStack(type).Push(w2 as Window);
 
-                    ShowCurrentStack();
+                    ShowCurrentStack(type);
 
                     promise.Resolve();
                 })
@@ -494,7 +504,7 @@ namespace SwiftFramework.Core.Windows
             return promise;
         }
 
-        public IPromise SetStack<W1, W2, W3>()
+        public IPromise SetStack<W1, W2, W3>(CanvasType type = CanvasType.Window)
             where W1 : IWindow
             where W2 : IWindow
             where W3 : IWindow
@@ -518,15 +528,16 @@ namespace SwiftFramework.Core.Windows
                 {
                     w3 = w;
                 });
+                var stack = GetStack(type);
                 Promise.All(p1, p2, p3).Then(() =>
                 {
-                    windowStack.Clear();
+                    GetStack(type).Clear();
 
-                    windowStack.Push(w1 as Window);
-                    windowStack.Push(w2 as Window);
-                    windowStack.Push(w3 as Window);
+                    stack.Push(w1 as Window);
+                    stack.Push(w2 as Window);
+                    stack.Push(w3 as Window);
 
-                    ShowCurrentStack();
+                    ShowCurrentStack(type);
 
                     promise.Resolve();
                 })
@@ -538,7 +549,7 @@ namespace SwiftFramework.Core.Windows
             return promise;
         }
 
-        public IPromise SetStack<W1, W2, W3, W4>()
+        public IPromise SetStack<W1, W2, W3, W4>(CanvasType type = CanvasType.Window)
             where W1 : IWindow
             where W2 : IWindow
             where W3 : IWindow
@@ -568,16 +579,17 @@ namespace SwiftFramework.Core.Windows
                 {
                     w4 = w;
                 });
-                Promise.All(p1, p2, p3, p4).Then(() =>
-                {
-                    windowStack.Clear();
+                Promise.All(p1, p2, p3, p4).Then(() => 
+                 {
+                    var stack = GetStack(type);
+                    stack.Clear();
 
-                    windowStack.Push(w1 as Window);
-                    windowStack.Push(w2 as Window);
-                    windowStack.Push(w3 as Window);
-                    windowStack.Push(w4 as Window);
+                    stack.Push(w1 as Window);
+                    stack.Push(w2 as Window);
+                    stack.Push(w3 as Window);
+                    stack.Push(w4 as Window);
 
-                    ShowCurrentStack();
+                    ShowCurrentStack(type);
 
                     promise.Resolve();
                 })
@@ -599,7 +611,7 @@ namespace SwiftFramework.Core.Windows
             if (window.IsFullScreen)
             {
                 bool isOnTop = false;
-                foreach (Window w in windowStack)
+                foreach (Window w in GetStack(window.CanvasType))
                 {
                     if (w.IsFullScreen)
                     {
@@ -609,7 +621,7 @@ namespace SwiftFramework.Core.Windows
                 }
                 if (window.IsShown && isOnTop)
                 {
-                    HideTopFullScreenWindow();
+                    HideTopFullScreenWindow(window.CanvasType);
                 }
             }
             else
@@ -855,7 +867,7 @@ namespace SwiftFramework.Core.Windows
 
             windowBuffer.Clear();
             windowBuffer.Add(window);
-            windowStack.Push(window);
+            GetStack(window.CanvasType).Push(window);
             Show(windowBuffer);
         }
 
@@ -868,7 +880,7 @@ namespace SwiftFramework.Core.Windows
 
             if (window.IsFullScreen)
             {
-                HideTopFullScreenWindow();
+                HideTopFullScreenWindow(window.CanvasType);
             }
             else
             {
@@ -885,15 +897,17 @@ namespace SwiftFramework.Core.Windows
             }
 
             windowBuffer.Clear();
+            
+            var stack = GetStack(window.CanvasType);
 
-            while (windowStack.Count > 0 && windowStack.Peek().IsFullScreen == false)
+            while (stack.Count > 0 && stack.Peek().IsFullScreen == false)
             {
-                windowBuffer.Add(windowStack.Pop());
+                windowBuffer.Add(stack.Pop());
             }
 
-            if (windowStack.Count > 0)
+            if (stack.Count > 0)
             {
-                windowBuffer.Add(windowStack.Peek());
+                windowBuffer.Add(stack.Peek());
             }
 
             Hide(windowBuffer);
@@ -967,7 +981,8 @@ namespace SwiftFramework.Core.Windows
                 }
                 windowBuffer.Clear();
 
-                windowBuffer.AddRange(windowStack);
+                var stack = GetStack(window.CanvasType);
+                windowBuffer.AddRange(stack);
 
                 windowShowBuffer.Clear();
                 windowShowBuffer.Add(window);
@@ -976,26 +991,26 @@ namespace SwiftFramework.Core.Windows
 
                 windowBuffer.Remove(window);
 
-                windowStack.Clear();
+                stack.Clear();
 
                 windowBuffer.Reverse();
 
                 foreach (var win in windowBuffer)
                 {
-                    windowStack.Push(win);
+                    stack.Push(win);
                 }
             });
         }
 
-        private void ShowCurrentStack()
+        private void ShowCurrentStack(CanvasType type)
         {
-            if (windowStack.Count == 0)
+            if (GetStack(type).Count == 0)
             {
                 return;
             }
             windowShowBuffer.Clear();
             windowBuffer.Clear();
-            windowShowBuffer.AddRange(windowStack);
+            windowShowBuffer.AddRange(GetStack(type));
 
             for (int i = 0; i < windowShowBuffer.Count; i++)
             {
@@ -1016,20 +1031,25 @@ namespace SwiftFramework.Core.Windows
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (windowStack.Count > 0)
-                {
-                    if (windowStack.Peek().IsFullScreen)
+                foreach (var layer in layers)
+                { 
+                    if (layer.Value.Count > 0)
                     {
-                        if (windowStack.Peek().CanBeClosed)
+                        if (layer.Value.Peek().IsFullScreen)
                         {
-                            windowStack.Peek().HandleCloseButtonClick();
+                            if (layer.Value.Peek().CanBeClosed)
+                            {
+                                layer.Value.Peek().HandleCloseButtonClick();
+                                break;
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (windowStack.Peek().CanBeClosed)
+                        else
                         {
-                            windowStack.Pop().HandleCloseButtonClick();
+                            if (layer.Value.Peek().CanBeClosed)
+                            {
+                                layer.Value.Pop().HandleCloseButtonClick();
+                                break;
+                            }
                         }
                     }
                 }
@@ -1050,7 +1070,7 @@ namespace SwiftFramework.Core.Windows
             return FindCanvas(type);
         }
 
-        public IPromise SetStack(params WindowLink[] windows)
+        public IPromise SetStack(CanvasType type, params WindowLink[] windows)
         {
             Promise promise = Promise.Create();
 
@@ -1063,13 +1083,14 @@ namespace SwiftFramework.Core.Windows
                     promises.Add(GetWindow<IWindow>(w).Then(_w => windowInstances.Add(_w)));
                 }
                 Promise.All(promises).Then(() =>
-                {
-                    windowStack.Clear();
-                    foreach (var win in windowInstances)
                     {
-                        windowStack.Push(win as Window);
-                    }
-                    ShowCurrentStack();
+                        var stack = GetStack(windowInstances[0].CanvasType);
+                        stack.Clear();
+                        foreach (var win in windowInstances)
+                        {
+                            stack.Push(win as Window);
+                        }
+                        ShowCurrentStack(type);
                 })
                 .Catch(e => promise.Reject(e));
 

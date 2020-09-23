@@ -8,11 +8,16 @@ namespace SwiftFramework.Core
 {
     [DefaultModule]
     [Configurable(typeof(LocalizationConfig))]
-    internal class LocalizationManager : Module, ILocalizationManager
+    public class LocalizationManager : Module, ILocalizationManager
     {
         public LocalizationManager(ModuleConfigLink configLink)
         {
             SetConfig(configLink);
+        }
+        
+        public LocalizationManager()
+        {
+
         }
         
         public SystemLanguage CurrentLanguage { get; private set; } = SystemLanguage.English;
@@ -48,7 +53,7 @@ namespace SwiftFramework.Core
 
             LocalizationSheet sheet = sheets[current];
             
-            sheet.LoadSheet().Then(rows =>
+            sheet.LoadSheet(rows =>  ParseSheet(rows, sheet.Separator)).Then(rows =>
             {
                 try
                 {

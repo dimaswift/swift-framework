@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace SwiftFramework.Core
 {
@@ -6,6 +7,6 @@ namespace SwiftFramework.Core
     public abstract class LocalizationSheet : ScriptableObject
     {
         public virtual char Separator => '\t';
-        public abstract IPromise<string[]> LoadSheet();
+        public abstract IPromise<string[]> LoadSheet(Action<string[]> onLazeLoad);
     }
 }

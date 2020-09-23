@@ -68,13 +68,13 @@ namespace SwiftFramework.Core
             return downloadedSheet;
         }
         
-        public override IPromise<string[]> LoadSheet()
+        public override IPromise<string[]> LoadSheet(Action<string[]> onLazeLoad)
         {
             Promise<string[]> promise = Promise<string[]>.Create();
             
             if (downloadSheetOnLoad == false)
             {
-                Download();
+                Download().Done(onLazeLoad);
                 promise.Resolve(GetCachedSheet());
                 return promise;
             }

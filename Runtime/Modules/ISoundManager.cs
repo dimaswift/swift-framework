@@ -10,6 +10,7 @@ namespace SwiftFramework.Core
         void SetMuted(bool muted, SoundType type);
         void SetMutedAll(bool muted);
         bool IsMuted(SoundType type);
+        bool IsMutedAll();
     }
 
     public enum SoundType

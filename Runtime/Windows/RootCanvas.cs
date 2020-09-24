@@ -33,7 +33,7 @@ namespace SwiftFramework.Core.Windows
             {
                 if (canvas == null)
                 {
-                    canvas = GetComponent<Canvas>();        
+                    canvas = GetComponent<Canvas>();
                 }
                 return canvas;
             }
@@ -45,6 +45,8 @@ namespace SwiftFramework.Core.Windows
         [SerializeField] private float planeDistance = 10;
         [SerializeField] private CanvasType type = CanvasType.Window;
         [SerializeField] private RectTransform safeAreaRect = null;
+        [SerializeField] private bool useCustomCamera;
+        [SerializeField] private string customCameraTag;
 
         private Canvas canvas;
         private RectTransform rectTransform;
@@ -52,7 +54,16 @@ namespace SwiftFramework.Core.Windows
         private void OnEnable()
         {
             Canvas.renderMode = renderMode;
-            Canvas.worldCamera = Camera.main;
+
+            if (useCustomCamera == false)
+            {
+                Canvas.worldCamera = Camera.main;
+            }
+            else
+            {
+                Canvas.worldCamera = GameObject.FindGameObjectWithTag(customCameraTag).GetComponent<Camera>();
+            }
+
             Canvas.planeDistance = planeDistance;
             Canvas.sortingLayerName = "UI";
             if (Canvas.worldCamera != null)
@@ -91,7 +102,7 @@ namespace SwiftFramework.Core.Windows
             Vector2 anchorMin = safeArea.position;
             Vector2 anchorMax = safeArea.position + safeArea.size;
             Rect pixelRect = Canvas.pixelRect;
-            
+
             anchorMin.x /= pixelRect.width;
             anchorMin.y /= pixelRect.height;
             anchorMax.x /= pixelRect.width;

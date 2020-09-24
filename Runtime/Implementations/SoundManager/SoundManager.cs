@@ -154,10 +154,10 @@ namespace SwiftFramework.Sound
         {
             foreach (object type in Enum.GetValues(typeof(SoundType)))
             {
-                if (channels.ContainsKey((int) type))
+                if (channels.ContainsKey((int)type))
                     continue;
-                channels.Add((int) type,
-                    new SoundChannel(gameObject, (SoundType) type, Config.startPlayersAmount,
+                channels.Add((int)type,
+                    new SoundChannel(gameObject, (SoundType)type, Config.startPlayersAmount,
                         Config.maxActivePlayerCount));
             }
 
@@ -254,7 +254,7 @@ namespace SwiftFramework.Sound
 
         private SoundChannel GetChannel(SoundType type)
         {
-            return channels[(int) type];
+            return channels[(int)type];
         }
 
         public void SetMuted(bool muted, SoundType type)
@@ -278,6 +278,11 @@ namespace SwiftFramework.Sound
         public bool IsMuted(SoundType type)
         {
             return GetChannel(type).IsMuted();
+        }
+
+        public bool IsMutedAll()
+        {
+            return IsMuted(SoundType.SFX) && IsMuted(SoundType.Music);
         }
     }
 }

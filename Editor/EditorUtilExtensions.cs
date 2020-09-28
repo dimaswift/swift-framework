@@ -1,7 +1,10 @@
 ﻿using System.IO;
+using System.Text;
 using SwiftFramework.Core;
 using SwiftFramework.Core.Editor;
+using SwiftFramework.Core.SharedData;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace SwiftFramework.EditorUtils
@@ -17,6 +20,12 @@ namespace SwiftFramework.EditorUtils
             position.center = newRect.center;
             window.position = position;
             window.Show();
+        }
+
+        public static AssemblyDefinition GetData(this AssemblyDefinitionAsset asset)
+        {
+            string text = Encoding.UTF8.GetString(asset.bytes);
+            return JsonUtility.FromJson<AssemblyDefinition>(text);
         }
         
         public static void ShowCompileAndPlayModeWarning(this EditorWindow window, out bool canEdit)

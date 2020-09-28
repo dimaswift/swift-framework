@@ -18,6 +18,11 @@ MonoBehaviour:
   displayVersion: 0.0.2
   canBeRemoved: 1
   canBeUpdated: 1
+  linkAssemblies:
+  - assembly: {fileID: 5897886265953266890, guid: bfc91bbf13d2e6d408ccfd432ece8138,
+      type: 3}
+    rootNamespaces:
+    - SwiftFramework
   defineSymbols:
   - SWIFT_FRAMEWORK_INSTALLED
   - USE_ADDRESSABLES

@@ -18,6 +18,7 @@ namespace SwiftFramework.Core.Editor
         public string displayVersion;
         public bool canBeRemoved;
         public bool canBeUpdated;
+        public AssemblyLinkerInfo[] linkAssemblies = {};
         
         [SerializeField] protected string[] defineSymbols;
         [SerializeField] protected PackageDependency[] packageDependencies;
@@ -30,7 +31,7 @@ namespace SwiftFramework.Core.Editor
         [HideInInspector] public bool showOptions = false;
 
         private ErrorSummary errorSummary = null;
-        
+
         public virtual bool CanInstall() => true;
         
         public virtual bool CanRemove() => canBeRemoved;
@@ -100,6 +101,19 @@ namespace SwiftFramework.Core.Editor
                 }
                 
                 error.invalidItems.Add(id);
+            }
+        }
+
+        public bool Installed
+        {
+            get
+            {
+                PluginData data = PluginsManifest.Instance.GetPluginData(this);
+                if (data == null)
+                {
+                    return false;
+                }
+                return data.installed;
             }
         }
 

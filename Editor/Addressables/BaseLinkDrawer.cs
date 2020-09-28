@@ -135,7 +135,7 @@ namespace SwiftFramework.Core.Editor
                 Directory.CreateDirectory(defaultFolder);
             }
 
-            string path = EditorUtility.SaveFilePanelInProject("Create new " + type.Name, fieldInfo?.Name.ToUpper(), ext, "Create new " + type.Name, defaultFolder);
+            string path = EditorUtility.SaveFilePanelInProject("Create new " + type.Name, fieldInfo?.Name.FirstCharToUpper(), ext, "Create new " + type.Name, defaultFolder);
 
             if (string.IsNullOrEmpty(path))
             {

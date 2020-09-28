@@ -113,6 +113,8 @@ namespace SwiftFramework.Core.Editor
         
         private static readonly HashSet<string> assetsRegistry = new HashSet<string>();
 
+        public IEnumerable<PluginData> GetPlugins() => pluginsData;
+        
         public InstallStage CurrentStage
         {
             get => currentStage;

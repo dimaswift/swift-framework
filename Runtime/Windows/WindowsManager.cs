@@ -1124,7 +1124,6 @@ namespace SwiftFramework.Core.Windows
         private IEnumerator TransitionRoutine(IPromise promiseToWait, Action action, Promise promise)
         {
             IsInTransition = true;
-
             transitionPanel.gameObject.SetActive(true);
             float a = 0f;
 
@@ -1137,14 +1136,16 @@ namespace SwiftFramework.Core.Windows
 
             transitionPanel.alpha = 1;
             action();
-
+ 
             yield return new WaitForSecondsRealtime(transitionDuration);
-
+            
             while (promiseToWait.CurrentState == PromiseState.Pending)
             {
                 yield return null;
             }
 
+            a = 1;
+            
             while (a > 0)
             {
                 transitionPanel.alpha = a;

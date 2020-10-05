@@ -8,18 +8,12 @@ using UnityEngine;
 
 namespace SwiftFramework.Editor
 {
-    internal static class LinkerBuildPreprocessor
+    public static class LinkerBuildPreprocessor
     {
         [InitializeOnLoadMethod]
         private static void Initialize()
         {
-            BuildPlayerWindow.RegisterBuildPlayerHandler(BuildPlayerHandler);
-        }
- 
-        private static void BuildPlayerHandler(BuildPlayerOptions options)
-        {
-            GenerateLinker();
-            BuildPlayerWindow.DefaultBuildMethods.BuildPlayer(options);
+            BuildHook.OnBeforeBuild += GenerateLinker;
         }
 
         private static IEnumerable<AssemblyLinkerInfo> GetPreserveInfos()
@@ -47,6 +41,7 @@ namespace SwiftFramework.Editor
         
         private static void GenerateLinker()
         {
+            BuildHook.OnBeforeBuild -= GenerateLinker;
             XmlDocument linker = new XmlDocument();
             XmlElement root = linker.CreateElement("linker");
             linker.AppendChild(root);

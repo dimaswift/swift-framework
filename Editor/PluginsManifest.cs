@@ -19,6 +19,8 @@ namespace SwiftFramework.Core.Editor
 
     public class PluginsManifest : ScriptableEditorSettings<PluginsManifest>
     {
+        protected override bool AutoCreate => false;
+
         public PluginInfo CurrentPlugin => currentPlugin;
 
         public PluginData GetPluginData(PluginInfo pluginInfo)
@@ -113,7 +115,10 @@ namespace SwiftFramework.Core.Editor
         
         private static readonly HashSet<string> assetsRegistry = new HashSet<string>();
 
-        public IEnumerable<PluginData> GetPlugins() => pluginsData;
+        public IEnumerable<PluginData> GetPlugins()
+        {
+            return pluginsData;
+        }
         
         public InstallStage CurrentStage
         {
@@ -196,12 +201,6 @@ namespace SwiftFramework.Core.Editor
                 return;
             }
             pluginsData.Add(data);
-            EditorUtility.SetDirty(this);
-        }
-
-        internal void ResetAll()
-        {
-            pluginsData.Clear();
             EditorUtility.SetDirty(this);
         }
     }

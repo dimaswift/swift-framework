@@ -23,10 +23,26 @@ namespace SwiftFramework.Core.Editor
         private const float DELETE_BTN_WIDTH = 20;
 
         private Vector2 scrollPos;
-        
+
+        private void OnFocus()
+        {
+            pluginsData.Clear();
+        }
+
         public void OnGUI()
         {
             Color defaultColor = GUI.color;
+
+            if (PluginsManifest.Instance == null)
+            {
+                EditorGUILayout.LabelField("PluginsManifest not found.", EditorGUIEx.BoldCenteredLabel);
+                if (GUILayout.Button("Create"))
+                {
+                    PluginsManifest.Create();
+                    Repaint();
+                }
+                return;
+            }
             
             if (PluginsManifest.Instance.CurrentStage != InstallStage.None)
             {
@@ -79,6 +95,15 @@ namespace SwiftFramework.Core.Editor
                 
                 bool isInstallationValid = true;
                 PluginInfo.ErrorSummary installationErrors = null;
+
+                if (data == null)
+                {
+                    Color c = GUI.color;
+                    GUI.color = EditorGUIEx.WarningRedColor;
+                    EditorGUILayout.LabelField("Plugin data not found: " + plugin.name);
+                    GUI.color = c;
+                    continue;
+                }
                 
                 if (data.installed)
                 {

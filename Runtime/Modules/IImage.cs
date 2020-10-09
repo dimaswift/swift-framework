@@ -9,6 +9,7 @@ namespace SwiftFramework.Core
         void SetSprite(Sprite sprite);
         void SetAlpha(float alpha);
         void SetColor(Color color);
+        bool PreserveAspect { get; set; }
     }
     
     [Serializable]

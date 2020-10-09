@@ -65,11 +65,19 @@ namespace SwiftFramework.Core
         {
             saveId = DEFAULT_SAVE_ID;
 
-            App.Boot.OnPaused += Boot_OnPaused;
+            App.Boot.OnFocused += OnFocusChanged;
+            
+            App.Boot.OnPaused += BootOnOnPaused;
 
             LoadFromPlayerPrefs();
 
             return base.GetInitPromise();
+        }
+
+        private void BootOnOnPaused()
+        {
+            OnBeforeSave();
+            WriteSave();
         }
 
         private void LoadFromPlayerPrefs()
@@ -144,10 +152,13 @@ namespace SwiftFramework.Core
             OnAfterLoad();
         }
 
-        private void Boot_OnPaused()
+        private void OnFocusChanged(bool focus)
         {
-            OnBeforeSaveOnPause();
-            WriteSaveToDisk();
+            if (focus == false)
+            {
+                OnBeforeSaveOnPause();
+                WriteSaveToDisk();
+            }
         }
 
         public void WriteSaveToDisk()

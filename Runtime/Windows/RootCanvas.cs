@@ -45,8 +45,8 @@ namespace SwiftFramework.Core.Windows
         [SerializeField] private float planeDistance = 10;
         [SerializeField] private CanvasType type = CanvasType.Window;
         [SerializeField] private RectTransform safeAreaRect = null;
-        [SerializeField] private bool useCustomCamera;
-        [SerializeField] private string customCameraTag;
+        [SerializeField] private bool useCustomCamera = false;
+        [SerializeField] private string customCameraTag = null;
 
         private Canvas canvas;
         private RectTransform rectTransform;

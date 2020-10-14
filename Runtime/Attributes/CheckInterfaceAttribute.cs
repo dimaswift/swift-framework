@@ -65,6 +65,8 @@ namespace SwiftFramework.Core
             }
         }
 
+        public Transform Transform => target != null ? target.transform : null;
+
         [SerializeField] private GameObject target = null;
         [NonSerialized] private T value;
 

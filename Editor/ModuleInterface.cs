@@ -12,5 +12,6 @@ namespace SwiftFramework.Core.Editor
         public GameObject behaviour;
         public ScriptableObject config;
         public bool initializeOnLoad = true;
+        public bool createAfterAppLoaded = false;
     }
 }

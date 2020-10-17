@@ -16,13 +16,13 @@ namespace SwiftFramework.Core
                 return;
             }
 #if UNITY_EDITOR
-            App.OnDomainReloaded += AppOnOnDomainReloaded;
+            App.OnDomainReloaded += OnAppReloaded;
 #endif
             this.link = link;
             OnLinked();
         }
 
-        private void AppOnOnDomainReloaded()
+        protected virtual void OnAppReloaded()
         {
             link = null;
         }

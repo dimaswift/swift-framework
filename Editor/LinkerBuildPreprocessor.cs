@@ -50,14 +50,7 @@ namespace SwiftFramework.Editor
                 XmlElement assemblyElement = linker.CreateElement("assembly");
                 AssemblyDefinition data = assemblyInfo.assembly.GetData();
                 assemblyElement.SetAttribute("fullname", data.name);
-                XmlElement type = linker.CreateElement("type");
-                foreach (string rootNamespace in assemblyInfo.rootNamespaces)
-                {
-                    type.SetAttribute("fullname", rootNamespace + ".*");
-                    type.SetAttribute("preserve", "all");
-                }
-
-                assemblyElement.AppendChild(type);
+                assemblyElement.SetAttribute("preserve", "all");
                 root.AppendChild(assemblyElement);
             }
             linker.Save(Application.dataPath + "/link.xml");

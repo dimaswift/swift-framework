@@ -7,6 +7,5 @@ namespace SwiftFramework.Core.Editor
     public class AssemblyLinkerInfo
     {
         public AssemblyDefinitionAsset assembly;
-        public string[] rootNamespaces = {};
     }
 }

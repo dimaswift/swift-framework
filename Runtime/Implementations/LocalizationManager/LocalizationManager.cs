@@ -169,7 +169,7 @@ namespace SwiftFramework.Core
 
         private void SetSystemLanguage()
         {
-            if (Application.isEditor)
+            if (Application.isEditor || config.onlyEnglish)
             {
                 SetLanguage(SystemLanguage.English);
             }

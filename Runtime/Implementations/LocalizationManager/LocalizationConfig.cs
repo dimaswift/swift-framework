@@ -6,5 +6,6 @@ namespace SwiftFramework.Core
     {
         public SystemLanguage defaultLanguage = SystemLanguage.English;
         public Language[] availableLanguages = { };
+        public bool onlyEnglish = true;
     }
 }

@@ -41,7 +41,6 @@ namespace SwiftFramework.Editor
         
         private static void GenerateLinker()
         {
-            BuildHook.OnBeforeBuild -= GenerateLinker;
             XmlDocument linker = new XmlDocument();
             XmlElement root = linker.CreateElement("linker");
             linker.AppendChild(root);

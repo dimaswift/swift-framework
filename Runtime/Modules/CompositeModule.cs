@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace SwiftFramework.Core
 {
-    public abstract class CompositeModule<T> : BehaviourModule where T : class, IModule
+    public abstract class CompositeModule<T> : BehaviourModule where T :  IModule
     {
         [SerializeField] private Location location = Location.Children;
         
@@ -27,9 +27,16 @@ namespace SwiftFramework.Core
                     break;
                 case Location.Resources:
                 {
-                    foreach (T module in AssetCache.GetPrefabs<T>())
+                    foreach (T prefab in AssetCache.GetPrefabs<T>())
                     {
-                        subModules.Add(module);
+                        BehaviourModule module = prefab as BehaviourModule;
+                        if (module == null)
+                        {
+                            Debug.LogError("Cannot use composite module: " + prefab + ". Has to be a BehaviourModule");
+                            continue;
+                        }
+                        T moduleInstance = Instantiate(module.gameObject).GetComponent<T>();
+                        subModules.Add(moduleInstance);
                     }
 
                     break;

@@ -15,3 +15,4 @@ MonoBehaviour:
   enableDebugLog: 0
   defaultLanguage: 10
   availableLanguages: []
+  onlyEnglish: 1

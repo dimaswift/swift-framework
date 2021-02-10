@@ -1,5 +1,6 @@
 ﻿using System;
 #if USE_ADDRESSABLES
+using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.ResourceProviders;
 #endif
@@ -40,6 +41,7 @@ namespace SwiftFramework.Core
         {
             Promise<bool> promise = Promise<bool>.Create();
 #if USE_ADDRESSABLES
+
             Addressables.LoadSceneAsync(Path, mode, true).GetPromise().Then(scene =>
                 {
                     sceneInstance = scene;

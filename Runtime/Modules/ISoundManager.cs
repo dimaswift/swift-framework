@@ -11,6 +11,7 @@ namespace SwiftFramework.Core
         void SetMutedAll(bool muted);
         bool IsMuted(SoundType type);
         bool IsMutedAll();
+        void PlayOncePitched(AudioClipLink clipLink, float pitch, float volumeScale = 1);
     }
 
     public enum SoundType

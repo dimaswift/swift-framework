@@ -25,11 +25,14 @@ namespace SwiftFramework.Core
         private void DownloadInternal()
         {
             UnityWebRequest request = UnityWebRequest.Get(publishedGoogleSheetUrl);
-
+            
             request.timeout = 10;
-
+            request.SetRequestHeader("Accept", "text/plain");
+            
             UnityWebRequestAsyncOperation operation = request.SendWebRequest();
-
+            
+         
+            
             operation.completed += response => 
             {
                 if (request.isHttpError || request.isNetworkError)
@@ -47,6 +50,7 @@ namespace SwiftFramework.Core
                         int oldRowsAmount = downloadedSheet.Length;
                         downloadedSheet = request.downloadHandler.text.Split('\n');
                         UnityEditor.EditorUtility.SetDirty(this);
+                        Debug.Log( request.downloadHandler.text);
                         Debug.Log($"<color=green>GoogleLocalizationSheet: Downloaded {downloadedSheet.Length} rows.</color>");
                         if (downloadedSheet.Length > oldRowsAmount)
                         {

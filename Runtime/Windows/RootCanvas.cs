@@ -57,7 +57,14 @@ namespace SwiftFramework.Core.Windows
 
             if (useCustomCamera == false)
             {
-                Canvas.worldCamera = Camera.main;
+                if (Camera.main == null)
+                {
+                    App.Core.Timer.WaitUntil(() => Camera.main).Done(() => Canvas.worldCamera = Camera.main);
+                }
+                else
+                {
+                    Canvas.worldCamera = Camera.main;
+                }
             }
             else
             {

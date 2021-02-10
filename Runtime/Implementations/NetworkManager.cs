@@ -98,7 +98,7 @@ namespace SwiftFramework.Core
             Promise<string> result = Promise<string>.Create();
 
             UnityWebRequest request = UnityWebRequest.Get(url);
-
+ 
             request.timeout = timeoutSeconds;
 
             var operation = request.SendWebRequest();

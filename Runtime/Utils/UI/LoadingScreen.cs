@@ -27,6 +27,9 @@ namespace SwiftFramework.Utils.UI
             {
                 return;
             }
+
+            currentLoadingProgress = Mathf.MoveTowards(currentLoadingProgress, 1, Time.deltaTime / 2);
+            
             loadingBar.Value.SetUp(currentLoadingProgress);
         }
 

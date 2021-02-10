@@ -146,7 +146,13 @@ namespace SwiftFramework.Sound
 
             internal void PlayOneShot(AudioClip clip, float volumeScale)
             {
+                oneShotPlayer.pitch = 1;
                 oneShotPlayer.PlayOneShot(clip, volumeScale);
+            }
+            
+            internal void SetPitch(float pitch)
+            {
+                oneShotPlayer.pitch = pitch;
             }
         }
 
@@ -201,6 +207,28 @@ namespace SwiftFramework.Sound
                 }
 
                 GetChannel(type).PlayOneShot(clip, volumeScale);
+                AddToHistory(clip);
+            });
+        }
+        
+        public void PlayOncePitched(AudioClipLink clipLink, float pitch, float volumeScale = 1)
+        {
+            clipLink.Load(clip =>
+            {
+                if (clip == null)
+                {
+                    return;
+                }
+
+                if (WasPlayedThisFrame(clip))
+                {
+                    return;
+                }
+
+                var channel = GetChannel(SoundType.SFX);
+              
+                channel.PlayOneShot(clip, volumeScale);
+                channel.SetPitch(pitch);
                 AddToHistory(clip);
             });
         }

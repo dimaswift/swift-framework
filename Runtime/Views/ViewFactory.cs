@@ -13,6 +13,7 @@ namespace SwiftFramework.Core
         private const int CAPACITY = 128; 
 
         private readonly Dictionary<int, Pool> pools = new Dictionary<int, Pool>(CAPACITY);
+        
 
         public IPromise<T> CreateAsync<T>(ViewLink link) where T : class, IView
         {
@@ -109,6 +110,19 @@ namespace SwiftFramework.Core
             {
                 Pool.GetPool(i).ReturnAll();
             }
+        }
+
+        public T FindView<T>(ViewLink link) where T : class, IView
+        {
+            if (pools.TryGetValue(link.GetHashCode(), out Pool pool))
+            {
+                foreach (var item in pool.GetActiveItems<T>())
+                {
+                    return item;
+                }
+            }
+
+            return default;
         }
 
         public bool IsLoaded(ViewLink link)

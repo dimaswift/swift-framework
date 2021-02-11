@@ -13,6 +13,7 @@ namespace SwiftFramework.Core
         RectTransform RectTransform { get; }
         IPromise HidePromise { get; }
         CanvasType CanvasType { get; }
+        bool ShowToolbarBackButton { get; }
     }
 
 }

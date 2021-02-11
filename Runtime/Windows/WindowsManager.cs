@@ -1031,30 +1031,35 @@ namespace SwiftFramework.Core.Windows
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                foreach (var layer in layers)
-                { 
-                    if (layer.Value.Count > 0)
+                CloseActiveWindow();
+            }
+            ProcessActionQueue();
+        }
+
+        public void CloseActiveWindow()
+        {
+            foreach (var layer in layers)
+            { 
+                if (layer.Value.Count > 0)
+                {
+                    if (layer.Value.Peek().IsFullScreen)
                     {
-                        if (layer.Value.Peek().IsFullScreen)
+                        if (layer.Value.Peek().CanBeClosed)
                         {
-                            if (layer.Value.Peek().CanBeClosed)
-                            {
-                                layer.Value.Peek().HandleCloseButtonClick();
-                                break;
-                            }
+                            layer.Value.Peek().HandleCloseButtonClick();
+                            break;
                         }
-                        else
+                    }
+                    else
+                    {
+                        if (layer.Value.Peek().CanBeClosed)
                         {
-                            if (layer.Value.Peek().CanBeClosed)
-                            {
-                                layer.Value.Pop().HandleCloseButtonClick();
-                                break;
-                            }
+                            layer.Value.Pop().HandleCloseButtonClick();
+                            break;
                         }
                     }
                 }
             }
-            ProcessActionQueue();
         }
 
         public void SetTopBarShown(bool shown)

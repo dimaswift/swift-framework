@@ -41,6 +41,7 @@ namespace SwiftFramework.Core
         event Action<IWindow> OnWindowJustEnabled;
 
         void ShowTooltip(string message, Vector3 screenPoint, float duration = 1, Color? color = null);
+        void CloseActiveWindow();
     }
 
     public enum CanvasType

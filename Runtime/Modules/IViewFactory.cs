@@ -13,5 +13,6 @@ namespace SwiftFramework.Core
         IPromise<T> CreateAsync<T>(ViewLink link) where T : class, IView;
         void CreateAsync<T>(ViewLink link, Action<T> onLoad, Action<Exception> onError = null) where T : class, IView;
         void ReturnEverythingToPool();
+        T FindView<T>(ViewLink link) where T : class, IView;
     }
 }

@@ -12,6 +12,7 @@ namespace SwiftFramework.Core.Windows
     public abstract class Window : MonoBehaviour, IWindow
     {
         public CanvasType CanvasType => canvasType;
+        public bool ShowToolbarBackButton => showTopBarBackButton;
 
         public IPromise HidePromise
         {
@@ -29,7 +30,7 @@ namespace SwiftFramework.Core.Windows
 
         public bool ShowTopBar => showTopBar;
 
-        public bool CanBeClosed => closeButton != null;
+        public bool CanBeClosed => closeButton != null || showTopBarBackButton;
 
         public bool IsShown { get; private set; }
 
@@ -58,7 +59,7 @@ namespace SwiftFramework.Core.Windows
         [SerializeField] private bool isFullScreen = false;
         [SerializeField] private bool showTopBar = false;
         [SerializeField] private Button closeButton = null;
-
+        [SerializeField] private bool showTopBarBackButton = false;
         
 
         public void Hide()

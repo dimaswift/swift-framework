@@ -67,7 +67,7 @@ namespace SwiftFramework.Core.Windows
 
         private void OnWindowWillBeShown(IWindow window)
         {
-            if (backButton.HasValue)
+            if (backButton.HasValue && window.IsFullScreen)
             {
                 backButton.SetActive(window.ShowToolbarBackButton);
             }

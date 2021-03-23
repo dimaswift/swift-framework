@@ -551,9 +551,21 @@ namespace SwiftFramework.Core
 
                     init.Catch(e =>
                     {
-                        logger.LogException(e);
-                        logger.LogError($"Cannot resolve dependencies for module {moduleLink}");
-                        result.Reject(e);
+                        newModule.HandleReInitialization().Subscribe(r =>
+                        {
+                            if (r == ReInitializationResult.None)
+                            {
+                                logger.LogException(e);
+                                logger.LogError($"Cannot init module {moduleLink}");
+                                result.Reject(e);
+                            }
+                            else if (r == ReInitializationResult.Success)
+                            {
+                                readyModules.Add(moduleLink, newModule);
+                                result.ReportProgress(1);
+                                result.Resolve(newModule);
+                            }
+                        });
                     });
                 })
                 .Catch(e =>

@@ -15,6 +15,8 @@ namespace SwiftFramework.Core
 
         }
 
+        public virtual Signal<ReInitializationResult> HandleReInitialization() => Signal<ReInitializationResult>.PreFired(ReInitializationResult.None);
+
         public IPromise InitModule()
         {
             return Promise.Resolved();

@@ -8,5 +8,7 @@ namespace SwiftFramework.Core
         void Unload();
         IEnumerable<ModuleLink> GetDependencies();
         void SetUp(IApp app);
+        Signal<ReInitializationResult> HandleReInitialization();
+        
     }
 }

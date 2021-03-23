@@ -9,7 +9,9 @@ namespace SwiftFramework.Core
     public abstract class BehaviourModule : MonoBehaviour
     {
         private Promise initPromise = null;
-
+        
+        public virtual Signal<ReInitializationResult> HandleReInitialization() => Signal<ReInitializationResult>.PreFired(ReInitializationResult.None);
+        
         protected IApp App { get; private set; }
 
         protected bool Initialized => initPromise != null && initPromise.CurrentState == PromiseState.Resolved;

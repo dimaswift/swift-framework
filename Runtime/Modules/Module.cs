@@ -5,10 +5,18 @@ using UnityEngine;
 
 namespace SwiftFramework.Core
 {
+    public enum ReInitializationResult
+    {
+        None = 0,
+        Failed = 1,
+        Success = 2
+    }
+    
     public abstract class Module
     {
-        private Promise initPromise = null;
-
+        protected Promise initPromise = null;
+        
+        public virtual Signal<ReInitializationResult> HandleReInitialization() => Signal<ReInitializationResult>.PreFired(ReInitializationResult.None);
         protected IApp App { get; private set; }
 
         protected bool Initialized => initPromise != null && initPromise.CurrentState == PromiseState.Resolved;

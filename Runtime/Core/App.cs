@@ -537,11 +537,12 @@ namespace SwiftFramework.Core
 
                     init.Done(() =>
                     {
-                        readyModules.Add(moduleLink, newModule);
-
-                        result.ReportProgress(1);
-
-                        result.Resolve(newModule);
+                        if (readyModules.ContainsKey(moduleLink) == false)
+                        {
+                            readyModules.Add(moduleLink, newModule);
+                            result.ReportProgress(1);
+                            result.Resolve(newModule);
+                        }
 
                         if (debugMode)
                         {
@@ -561,9 +562,12 @@ namespace SwiftFramework.Core
                             }
                             else if (r == ReInitializationResult.Success)
                             {
-                                readyModules.Add(moduleLink, newModule);
-                                result.ReportProgress(1);
-                                result.Resolve(newModule);
+                                if (readyModules.ContainsKey(moduleLink) == false)
+                                {
+                                    readyModules.Add(moduleLink, newModule);
+                                    result.ReportProgress(1);
+                                    result.Resolve(newModule);
+                                }
                             }
                         });
                     });

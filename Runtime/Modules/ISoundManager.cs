@@ -12,6 +12,10 @@ namespace SwiftFramework.Core
         bool IsMuted(SoundType type);
         bool IsMutedAll();
         void PlayOncePitched(AudioClipLink clipLink, float pitch, float volumeScale = 1);
+        void Vibrate();
+        bool IsVibrationEnabled();
+
+        void SetVibrationEnabled(bool enabled);
     }
 
     public enum SoundType

@@ -233,6 +233,27 @@ namespace SwiftFramework.Sound
             });
         }
 
+        public void Vibrate()
+        {
+            if (State.enableVibration == false)
+            {
+                return;
+            }
+            #if UNITY_ANDROID
+                Handheld.Vibrate();
+            #endif
+        }
+
+        public bool IsVibrationEnabled()
+        {
+            return State.enableVibration;
+        }
+
+        public void SetVibrationEnabled(bool enabled)
+        {
+            State.enableVibration = enabled;
+        }
+
         private bool WasPlayedThisFrame(AudioClip clip)
         {
             for (int i = 0; i < clipsPlayedCurrentFrame.Count; i++)

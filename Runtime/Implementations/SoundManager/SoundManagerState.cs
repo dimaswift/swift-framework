@@ -8,6 +8,8 @@ namespace SwiftFramework.Sound
     {
         public List<SoundTypeState> statesByType = new List<SoundTypeState>();
 
+        public bool enableVibration = true;
+        
         [System.Serializable]
         public class SoundTypeState
         {

@@ -784,6 +784,19 @@ namespace SwiftFramework.Core.Windows
                 yield return null;
 
             }
+            
+            if (topBarAnimation.HasValue)
+            {
+                if (topBarShown)
+                {
+                    topBarAnimation.Value.ProcessShowing(1);
+                }
+                if (topBarHidden)
+                {
+                    topBarAnimation.Value.ProcessHiding(1);
+                }
+            }
+
 
             foreach (Window win in windows)
             {

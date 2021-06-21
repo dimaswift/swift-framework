@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CustomPropertyDrawer(typeof(ModuleLink), false)]
     internal class ModuleLinkDrawer : PropertyDrawer

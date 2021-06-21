@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [System.Serializable]
     public class StateSwitch<T>

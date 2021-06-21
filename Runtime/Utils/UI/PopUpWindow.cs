@@ -1,10 +1,10 @@
 ﻿using System;
+using Swift.Core;
+using Swift.Core.Windows;
 using UnityEngine;
-using SwiftFramework.Core.Windows;
-using SwiftFramework.Core;
 using UnityEngine.UI;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     [AddrSingleton(Folders.Windows)]
     public class PopUpWindow : WindowWithArgs<string>

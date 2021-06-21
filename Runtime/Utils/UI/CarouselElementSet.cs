@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using SwiftFramework.Core;
-using SwiftFramework.Core.Windows;
+using Swift.Core;
+using Swift.Core.Windows;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class CarouselElementSet : ElementSet, IDragHandler, IEndDragHandler, IBeginDragHandler, ISelectableSet
     {

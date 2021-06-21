@@ -6,7 +6,7 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 #endif
 using UnityEngine.SceneManagement;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [FlatHierarchy]
     [Serializable()]

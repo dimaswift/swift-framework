@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public abstract class AppSceneBoot : AppBoot
     {

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using SwiftFramework.Core.Pooling;
+using Swift.Core.Pooling;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public enum AppState
     {

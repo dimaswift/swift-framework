@@ -1,88 +1,89 @@
 using System.Reflection;
+using Swift.Core.SharedData;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     using UnityEditor;
     
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.GameObjectLink))]
+    [CustomPropertyDrawer(typeof(GameObjectLink))]
     public class GameObjectLinkDrawer : LinkPropertyDrawer<UnityEngine.GameObject>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.MonoBehaviourLink))]
+    [CustomPropertyDrawer(typeof(MonoBehaviourLink))]
     public class MonoBehaviourLinkDrawer : LinkPropertyDrawer<UnityEngine.MonoBehaviour>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.ModuleConfigLink))]
-    public class ModuleConfigLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.ModuleConfig>
+    [CustomPropertyDrawer(typeof(ModuleConfigLink))]
+    public class ModuleConfigLinkDrawer : LinkPropertyDrawer<ModuleConfig>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.AudioClipLink))]
+    [CustomPropertyDrawer(typeof(AudioClipLink))]
     public class AudioClipLinkDrawer : LinkPropertyDrawer<UnityEngine.AudioClip>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SpriteLink))]
+    [CustomPropertyDrawer(typeof(SpriteLink))]
     public class SpriteLinkDrawer : LinkPropertyDrawer<UnityEngine.Sprite>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.Texture2DLink))]
+    [CustomPropertyDrawer(typeof(Texture2DLink))]
     public class Texture2DLinkDrawer : LinkPropertyDrawer<UnityEngine.Texture2D>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.MaterialLink))]
+    [CustomPropertyDrawer(typeof(MaterialLink))]
     public class MaterialLinkDrawer : LinkPropertyDrawer<UnityEngine.Material>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.BehaviourModuleLink))]
-    public class BehaviourModuleLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.BehaviourModule>
+    [CustomPropertyDrawer(typeof(BehaviourModuleLink))]
+    public class BehaviourModuleLinkDrawer : LinkPropertyDrawer<BehaviourModule>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.WindowLink))]
-    public class WindowLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.IWindow>
+    [CustomPropertyDrawer(typeof(WindowLink))]
+    public class WindowLinkDrawer : LinkPropertyDrawer<IWindow>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.UIElementLink))]
-    public class UIElementLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.IUIElement>
+    [CustomPropertyDrawer(typeof(UIElementLink))]
+    public class UIElementLinkDrawer : LinkPropertyDrawer<IUIElement>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.ViewLink))]
-    public class ViewLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.IView>
+    [CustomPropertyDrawer(typeof(ViewLink))]
+    public class ViewLinkDrawer : LinkPropertyDrawer<IView>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.GlobalEventLink))]
-    public class GlobalEventLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.GlobalEvent>
+    [CustomPropertyDrawer(typeof(GlobalEventLink))]
+    public class GlobalEventLinkDrawer : LinkPropertyDrawer<GlobalEvent>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.GlobalPromiseLink))]
-    public class GlobalPromiseLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.GlobalPromise>
+    [CustomPropertyDrawer(typeof(GlobalPromiseLink))]
+    public class GlobalPromiseLinkDrawer : LinkPropertyDrawer<GlobalPromise>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.EventArgumentsLink))]
-    public class EventArgumentsLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.EventArguments>
+    [CustomPropertyDrawer(typeof(EventArgumentsLink))]
+    public class EventArgumentsLinkDrawer : LinkPropertyDrawer<EventArguments>
     {
     }
 
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.RewardLink))]
-    public class RewardLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.IReward>
+    [CustomPropertyDrawer(typeof(RewardLink))]
+    public class RewardLinkDrawer : LinkPropertyDrawer<IReward>
     {
     }
     
-    [CustomPropertyDrawer(typeof(SwiftFramework.Core.SharedData.CurveLink))]
-    public class CurveLinkDrawer : LinkPropertyDrawer<SwiftFramework.Core.SharedData.Curve>
+    [CustomPropertyDrawer(typeof(CurveLink))]
+    public class CurveLinkDrawer : LinkPropertyDrawer<Curve>
     {
     }
     

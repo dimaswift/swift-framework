@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using SwiftFramework.Core;
+using Swift.Core;
 using UnityEngine;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class CarouselIndicator : ElementSet
     {

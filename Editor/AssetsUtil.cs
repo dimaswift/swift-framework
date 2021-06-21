@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEditor;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     public class AssetsUtil : AssetPostprocessor
     {

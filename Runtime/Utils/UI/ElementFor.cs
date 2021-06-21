@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public abstract class ElementFor<T> : Element, IPointerClickHandler
     {

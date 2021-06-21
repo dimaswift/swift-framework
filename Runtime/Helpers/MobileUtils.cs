@@ -1,8 +1,8 @@
-﻿using SwiftFramework.Core;
+﻿using Swift.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SwiftFramework.Helpers
+namespace Swift.Helpers
 {
     public static class MobileUtils
     {

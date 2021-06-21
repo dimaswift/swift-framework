@@ -1,7 +1,7 @@
-using SwiftFramework.Core;
-using SwiftFramework.Utils.UI;
+using Swift.Core;
+using Swift.Utils.UI;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class SoundToggle : SimpleToggle
     {

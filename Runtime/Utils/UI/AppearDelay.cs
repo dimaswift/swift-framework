@@ -1,8 +1,8 @@
 ﻿using System;
-using SwiftFramework.Core;
+using Swift.Core;
 using UnityEngine;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class AppearDelay : MonoBehaviour
     {

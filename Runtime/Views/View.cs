@@ -1,8 +1,8 @@
-﻿using SwiftFramework.Core.Pooling;
-using System;
+﻿using System;
+using Swift.Core.Pooling;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Views
+namespace Swift.Core.Views
 {
     public class View : MonoBehaviour, IPooled, IView
     {

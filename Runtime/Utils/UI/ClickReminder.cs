@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class ClickReminder : MonoBehaviour
     {

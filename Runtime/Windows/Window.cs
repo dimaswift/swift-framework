@@ -3,7 +3,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     [AddrLabel(AddrLabels.Window)]
     [AddrGroup(AddrGroups.Windows)]

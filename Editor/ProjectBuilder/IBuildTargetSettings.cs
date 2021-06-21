@@ -1,7 +1,7 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     internal interface IBuildTargetSettings
     {

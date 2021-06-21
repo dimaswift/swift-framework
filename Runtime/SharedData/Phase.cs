@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SwiftFramework.Core.SharedData
+namespace Swift.Core.SharedData
 {
     public class Phase<T>
     {

@@ -9,16 +9,16 @@ using System.Reflection;
 using System.Security.Cryptography;
 using JetBrains.Annotations;
 using Newtonsoft.Json.Linq;
-using SwiftFramework.Core;
-using SwiftFramework.Core.Editor;
-using SwiftFramework.Helpers;
+using Swift.Core;
+using Swift.Core.Editor;
+using Swift.Helpers;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditorInternal;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     public class Util : ScriptableSingleton<Util>
     {
@@ -299,7 +299,7 @@ namespace SwiftFramework.EditorUtils
         }
 
 
-        private static string ToAbsolutePath(string relativePath)
+        public static string ToAbsolutePath(string relativePath)
         {
             return Application.dataPath + relativePath.Remove(0, 6);
         }

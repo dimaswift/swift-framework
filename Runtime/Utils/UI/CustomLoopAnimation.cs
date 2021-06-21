@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class CustomLoopAnimation : MonoBehaviour
     {

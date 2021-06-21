@@ -1,6 +1,6 @@
-﻿using SwiftFramework.Core;
+﻿using Swift.Core;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     public abstract class WindowWithArgs<T> : Window, IWindowWithArgs<T>
     {

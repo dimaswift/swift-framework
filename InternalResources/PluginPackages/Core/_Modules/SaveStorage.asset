@@ -16,10 +16,10 @@ MonoBehaviour:
     configType:
       type: 
     interfaceType:
-      type: SwiftFramework.Core.ISaveStorage, SwiftFramework.Core, Version=0.0.0.0,
+      type: Swift.Core.ISaveStorage, Swift.Core, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
     implementationType:
-      type: SwiftFramework.Core.SaveStorageManager, SwiftFramework.Core, Version=0.0.0.0,
+      type: Swift.Core.SaveStorageManager, Swift.Core, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
     behaviour: {fileID: 0}
     config: {fileID: 0}

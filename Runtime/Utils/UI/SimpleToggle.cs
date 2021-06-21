@@ -2,7 +2,7 @@
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class SimpleToggle : Element, IPointerClickHandler
     {

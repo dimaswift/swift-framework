@@ -9,7 +9,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
 
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [Serializable]
     public class LinkTo<T> : Link where T : UnityEngine.Object

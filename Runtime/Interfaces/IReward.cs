@@ -2,7 +2,7 @@
 using UnityEngine;
 
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [PrewarmAsset]
     public interface IReward

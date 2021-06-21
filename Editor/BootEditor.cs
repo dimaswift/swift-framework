@@ -1,11 +1,11 @@
 ﻿using System;
 using System.CodeDom;
 using System.IO;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CustomEditor(typeof(AppBoot), true)]
     internal class BootEditor : UnityEditor.Editor

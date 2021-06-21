@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SwiftFramework.Core.Pooling
+namespace Swift.Core.Pooling
 {
     public class SimplePool<P> : IPool where P : class, IPooled
     {

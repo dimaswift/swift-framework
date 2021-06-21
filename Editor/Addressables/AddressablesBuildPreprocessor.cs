@@ -1,12 +1,12 @@
-﻿using SwiftFramework.EditorUtils;
+﻿using Swift.Editor;
+using Swift.EditorUtils;
 using UnityEditor;
 #if USE_ADDRESSABLES
-using SwiftFramework.Editor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 #endif
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     #if USE_ADDRESSABLES
     

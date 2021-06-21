@@ -1,7 +1,7 @@
-﻿using SwiftFramework.Core;
+﻿using Swift.Core;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     [RequireComponent(typeof(Canvas), typeof(RectTransform))]
     public class TopBar : MonoBehaviour, ITopBar

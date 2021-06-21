@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public class DummyModule : IModule
     {

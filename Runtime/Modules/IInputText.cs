@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine.Events;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public interface IInputText
     {

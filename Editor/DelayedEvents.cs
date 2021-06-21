@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     public class DelayedEvents : ScriptableSingleton<DelayedEvents>
     {

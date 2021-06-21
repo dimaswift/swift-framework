@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [Serializable]
     public class ModuleInterface

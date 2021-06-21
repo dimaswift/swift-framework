@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public interface ICloudSave
     {

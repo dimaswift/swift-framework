@@ -2,7 +2,7 @@
 
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public static class AddressablesExtentions
     {

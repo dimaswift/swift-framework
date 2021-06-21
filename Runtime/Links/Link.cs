@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
 using System.Runtime.Serialization;
-using SwiftFramework.Helpers;
+using Swift.Helpers;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [Serializable]
     public class Link : ILink, ISerializationCallbackReceiver

@@ -1,12 +1,12 @@
 ﻿using NUnit.Framework;
-using SwiftFramework.EditorUtils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CustomPropertyDrawer(typeof(CheckInterfaceAttribute), true)]
     public class CheckInterfaceAttributePropertyDrawer : BaseInterfaceComponentFieldPropertyDrawer

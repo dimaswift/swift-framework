@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SwiftFramework.Helpers
+namespace Swift.Helpers
 {
     public static class GeometryHelper
     {

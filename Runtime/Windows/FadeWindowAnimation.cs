@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     [RequireComponent(typeof(CanvasGroup))]
     public class FadeWindowAnimation : MonoBehaviour, IAppearAnimationHandler

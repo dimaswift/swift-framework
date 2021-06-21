@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using SwiftFramework.Core;
+using Swift.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     internal class TypeSelectorWindow : EditorWindow
     {

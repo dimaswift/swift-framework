@@ -1,7 +1,7 @@
-﻿using SwiftFramework.Core.SharedData;
+﻿using Swift.Core.SharedData;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     public class BounceWindowAnimation : MonoBehaviour, IAppearAnimationHandler
     {

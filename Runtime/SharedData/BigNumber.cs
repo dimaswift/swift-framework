@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [Serializable]
     public struct BigNumber : ISerializationCallbackReceiver

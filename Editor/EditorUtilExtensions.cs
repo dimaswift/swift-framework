@@ -1,13 +1,13 @@
 ﻿using System.IO;
 using System.Text;
-using SwiftFramework.Core;
-using SwiftFramework.Core.Editor;
-using SwiftFramework.Core.SharedData;
+using Swift.Core;
+using Swift.Core.Editor;
+using Swift.Core.SharedData;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     public static class EditorUtilExtensions
     {

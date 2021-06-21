@@ -1,8 +1,8 @@
-﻿using SwiftFramework.Core;
-using SwiftFramework.Core.Pooling;
+﻿using Swift.Core;
+using Swift.Core.Pooling;
 using UnityEngine;
 
-namespace SwiftFramework.Utils
+namespace Swift.Utils
 {
     public class PopText : MonoBehaviour, IView
     {

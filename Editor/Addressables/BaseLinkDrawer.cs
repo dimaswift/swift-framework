@@ -5,13 +5,13 @@ using UnityEngine;
 #if USE_ADDRESSABLES
 using UnityEditor.AddressableAssets.Settings;
 #endif
-using SwiftFramework.EditorUtils;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.IO;
+using Swift.EditorUtils;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     internal class BaseLinkDrawer
     {

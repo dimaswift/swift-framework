@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public class ModuleFactory : IModuleFactory
     {

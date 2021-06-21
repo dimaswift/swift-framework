@@ -1,7 +1,7 @@
-﻿using SwiftFramework.Helpers;
+﻿using Swift.Helpers;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public class Route : MonoBehaviour
     {

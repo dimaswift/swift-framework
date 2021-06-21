@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace SwiftFramework.Core.Views
+namespace Swift.Core.Views
 {
     public class ImageFillProgressBar : MonoBehaviour, IProgressBar
     {

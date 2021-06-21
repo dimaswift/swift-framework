@@ -3,7 +3,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CustomPropertyDrawer(typeof(ModuleInterface))]
     public class ModuleInterfaceDrawer : PropertyDrawer

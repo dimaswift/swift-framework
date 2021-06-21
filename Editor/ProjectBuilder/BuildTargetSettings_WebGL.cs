@@ -1,6 +1,6 @@
 ﻿using UnityEditor;
 using UnityEngine;
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     [System.Serializable]
     internal class BuildTargetSettings_WebGL : IBuildTargetSettings

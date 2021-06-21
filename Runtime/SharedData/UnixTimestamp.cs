@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [Serializable]
     public struct UnixTimestamp

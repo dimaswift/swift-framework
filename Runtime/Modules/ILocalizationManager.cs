@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [ModuleGroup(ModuleGroups.Core)]
     public interface ILocalizationManager : IModule

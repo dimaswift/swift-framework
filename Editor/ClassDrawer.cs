@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     public class ClassDrawer
     {

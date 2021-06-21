@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Xml;
-using SwiftFramework.Core.Editor;
-using SwiftFramework.Core.SharedData;
-using SwiftFramework.EditorUtils;
+using Swift.Core.Editor;
+using Swift.Core.SharedData;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Editor
+namespace Swift.Editor
 {
     public static class LinkerBuildPreprocessor
     {

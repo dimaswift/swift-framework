@@ -3,10 +3,10 @@ using UnityEditor;
 using UnityEngine;
 using System.Reflection;
 using System.Collections.Generic;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     internal class AssetLinkDrawer : BaseLinkDrawer
     {

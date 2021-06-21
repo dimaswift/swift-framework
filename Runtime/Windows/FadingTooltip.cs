@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections;
-using SwiftFramework.Core.Views;
+using Swift.Core.Views;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     public class FadingTooltip : View, ITooltip
     {

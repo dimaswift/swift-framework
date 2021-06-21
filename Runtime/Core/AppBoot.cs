@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public class AppBoot : MonoBehaviour, IBoot
     {

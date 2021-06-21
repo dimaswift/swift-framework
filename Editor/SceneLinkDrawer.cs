@@ -4,7 +4,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CustomPropertyDrawer(typeof(SceneLink))]
     public class SceneLinkPropertyDrawer : PropertyDrawer

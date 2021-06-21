@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     [RequireComponent(typeof(Canvas))]
     public class RootCanvas : MonoBehaviour, IRootCanvas

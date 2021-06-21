@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Promises/GlobalPromise", fileName = "GlobalPromise")]
     public class GlobalPromise : ScriptableObject

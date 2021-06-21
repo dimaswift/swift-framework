@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public interface IBasePromise
     {

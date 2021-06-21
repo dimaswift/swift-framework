@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using UnityEditor;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     #if USE_ADDRESSABLES
     public class AddressableAssetModificationProcessor : UnityEditor.AssetModificationProcessor

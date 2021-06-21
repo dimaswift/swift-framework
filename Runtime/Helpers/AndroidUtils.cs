@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Utils
+namespace Swift.Utils
 {
     public static class AndroidUtils
     {
@@ -13,26 +13,28 @@ namespace SwiftFramework.Utils
 #endif
             
 #if UNITY_ANDROID
-            AndroidJavaClass up = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-            AndroidJavaObject ca = up.GetStatic<AndroidJavaObject>("currentActivity");
-            AndroidJavaObject packageManager = ca.Call<AndroidJavaObject>("getPackageManager");
+            bool installed = false;
+            AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+            AndroidJavaObject curActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            AndroidJavaObject packageManager = curActivity.Call<AndroidJavaObject>("getPackageManager");
+
             AndroidJavaObject launchIntent = null;
             try
             {
                 launchIntent = packageManager.Call<AndroidJavaObject>("getLaunchIntentForPackage", bundleID);
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("exception" + ex.Message);
+                if (launchIntent == null)
+                    installed = false;
+
+                else
+                    installed = true;
             }
 
-            if (launchIntent == null)
+            catch (System.Exception e)
             {
-                Debug.Log(bundleID + " not installed");
-                return false;
+                installed = false;
             }
 
-            return true;
+            return installed;
 #else
             return false;
 #endif

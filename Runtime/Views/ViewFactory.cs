@@ -1,10 +1,10 @@
-﻿using SwiftFramework.Core;
-using SwiftFramework.Core.Pooling;
+﻿using Swift.Core;
 using System;
 using System.Collections.Generic;
+using Swift.Core.Pooling;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [DefaultModule]
     [DisallowCustomModuleBehaviours]

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public static class FileHelper
     {

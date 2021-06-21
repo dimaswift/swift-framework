@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public class LocalizationConfig : ModuleConfig
     {

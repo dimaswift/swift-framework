@@ -1,9 +1,9 @@
 ﻿using System.Collections;
-using SwiftFramework.Core;
-using SwiftFramework.Core.SharedData;
+using Swift.Core;
+using Swift.Core.SharedData;
 using UnityEngine;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class ScaleAnimation : MonoBehaviour, IGenericAnimation
     {

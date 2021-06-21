@@ -1,10 +1,10 @@
 ﻿using System;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Editor/Module Install Info")]
     public class ModuleInstallInfo : ScriptableObject

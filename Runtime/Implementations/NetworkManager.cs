@@ -1,10 +1,10 @@
-﻿using SwiftFramework.Core;
+﻿using Swift.Core;
 using UnityEngine.Networking;
 using System;
 using UnityEngine;
 using System.Collections;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [DefaultModule]
     [DisallowCustomModuleBehaviours]

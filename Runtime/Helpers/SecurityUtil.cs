@@ -4,7 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public static class SecurityUtil
     {

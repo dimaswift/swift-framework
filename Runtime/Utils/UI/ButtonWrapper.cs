@@ -1,9 +1,8 @@
-﻿using SwiftFramework.Core;
-
+﻿using Swift.Core;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class ButtonWrapper : Button, IButton
     {

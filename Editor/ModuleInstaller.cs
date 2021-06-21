@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
+using AssetsUtil = Swift.EditorUtils.AssetsUtil;
+using EditorGUIEx = Swift.EditorUtils.EditorGUIEx;
 using Object = UnityEngine.Object;
+using Util = Swift.EditorUtils.Util;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     public class ModuleInstaller : EditorWindow
     {

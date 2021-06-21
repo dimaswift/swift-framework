@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     [Serializable]
     internal class BuildTargetSettingsAndroid : IBuildTargetSettings

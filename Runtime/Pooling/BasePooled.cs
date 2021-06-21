@@ -1,4 +1,4 @@
-﻿namespace SwiftFramework.Core.Pooling
+﻿namespace Swift.Core.Pooling
 {
     public abstract class BasePooled : IPooled
     {

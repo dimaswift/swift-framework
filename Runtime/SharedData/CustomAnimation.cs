@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core.SharedData
+namespace Swift.Core.SharedData
 {
     [Serializable]
     public class CustomAnimation

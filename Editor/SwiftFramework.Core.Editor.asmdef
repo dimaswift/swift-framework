@@ -4,7 +4,7 @@
         "Unity.Addressables",
         "Unity.Addressables.Editor",
         "Unity.ResourceManager",
-        "SwiftFramework.Core"
+        "Swift.Core"
     ],
     "includePlatforms": [
         "Editor"

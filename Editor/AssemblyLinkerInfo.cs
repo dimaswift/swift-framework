@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEditorInternal;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [Serializable]
     public class AssemblyLinkerInfo

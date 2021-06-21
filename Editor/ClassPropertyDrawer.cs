@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEditor;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     public class ClassPropertyDrawer : ClassDrawer
     {

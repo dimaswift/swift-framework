@@ -1,5 +1,5 @@
 {
-    "name": "SwiftFramework.Core",
+    "name": "Swift.Core",
     "references": [
         "Unity.Addressables",
         "Unity.ResourceManager"

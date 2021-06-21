@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public abstract class IsometricCameraHandler : MonoBehaviour
     {

@@ -1,6 +1,6 @@
 ﻿#if USE_ADDRESSABLES
-using SwiftFramework.EditorUtils;
 using System.Collections.Generic;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 using UnityEditor.AddressableAssets;
@@ -8,7 +8,7 @@ using UnityEditor.AddressableAssets.Settings;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     internal class LinkValidator : ScriptableSingleton<LinkValidator>
     {

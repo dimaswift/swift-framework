@@ -1,11 +1,11 @@
-﻿using SwiftFramework.Core;
+﻿using Swift.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [DefaultModule]
     public class SaveStorageManager : Module, ISaveStorage

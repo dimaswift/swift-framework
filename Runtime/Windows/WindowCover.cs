@@ -1,8 +1,8 @@
-﻿using SwiftFramework.Core.Windows;
+﻿using Swift.Core.Windows;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     public class WindowCover : MonoBehaviour, IPointerClickHandler
     {

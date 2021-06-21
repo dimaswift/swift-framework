@@ -1,10 +1,10 @@
-﻿using SwiftFramework.Core.SharedData;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Swift.Core.SharedData;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public class PhaseLoop<S>
     {

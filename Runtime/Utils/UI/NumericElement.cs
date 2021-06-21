@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class NumericElement : ElementFor<int>
     {

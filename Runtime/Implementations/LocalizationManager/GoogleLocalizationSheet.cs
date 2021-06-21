@@ -3,7 +3,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Localization/Google Localization Sheet")]
     public class GoogleLocalizationSheet : LocalizationSheet

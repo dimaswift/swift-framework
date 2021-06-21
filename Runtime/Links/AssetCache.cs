@@ -10,7 +10,7 @@ using System.Reflection;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public static class AssetCache
     {

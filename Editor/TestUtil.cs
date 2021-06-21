@@ -3,14 +3,14 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using SwiftFramework.Core;
-using SwiftFramework.Core.Editor;
-using SwiftFramework.Helpers;
+using Swift.Core;
+using Swift.Helpers;
+using Swift.Core.Editor;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     internal class TestUtil : ScriptableSingleton<TestUtil>
     {

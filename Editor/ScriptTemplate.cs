@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Editor
+namespace Swift.Editor
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Script Template")]
     internal class ScriptTemplate : ScriptableObject

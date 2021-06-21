@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [Serializable]
     public class GameObjectLink : LinkTo<GameObject>

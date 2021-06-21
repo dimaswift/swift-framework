@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [Serializable]
     public struct SerializedType : ISerializationCallbackReceiver

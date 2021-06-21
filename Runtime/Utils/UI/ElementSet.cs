@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class ElementSet : MonoBehaviour
     {

@@ -3,7 +3,7 @@ using System.Threading;
 using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [ExecuteInEditMode]
 	public class Dispatcher : MonoBehaviour

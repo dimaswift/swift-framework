@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Events/GlobalEvent", fileName = "GlobalEvent")]
     [PrewarmAsset]

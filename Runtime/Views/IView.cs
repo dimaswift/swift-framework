@@ -1,7 +1,7 @@
-﻿using SwiftFramework.Core.Pooling;
+﻿using Swift.Core.Pooling;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public interface IView<T> : IView
     {

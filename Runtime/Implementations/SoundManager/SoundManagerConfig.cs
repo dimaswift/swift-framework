@@ -1,5 +1,6 @@
-﻿using SwiftFramework.Core;
-namespace SwiftFramework.Sound
+﻿using Swift.Core;
+
+namespace Swift.Sound
 {
     internal class SoundManagerConfig : ModuleConfig
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Pooling
+namespace Swift.Core.Pooling
 {
     public class BehaviourPool<P> : IPool where P : Component
     {

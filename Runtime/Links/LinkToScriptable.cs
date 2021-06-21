@@ -5,7 +5,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [Serializable]
     public class LinkToScriptable<T> : Link where T : class

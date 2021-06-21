@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CustomPropertyDrawer(typeof(BigNumber))]
     public class BigNumberCustomInspector : PropertyDrawer

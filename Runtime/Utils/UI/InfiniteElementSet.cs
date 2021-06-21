@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class InfiniteElementSet : ElementSet
     {

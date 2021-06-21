@@ -1,10 +1,10 @@
 ﻿using System.Collections;
+using Swift.Core;
 using UnityEngine;
-using SwiftFramework.Core;
-using SwiftFramework.Core.SharedData;
+using Swift.Core.SharedData;
 using UnityEngine.UI;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class BounceAnimation : MonoBehaviour
     {

@@ -1,10 +1,10 @@
 ﻿using System.IO;
 using System.Linq;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     public class ScriptableEditorSettings<T> : ScriptableObject where T : ScriptableEditorSettings<T>
     {

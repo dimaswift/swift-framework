@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public abstract class CompositeModule<T> : BehaviourModule where T :  IModule
     {

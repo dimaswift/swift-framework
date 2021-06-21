@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [CreateAssetMenu(fileName = "BootConfig", menuName = "SwiftFramework/Config/BootConfig")]
     [AddrSingleton(Folders.Configs)]

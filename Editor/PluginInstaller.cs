@@ -1,17 +1,17 @@
-﻿using SwiftFramework.EditorUtils;
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
 using System.Reflection;
 using System.Linq;
-using SwiftFramework.Helpers;
+using Swift.EditorUtils;
+using Swift.Helpers;
 using UnityEditor.Compilation;
 using UnityEditor.VersionControl;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [InitializeOnLoad]
     public class PluginInstaller : EditorWindow

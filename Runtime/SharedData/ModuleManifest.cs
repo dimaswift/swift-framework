@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [AddrLabel(AddrLabels.Module)]
     [PrewarmAsset]

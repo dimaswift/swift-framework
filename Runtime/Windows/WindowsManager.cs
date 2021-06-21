@@ -4,9 +4,9 @@ using UnityEngine;
 using System;
 using UnityEngine.UI;
 using System.Reflection;
-using SwiftFramework.Core;
+using Swift.Core;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     public class WindowsManager : BehaviourModule, IWindowsManager
     {

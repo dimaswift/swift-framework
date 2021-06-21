@@ -1,6 +1,6 @@
 ﻿using UnityEditor;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     public static class LinkEditorExtensions
     {

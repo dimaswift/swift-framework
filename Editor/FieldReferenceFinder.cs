@@ -3,14 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using SwiftFramework.Core;
+using Swift.Core;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     internal class FieldData<T> where T : class
     {

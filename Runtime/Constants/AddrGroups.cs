@@ -1,4 +1,4 @@
-﻿namespace SwiftFramework.Core
+﻿namespace Swift.Core
 {
     public static class AddrGroups
     {

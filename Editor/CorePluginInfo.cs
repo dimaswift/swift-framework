@@ -3,11 +3,11 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Editor/Internal/Core Plugin Info")]
     internal class CorePluginInfo : PluginInfo

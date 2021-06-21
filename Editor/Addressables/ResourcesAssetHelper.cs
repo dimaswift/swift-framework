@@ -1,13 +1,13 @@
-﻿using SwiftFramework.EditorUtils;
-using System;
+﻿using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     public class ResourcesAssetHelper : AssetPostprocessor
     {

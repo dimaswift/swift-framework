@@ -1,4 +1,4 @@
-﻿namespace SwiftFramework.Core
+﻿namespace Swift.Core
 {
     public abstract class StatefulBehaviourModule<T> : BehaviourModule where T : class, new()
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEditor;
 
-namespace SwiftFramework.Editor
+namespace Swift.Editor
 {
     public static class BuildHook
     {

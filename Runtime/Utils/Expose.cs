@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace SwiftFramework.Utils
+namespace Swift.Utils
 {
     public class Expose : IEnumerable
     {

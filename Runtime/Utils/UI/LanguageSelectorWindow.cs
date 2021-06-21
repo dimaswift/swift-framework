@@ -1,9 +1,9 @@
-﻿using SwiftFramework.Core;
-using SwiftFramework.Core.Windows;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Swift.Core;
+using Swift.Core.Windows;
 using UnityEngine;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class LanguageSelectorWindow : WindowWithArgs<ILocalizationManager>
     {

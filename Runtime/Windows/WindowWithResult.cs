@@ -1,7 +1,7 @@
-﻿using SwiftFramework.Core;
+﻿using Swift.Core;
 using System;
 
-namespace SwiftFramework.Core.Windows
+namespace Swift.Core.Windows
 {
     public abstract class WindowWithResult<R> : Window, IWindowWithResult<R>
     {

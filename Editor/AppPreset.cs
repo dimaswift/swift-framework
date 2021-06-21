@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using SwiftFramework.EditorUtils;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [CreateAssetMenu(menuName = "SwiftFramework/Editor/App Preset")]
     public class AppPreset : ScriptableObject

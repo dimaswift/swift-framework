@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [AttributeUsage(AttributeTargets.Interface)]
     public class ModuleGroupAttribute : Attribute

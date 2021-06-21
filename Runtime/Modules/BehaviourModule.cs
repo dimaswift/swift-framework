@@ -1,10 +1,10 @@
-﻿using SwiftFramework.Core;
+﻿using Swift.Core;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public abstract class BehaviourModule : MonoBehaviour
     {

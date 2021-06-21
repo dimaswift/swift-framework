@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using UnityEngine;
 
-namespace SwiftFramework.Helpers
+namespace Swift.Helpers
 {
     public static class PathUtils
     {

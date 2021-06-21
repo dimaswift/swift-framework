@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     [BuiltInModule]
     [ModuleGroup(ModuleGroups.Core)]

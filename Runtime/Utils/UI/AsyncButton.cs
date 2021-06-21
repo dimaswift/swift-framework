@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
-using SwiftFramework.Core;
 using UnityEngine.UI;
 using System;
+using Swift.Core;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     [RequireComponent(typeof(Button))]
     public class AsyncButton : MonoBehaviour

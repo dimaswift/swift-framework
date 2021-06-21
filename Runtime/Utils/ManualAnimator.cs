@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SwiftFramework.Utils
+namespace Swift.Utils
 {
     [RequireComponent(typeof(Animator))]
     public class ManualAnimator : MonoBehaviour

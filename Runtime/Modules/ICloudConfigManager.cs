@@ -1,10 +1,10 @@
 ﻿using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public interface ICloudConfigManager : IModule
     {
         IPromise<T> LoadConfig<T>() where T : new();
-        IPromise LoadConfig<T>(T configToOverride) where T : ScriptableObject;
+        IPromise LoadConfig<T>(T configToOverride) where T : ScriptableObject; 
     }
 }

@@ -1,8 +1,8 @@
-﻿using SwiftFramework.Core;
-using SwiftFramework.Core.Windows;
+﻿using Swift.Core;
+using Swift.Core.Windows;
 using UnityEngine;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     [AddrSingleton]
     public class PopUpMessage : WindowWithArgs<string>

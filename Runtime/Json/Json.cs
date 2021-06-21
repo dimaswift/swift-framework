@@ -9,7 +9,7 @@ using System.Text;
 using Newtonsoft.Json.Converters;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public static class Json
     {

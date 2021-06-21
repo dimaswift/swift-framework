@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEditor.iOS.Xcode;
 #endif
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     [Serializable]
     internal class BuildTargetSettingsIOs : IBuildTargetSettings

@@ -1,9 +1,9 @@
-﻿using SwiftFramework.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Swift.Core;
 using UnityEngine;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     [RequireComponent(typeof(ElementSet))]
     public class Toolbar : MonoBehaviour

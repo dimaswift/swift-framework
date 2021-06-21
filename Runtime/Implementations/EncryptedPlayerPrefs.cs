@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
-using SwiftFramework.Core;
 using System;
 using System.Security.Cryptography;
 using System.IO;
 using System.Text;
+using Swift.Core;
 
-namespace SwiftFramework.EncryptedPlayerPrefs
+namespace Swift.EncryptedPlayerPrefs
 {
     [DependsOnModules(typeof(ISoundManager))]
     internal class EncryptedPlayerPrefs : Module, ISecurePrefs

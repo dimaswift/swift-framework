@@ -1,4 +1,4 @@
-﻿namespace SwiftFramework.Core
+﻿namespace Swift.Core
 {
     public abstract class StatefulModule<T> : Module where T : class, new()
     {

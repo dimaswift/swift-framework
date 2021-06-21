@@ -2,7 +2,7 @@
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     [RequireComponent(typeof(BounceAnimation))]
     public class ButtonClickBounce : MonoBehaviour, IPointerUpHandler, IPointerDownHandler, IPointerExitHandler, IPointerClickHandler

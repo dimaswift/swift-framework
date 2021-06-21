@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core.Views
+namespace Swift.Core.Views
 {
     public class SimpleProgressBar : MonoBehaviour, IProgressBar
     {

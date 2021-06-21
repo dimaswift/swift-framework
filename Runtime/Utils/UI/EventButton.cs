@@ -1,8 +1,8 @@
-﻿using SwiftFramework.Core;
+﻿using Swift.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SwiftFramework.Utils.UI
+namespace Swift.Utils.UI
 {
     public class EventButton : MonoBehaviour, IPointerClickHandler, IPointerDownHandler, IPointerUpHandler
     {

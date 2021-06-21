@@ -1,10 +1,10 @@
 ﻿#if USE_ADDRESSABLES
 
-using SwiftFramework.EditorUtils;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using Swift.EditorUtils;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
@@ -12,7 +12,7 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace SwiftFramework.Core.Editor
+namespace Swift.Core.Editor
 {
     [InitializeOnLoad]
     internal class AddrHelper : AssetPostprocessor

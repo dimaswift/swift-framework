@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public class ScriptableController<TState, TLink> : LinkedScriptableObject, ILinked where TLink : class, ILink where TState : new()
     {

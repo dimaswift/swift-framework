@@ -2,13 +2,13 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using SwiftFramework.Core;
-using SwiftFramework.Helpers;
+using Swift.Core;
+using Swift.Helpers;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace SwiftFramework.EditorUtils
+namespace Swift.EditorUtils
 {
     internal sealed class Builder : ScriptableObject
     {

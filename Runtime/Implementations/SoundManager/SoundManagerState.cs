@@ -1,7 +1,7 @@
-﻿using SwiftFramework.Core;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Swift.Core;
 
-namespace SwiftFramework.Sound
+namespace Swift.Sound
 {
     [System.Serializable]
     internal class SoundManagerState

@@ -1,5 +1,5 @@
 ﻿using Newtonsoft.Json;
-using SwiftFramework.Core;
+using Swift.Core;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ using UnityEngine.UI;
 using Object = UnityEngine.Object;
 using Vector3 = UnityEngine.Vector3;
 
-namespace SwiftFramework.Core
+namespace Swift.Core
 {
     public delegate void FileDownloadHandler(long downloadedBytes, long totalBytes);
 

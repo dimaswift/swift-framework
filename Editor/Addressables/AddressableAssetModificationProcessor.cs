@@ -13,19 +13,19 @@ namespace SwiftFramework.Core.Editor
 
         static AssetDeleteResult OnWillDeleteAsset(string assetName, RemoveAssetOptions options)
         {
-            AddrHelper.ReloadOnPostProcess = true;
-            File.Delete(assetName);
-            File.Delete(assetName + ".meta");
-            AssetDatabase.Refresh();
+            // AddrHelper.ReloadOnPostProcess = true;
+            // File.Delete(assetName);
+            // File.Delete(assetName + ".meta");
+            // AssetDatabase.Refresh();
             return AssetDeleteResult.DidDelete;
         }
 
         static AssetMoveResult OnWillMoveAsset(string assetName, string destinationPath)
         {
-            AddrHelper.ReloadOnPostProcess = true;
-            File.Move(assetName, destinationPath);
-            File.Move(assetName + ".meta", destinationPath + ".meta");
-            AssetDatabase.Refresh();
+            // AddrHelper.ReloadOnPostProcess = true;
+            // File.Move(assetName, destinationPath);
+            // File.Move(assetName + ".meta", destinationPath + ".meta");
+            // AssetDatabase.Refresh();
             return AssetMoveResult.DidMove;
         }
     }

@@ -140,9 +140,9 @@ namespace SwiftFramework.Core.Editor
 
         protected bool FindInScene(SerializedProperty property, SerializedProperty gameObjectProperty)
         {
-            if (UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null)
+            if (UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage() != null)
             {
-                foreach (Transform other in UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage().prefabContentsRoot.GetComponentsInChildren<Transform>(true))
+                foreach (Transform other in UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage().prefabContentsRoot.GetComponentsInChildren<Transform>(true))
                 {
                     if (IsValid(other.gameObject, property))
                     {
